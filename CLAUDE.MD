@@ -227,6 +227,47 @@ Railway usa `prisma migrate deploy` (não `dev`). Criar migrations manualmente e
 
 O correto é o projeto **"web"** com domínio `raio-x-2026.com.br`. O outro ("raio-x-2026" com `raio-x-2026.vercel.app`) deve ser deletado em Settings → Delete Project.
 
+### Pipeline de população de dados reais (`populateRealData.ts`)
+
+`syncCamara/syncSenado` criam registros Candidate próprios (keyed por `camaraId`/`senadoId`) e nunca linkam aos candidatos do seed. O `populateRealData.ts` resolve isso com dois passos:
+
+1. **Link**: consulta a API do Senado, normaliza nomes (NFD + lowercase), faz fuzzy match com candidatos do seed, salva `senadoId` no candidato existente.
+2. **Sync**: com o `senadoId` correto, sincroniza votos (`saveSenadoVotes`) e matérias (`saveSenadoMaterias`) para o ID certo no banco.
+3. **Sites**: chama `loadCandidateSiteConfigs()` + `syncCandidateSites()` para scraping Playwright + extração Groq.
+
+Scripts adicionados ao `packages/scraper/package.json`:
+- `populate` — executa tudo (link senado + sites)
+- `populate:senado` — só link + votes + bills
+- `populate:sites` — só scraping de sites
+
+Para rodar manualmente contra produção, use `DATABASE_PUBLIC_URL` do painel Railway → serviço Postgres → Variables. Nunca commitar essa URL.
+
+### SiteUrls corretos dos candidatos (seed.ts)
+
+URLs verificadas que funcionam:
+- Flávio Bolsonaro: `https://www.flaviobolsonaro.net` (`.com` tem erro de certificado)
+- Ronaldo Caiado: `http://ronaldocaiado.com.br` (HTTPS tem cert error; usar HTTP)
+- `caiado.com.br` → revenda de pneus (não é o político)
+- `zema.com.br` → empresa de materiais de construção (não é o político)
+- `tarcisiodefreitas.com.br` → DNS não resolve
+- `eduardoleite.com.br` → timeout
+
+### Patrimônio e financiamento: TSE só disponível após agosto 2026
+
+`AssetDeclaration` e `CampaignFinancing` dependem de dados do TSE que só ficam disponíveis após o prazo de registro de candidatos (15/ago/2026). Essas seções estarão zeradas para todos os candidatos até lá — comportamento correto, não é bug.
+
+### Redis: flushar cache após popular dados
+
+Após rodar `populateRealData`, o Redis pode ter nulls ou dados vazios em cache (TTL 1h). Solução mais rápida: `railway redeploy --service API --yes` → o startup da API faz `invalidate('candidates:*')`. Alternativa: aguardar TTL expirar (~1h).
+
+### NEXT_SESSION.md deve ficar no .gitignore
+
+O arquivo NEXT_SESSION.md (notas de sessão) pode conter URLs de banco, API keys e outros segredos temporários. Está agora no `.gitignore` para nunca ser commitado. GitGuardian detectou vazamento de `DATABASE_PUBLIC_URL` do Railway em commit anterior — rotacionar a senha do banco imediatamente se isso ocorrer.
+
+### GitHub Actions: `workflow_dispatch` com opção `populate`
+
+O workflow `scraper.yml` tem 4 opções no `workflow_dispatch`: `populate`, `daily`, `weekly`, `all`. Usar `populate` para bootstrapping inicial de produção (instala Playwright, timeout 90min). Os jobs `daily` e `weekly` rodam automaticamente por cron.
+
 ---
 
 ## Schema do banco (Prisma — resumo)
