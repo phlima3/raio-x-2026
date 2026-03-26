@@ -58,10 +58,13 @@ export async function withCache<T>(
 
   const result = await fn()
 
-  try {
-    await client.setex(key, ttlSeconds, JSON.stringify(result))
-  } catch {
-    // Best-effort — don't fail because we couldn't cache
+  // Don't cache null/undefined — a missing resource may appear later (e.g. after seed)
+  if (result != null) {
+    try {
+      await client.setex(key, ttlSeconds, JSON.stringify(result))
+    } catch {
+      // Best-effort — don't fail because we couldn't cache
+    }
   }
 
   return result

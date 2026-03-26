@@ -5,6 +5,7 @@ import helmet from 'helmet'
 
 import { errorHandler } from './middleware/errorHandler'
 import { rateLimiter } from './middleware/rateLimiter'
+import { invalidate } from './services/cacheService'
 import candidatesRouter from './routes/candidates'
 import proposalsRouter from './routes/proposals'
 import comparisonRouter from './routes/comparison'
@@ -41,6 +42,8 @@ app.use(errorHandler)
 
 app.listen(PORT, () => {
   console.info(`[api] Running on http://localhost:${PORT}`)
+  // Flush candidate caches on startup so stale null entries (from pre-seed requests) don't persist
+  invalidate('candidates:*').catch(() => {})
 })
 
 export default app
