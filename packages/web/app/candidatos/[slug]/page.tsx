@@ -18,12 +18,20 @@ const POSITION_LABELS: Record<string, string> = {
   GOVERNADOR: 'Governador(a)',
 }
 
-// ISR: pre-render popular candidates (presidents + governors) at build time
+// ISR: pre-render popular candidates (presidents + governors) at build time.
+// Falls back to empty array if API is unavailable — pages are then rendered on-demand.
 export async function generateStaticParams() {
-  const res = await fetchCandidates({ position: 'PRESIDENTE', limit: '20' })
-  const govRes = await fetchCandidates({ position: 'GOVERNADOR', limit: '50' })
-  const all = [...(res.data ?? []), ...(govRes.data ?? [])]
-  return all.map((c) => ({ slug: c.slug }))
+  try {
+    const [presidentsRes, governorsRes] = await Promise.allSettled([
+      fetchCandidates({ position: 'PRESIDENTE', limit: '20' }),
+      fetchCandidates({ position: 'GOVERNADOR', limit: '50' }),
+    ])
+    const presidents = presidentsRes.status === 'fulfilled' ? presidentsRes.value.data : []
+    const governors = governorsRes.status === 'fulfilled' ? governorsRes.value.data : []
+    return [...presidents, ...governors].map((c) => ({ slug: c.slug }))
+  } catch {
+    return []
+  }
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
