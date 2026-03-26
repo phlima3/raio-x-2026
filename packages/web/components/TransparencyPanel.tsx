@@ -24,10 +24,10 @@ interface TransparencyData {
 }
 
 interface TransparencyPanelProps {
-  candidateId: string
+  candidateSlug: string
 }
 
-export function TransparencyPanel({ candidateId }: TransparencyPanelProps) {
+export function TransparencyPanel({ candidateSlug }: TransparencyPanelProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>('voting')
   const [data, setData] = useState<TransparencyData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -36,7 +36,7 @@ export function TransparencyPanel({ candidateId }: TransparencyPanelProps) {
   useEffect(() => {
     const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 
-    fetch(`${API_BASE}/api/candidates/${candidateId}/transparency`, {
+    fetch(`${API_BASE}/api/candidates/${candidateSlug}/transparency`, {
       next: { revalidate: 3600 },
     } as RequestInit)
       .then((r) => r.json())
@@ -46,7 +46,7 @@ export function TransparencyPanel({ candidateId }: TransparencyPanelProps) {
       })
       .catch(() => setError('Falha de conexão'))
       .finally(() => setLoading(false))
-  }, [candidateId])
+  }, [candidateSlug])
 
   const tabs: { key: ActiveTab; label: string }[] = [
     { key: 'voting',    label: 'Votações' },

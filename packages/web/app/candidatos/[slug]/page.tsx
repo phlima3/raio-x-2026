@@ -231,7 +231,7 @@ export default async function CandidatePage({ params }: Props) {
       {/* Transparency */}
       <section>
         <h2 className="text-xl font-bold text-gray-900 mb-5">Transparência</h2>
-        <TransparencyPanel candidateId={candidate.id} />
+        <TransparencyPanel candidateSlug={params.slug} />
       </section>
     </div>
   )
