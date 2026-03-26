@@ -14,6 +14,9 @@ import transparencyRouter from './routes/transparency'
 const app: Express = express()
 const PORT = process.env.API_PORT ?? 3001
 
+// Trust Railway/Vercel reverse proxy so rate-limiter reads real client IP
+app.set('trust proxy', 1)
+
 // ── Global middleware ─────────────────────────────────────────────────────────
 app.use(helmet())
 const corsOrigins = [
