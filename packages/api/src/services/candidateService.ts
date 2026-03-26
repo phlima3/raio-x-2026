@@ -30,24 +30,70 @@ function parseSlug(slug: string): { namePart: string; state: string } | null {
 
 // ── List candidates ───────────────────────────────────────────────────────────
 
+type CandidateRow = {
+  id: string
+  name: string
+  socialName: string | null
+  party: string
+  state: string
+  position: string
+  photoUrl: string | null
+  ballotNumber: number | null
+  isIncumbent: boolean
+  electionYear: number
+}
+
 export async function listCandidates(filters: CandidateFilters) {
   const { party, state, position, electionYear, search, page, limit } = filters
   const skip = (page - 1) * limit
   const key = cacheKey.candidateList(JSON.stringify(filters))
 
   return withCache(key, TTL.CANDIDATE_LIST, async () => {
+    // When search is present, use raw SQL with unaccent for accent-insensitive matching
+    // ("flavio" must find "Flávio"; Prisma's ILIKE is case-insensitive but not accent-insensitive)
+    if (search) {
+      const searchParam = `%${search}%`
+      const conditions: Prisma.Sql[] = [
+        Prisma.sql`(
+          unaccent(lower(c.name)) LIKE unaccent(lower(${searchParam}))
+          OR unaccent(lower(COALESCE(c."socialName", ''))) LIKE unaccent(lower(${searchParam}))
+          OR unaccent(lower(c.party)) LIKE unaccent(lower(${searchParam}))
+        )`,
+      ]
+      if (party) conditions.push(Prisma.sql`c.party = ${party}`)
+      if (state) conditions.push(Prisma.sql`c.state = ${state}`)
+      if (position) conditions.push(Prisma.sql`c.position = ${position}`)
+      if (electionYear) conditions.push(Prisma.sql`c."electionYear" = ${electionYear}`)
+
+      const whereClause = Prisma.join(conditions, ' AND ')
+
+      const [countResult, rows] = await Promise.all([
+        prisma.$queryRaw<[{ count: bigint }]>`
+          SELECT COUNT(*) AS count FROM "Candidate" c WHERE ${whereClause}
+        `,
+        prisma.$queryRaw<CandidateRow[]>`
+          SELECT c.id, c.name, c."socialName", c.party, c.state, c.position,
+                 c."photoUrl", c."ballotNumber", c."isIncumbent", c."electionYear"
+          FROM "Candidate" c
+          WHERE ${whereClause}
+          ORDER BY c.position ASC, c.state ASC, c.name ASC
+          LIMIT ${limit} OFFSET ${skip}
+        `,
+      ])
+
+      const total = Number(countResult[0].count)
+      return {
+        data: rows.map((c) => ({ ...c, slug: makeSlug(c.name, c.party, c.state) })),
+        meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+      }
+    }
+
+    // No search: use ORM (supports Prisma type safety + index scans on exact filters)
     const where: Prisma.CandidateWhereInput = {
       ...(party && { party }),
       ...(state && { state }),
       ...(position && { position }),
       ...(electionYear && { electionYear }),
-      ...(search && {
-        OR: [
-          { name: { contains: search, mode: 'insensitive' } },
-          { socialName: { contains: search, mode: 'insensitive' } },
-          { party: { contains: search, mode: 'insensitive' } },
-        ],
-      }),
     }
 
     const [total, candidates] = await Promise.all([
