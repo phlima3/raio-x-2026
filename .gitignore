@@ -26,7 +26,6 @@ pnpm-debug.log*
 *.sqlite
 
 # Prisma generated
-packages/api/prisma/migrations/
 packages/api/node_modules/.prisma/
 
 # OS
