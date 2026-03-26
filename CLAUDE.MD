@@ -142,6 +142,31 @@ pnpm run sync:all           # todos os jobs
 
 ---
 
+## Infraestrutura de produção (deploy atual)
+
+| Serviço    | Plataforma | URL / domínio                              |
+| ---------- | ---------- | ------------------------------------------ |
+| Frontend   | Vercel     | raio-x-2026.com.br (projeto: "web")        |
+| API        | Railway    | api-production-bf20.up.railway.app → :3001 |
+| PostgreSQL | Railway    | postgres.railway.internal:5432             |
+| Redis      | Railway    | (configurado via REDIS_URL)                |
+
+### DNS (Hostinger)
+- `@` → ALIAS + A `76.76.21.21` (Vercel)
+- `www` → CNAME `cname.vercel-dns.com`
+- `api` → CNAME `api-production-bf20.up.railway.app`
+
+### Variáveis de ambiente — Vercel (projeto "web")
+- `NEXT_PUBLIC_API_URL` = `https://api-production-bf20.up.railway.app` (usar o domínio direto do Railway enquanto o CNAME api. não propaga)
+
+### Variáveis de ambiente — Railway (serviço API)
+- `DATABASE_URL` = URL interna do PostgreSQL Railway
+- `REDIS_URL` = URL interna do Redis Railway
+- `FRONTEND_URL` = `https://raio-x-2026.com.br`
+- `GROQ_API_KEY` = chave do Groq
+
+---
+
 ## Decisões importantes já tomadas
 
 ### LLM: Groq em vez de Gemini (por enquanto)
@@ -169,6 +194,38 @@ Páginas de candidatos são geradas estaticamente em build time (`generateStatic
 - Branch de desenvolvimento: `develop`
 - Features: `feat/nome`, Fixes: `fix/nome`
 - Regra: qualquer branch mergeada em `main` deve ser mergeada **diretamente** em `develop`. Nunca mergear `main` em `develop`.
+
+### API rodando com `tsx` (não `node dist/`)
+
+O start script usa `tsx src/index.ts` diretamente. Isso evita o bug do Railway onde o build cache reaproveita o `dist/` compilado antigo, ignorando mudanças no código. `tsx` está em `dependencies` (não devDependencies) para estar disponível em produção.
+
+### Slug do candidato: coluna no banco + fallback por estado
+
+O modelo `Candidate` tem `slug String? @unique`. O seed popula o slug em cada startup. `getCandidateBySlug` primeiro tenta `findFirst({ where: { slug } })` (lookup direto) e cai no fallback que filtra por estado e compara com `makeSlug` em JavaScript. **Não usar `ILIKE 'nome%'` no PostgreSQL** — nomes acentuados como "Flávio" não casam com `ILIKE 'flavio%'`.
+
+### `withCache` não cacheia `null`
+
+`null` serializado vira a string `"null"` no Redis. `if (cached)` para `"null"` é truthy, então `null` seria retornado eternamente. Correção: só chamar `setex` se `result != null`. Também: flushar `candidates:*` no startup via `invalidate('candidates:*')` para limpar nulls estagnados de antes do seed rodar.
+
+### `trust proxy` no Express (Railway)
+
+Railway fica atrás de um proxy reverso. Sem `app.set('trust proxy', 1)`, o `express-rate-limit` lança `ValidationError` em toda requisição (ERR_ERL_UNEXPECTED_X_FORWARDED_FOR).
+
+### TransparencyPanel usa `candidateSlug` (não `candidate.id`)
+
+O endpoint de transparência é `/api/candidates/:slug/transparency`. O componente deve receber `candidateSlug={params.slug}` (o slug da URL), não `candidate.id` (o UUID do banco).
+
+### Vercel SSG: rebuild necessário após corrigir a API
+
+Quando `generateStaticParams` inclui um slug e o Railway retorna 404 para aquele slug na hora do build, o Vercel gera uma página 404 estática. Mesmo após corrigir a API, essa página 404 fica em cache. Solução: rodar `vercel --prod --yes` após confirmar que a API responde 200 para todos os slugs.
+
+### Migrations manuais (não `prisma migrate dev` no Railway)
+
+Railway usa `prisma migrate deploy` (não `dev`). Criar migrations manualmente em `prisma/migrations/YYYYMMDDHHMMSS_nome/migration.sql`. Sempre incluir `IF NOT EXISTS` no SQL para idempotência.
+
+### Dois projetos duplicados no Vercel
+
+O correto é o projeto **"web"** com domínio `raio-x-2026.com.br`. O outro ("raio-x-2026" com `raio-x-2026.vercel.app`) deve ser deletado em Settings → Delete Project.
 
 ---
 
