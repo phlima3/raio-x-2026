@@ -48,3 +48,7 @@ packages/scraper/test-results/
 # Cache
 .turbo/
 .eslintcache
+.vercel
+
+# Session notes with potentially sensitive data — keep local only
+NEXT_SESSION.md
