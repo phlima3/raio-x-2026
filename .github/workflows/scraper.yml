@@ -11,14 +11,60 @@ on:
       job:
         description: 'Which job to run'
         required: true
-        default: 'daily'
+        default: 'populate'
         type: choice
         options:
+          - populate
           - daily
           - weekly
           - all
 
 jobs:
+  populate:
+    name: Populate Real Data (One-shot)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'populate'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Playwright browsers
+        working-directory: packages/scraper
+        run: npx playwright install chromium --with-deps
+
+      - name: Install dependencies
+        working-directory: packages/scraper
+        run: pnpm install --frozen-lockfile
+
+      - name: Install API deps (for Prisma)
+        working-directory: packages/api
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        working-directory: packages/api
+        run: pnpm prisma generate
+
+      - name: Populate real data (link senators + scrape sites)
+        working-directory: packages/scraper
+        run: pnpm run populate
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+          REDIS_URL: ${{ secrets.PROD_REDIS_URL }}
+          LLM_PROVIDER: groq
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          CAMARA_API_URL: https://dadosabertos.camara.leg.br/api/v2
+          SENADO_API_URL: https://legis.senado.leg.br/dadosabertos
+          SCRAPER_CONCURRENCY: '2'
+        timeout-minutes: 90
+
   daily-sync:
     name: Daily Sync (Câmara + Senado)
     runs-on: ubuntu-latest

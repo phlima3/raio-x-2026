@@ -42,3 +42,13 @@ export const dailySyncJob = cron.schedule(CRON_SCHEDULE, runDailySync, {
 
 // Allow running once immediately for testing
 export { runDailySync }
+
+// ── Direct execution ──────────────────────────────────────────────────────────
+// Used by: pnpm run sync:all
+if (require.main === module) {
+  runDailySync()
+    .catch((err) => {
+      logger.error('[daily-sync] Fatal error', err)
+      process.exit(1)
+    })
+}

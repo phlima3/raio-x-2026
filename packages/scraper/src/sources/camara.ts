@@ -585,3 +585,13 @@ export async function syncCamara(filters: DeputadoFilters = {}): Promise<void> {
   logger.info(`[camara] Sync complete — ${synced} ok, ${failed} failed`)
   await prisma.$disconnect()
 }
+
+// ── Direct execution ──────────────────────────────────────────────────────────
+// Used by: pnpm run sync:camara
+if (require.main === module) {
+  syncCamara()
+    .catch((err) => {
+      logger.error('[camara] Fatal error', err)
+      process.exit(1)
+    })
+}

@@ -35,3 +35,13 @@ export const weeklyProposalsJob = cron.schedule(CRON_SCHEDULE, runWeeklyProposal
 })
 
 export { runWeeklyProposalsSync }
+
+// ── Direct execution ──────────────────────────────────────────────────────────
+// Used by: pnpm run process:proposals
+if (require.main === module) {
+  runWeeklyProposalsSync()
+    .catch((err) => {
+      console.error('[weekly-proposals] Fatal error', err)
+      process.exit(1)
+    })
+}

@@ -568,3 +568,13 @@ export async function syncSenado(
   logger.info(`[senado] Sync complete — ${synced} ok, ${failed} failed`)
   await prisma.$disconnect()
 }
+
+// ── Direct execution ──────────────────────────────────────────────────────────
+// Used by: pnpm run sync:senado
+if (require.main === module) {
+  syncSenado()
+    .catch((err) => {
+      logger.error('[senado] Fatal error', err)
+      process.exit(1)
+    })
+}
