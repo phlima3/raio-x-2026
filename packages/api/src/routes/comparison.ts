@@ -1,8 +1,8 @@
-import { Router } from 'express'
+import { Router, type Router as RouterType } from 'express'
 import { compareHandler, getComparisonTopicsHandler } from '../controllers/comparison'
 import { strictRateLimiter } from '../middleware/rateLimiter'
 
-const router = Router()
+const router: RouterType = Router()
 
 // GET /api/comparison?candidateA=:id&candidateB=:id — side-by-side candidate data
 // Uses strict rate limiter because Gemini calls can be expensive

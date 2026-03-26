@@ -1,11 +1,11 @@
-import { Router } from 'express'
+import { Router, type Router as RouterType } from 'express'
 import {
   listProposalsHandler,
   getProposalHandler,
   getProposalCategoriesHandler,
 } from '../controllers/proposals'
 
-const router = Router()
+const router: RouterType = Router()
 
 // GET /api/proposals — list with filters (candidateId, category, status, source)
 router.get('/', listProposalsHandler)

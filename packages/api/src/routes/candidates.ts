@@ -1,4 +1,4 @@
-import { Router } from 'express'
+import { Router, type Router as RouterType } from 'express'
 import {
   listCandidatesHandler,
   getCandidateHandler,
@@ -8,7 +8,7 @@ import {
   getCandidateStatsHandler,
 } from '../controllers/candidates'
 
-const router = Router()
+const router: RouterType = Router()
 
 // GET /api/candidates — list with filters & pagination
 router.get('/', listCandidatesHandler)

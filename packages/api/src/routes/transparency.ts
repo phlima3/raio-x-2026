@@ -1,11 +1,11 @@
-import { Router } from 'express'
+import { Router, type Router as RouterType } from 'express'
 import {
   getVotingRecordsHandler,
   getAssetDeclarationsHandler,
   getCampaignFinancingHandler,
 } from '../controllers/transparency'
 
-const router = Router()
+const router: RouterType = Router()
 
 // GET /api/transparency/:candidateId/voting — voting history
 router.get('/:candidateId/voting', getVotingRecordsHandler)

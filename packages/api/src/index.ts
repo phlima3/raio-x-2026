@@ -1,5 +1,5 @@
 import 'dotenv/config'
-import express from 'express'
+import express, { type Express } from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 
@@ -10,7 +10,7 @@ import proposalsRouter from './routes/proposals'
 import comparisonRouter from './routes/comparison'
 import transparencyRouter from './routes/transparency'
 
-const app = express()
+const app: Express = express()
 const PORT = process.env.API_PORT ?? 3001
 
 // ── Global middleware ─────────────────────────────────────────────────────────
