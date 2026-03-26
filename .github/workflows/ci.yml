@@ -1,0 +1,116 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [develop]
+
+jobs:
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: raiox2026_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5433/raiox2026_test
+      REDIS_URL: redis://localhost:6379
+      LLM_PROVIDER: groq
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: |
+            packages/api/pnpm-lock.yaml
+            packages/web/pnpm-lock.yaml
+            packages/scraper/pnpm-lock.yaml
+
+      - name: Install API dependencies
+        working-directory: packages/api
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Web dependencies
+        working-directory: packages/web
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Scraper dependencies
+        working-directory: packages/scraper
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        working-directory: packages/api
+        run: pnpm prisma generate
+
+      - name: Apply migrations
+        working-directory: packages/api
+        run: pnpm prisma migrate deploy
+
+      - name: Type check API
+        working-directory: packages/api
+        run: pnpm tsc --noEmit
+
+      - name: Type check Web
+        working-directory: packages/web
+        run: pnpm tsc --noEmit
+
+      - name: Type check Scraper
+        working-directory: packages/scraper
+        run: pnpm tsc --noEmit
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: typecheck
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Web dependencies
+        working-directory: packages/web
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Web (Next.js)
+        working-directory: packages/web
+        env:
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL || 'http://localhost:3001' }}
+        run: pnpm build
+
+      - name: Install API dependencies
+        working-directory: packages/api
+        run: pnpm install --frozen-lockfile
+
+      - name: Build API
+        working-directory: packages/api
+        run: pnpm build

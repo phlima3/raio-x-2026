@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Database
+*.db
+*.sqlite
+
+# Prisma generated
+packages/api/prisma/migrations/
+packages/api/node_modules/.prisma/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Playwright
+packages/scraper/playwright-report/
+packages/scraper/test-results/
+
+# TypeScript
+*.tsbuildinfo
+
+# Cache
+.turbo/
+.eslintcache

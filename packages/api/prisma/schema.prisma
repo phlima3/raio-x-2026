@@ -1,0 +1,184 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ─────────────────────────────────────────────────────────────────────
+
+enum Position {
+  PRESIDENTE
+  VICE_PRESIDENTE
+  SENADOR
+  DEPUTADO_FEDERAL
+  DEPUTADO_ESTADUAL
+  GOVERNADOR
+  VICE_GOVERNADOR
+  PREFEITO
+  VEREADOR
+}
+
+enum ProposalStatus {
+  DRAFT
+  SUBMITTED
+  IN_COMMITTEE
+  VOTED
+  APPROVED
+  REJECTED
+  ARCHIVED
+}
+
+enum VoteType {
+  YES
+  NO
+  ABSTENTION
+  ABSENT
+  OBSTRUCTION
+}
+
+// ── Models ────────────────────────────────────────────────────────────────────
+
+model Candidate {
+  id              String   @id @default(cuid())
+  tseId           String?  @unique // ID no TSE
+  camaraId        String?  @unique // ID na API da Câmara dos Deputados
+  senadoId        String?  @unique // ID na API do Senado Federal
+  name            String
+  socialName      String?
+  party           String   // Sigla do partido (ex: PT, PL, MDB)
+  state           String   // UF (ex: SP, RJ, MG)
+  position        Position
+  coalitionName   String?
+  photoUrl        String?
+  bio             String?  @db.Text
+  bioSummary      String?  @db.Text // Gerado pelo Gemini
+  siteUrl         String?
+  email           String?
+
+  // Dados eleitorais
+  ballotNumber    Int?
+  electionYear    Int      @default(2026)
+  isIncumbent     Boolean  @default(false)
+
+  proposals          Proposal[]
+  votingRecords      VotingRecord[]
+  assetDeclarations  AssetDeclaration[]
+  campaignFinancings CampaignFinancing[]
+  consistencyScores  ConsistencyScore[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([party])
+  @@index([state])
+  @@index([position])
+  @@index([electionYear])
+}
+
+model Proposal {
+  id            String         @id @default(cuid())
+  externalId    String?        @unique // ID na Câmara ou Senado
+  source        String         // "camara" | "senado" | "candidate_site"
+  title         String
+  description   String?        @db.Text
+  summary       String?        @db.Text // Gerado pelo Gemini
+  category      String?        // Saúde, Educação, Economia, etc.
+  tags          String[]
+  status        ProposalStatus @default(DRAFT)
+  proposedAt    DateTime?
+  url           String?        // URL original na fonte
+
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([candidateId])
+  @@index([category])
+  @@index([status])
+}
+
+model VotingRecord {
+  id           String   @id @default(cuid())
+  externalId   String?  // ID da votação na Câmara/Senado
+  source       String   // "camara" | "senado"
+  proposalName String
+  proposalUrl  String?
+  voteType     VoteType
+  votedAt      DateTime
+  session      String?  // Identificador da sessão
+
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([candidateId])
+  @@index([votedAt])
+  @@index([voteType])
+}
+
+model AssetDeclaration {
+  id           String   @id @default(cuid())
+  year         Int      // Ano da declaração
+  totalValue   Decimal  @db.Decimal(18, 2)
+  currency     String   @default("BRL")
+  sourceUrl    String?  // URL no TSE
+  assets       Json?    // Array de bens detalhados
+
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([candidateId, year])
+  @@index([candidateId])
+  @@index([year])
+}
+
+model CampaignFinancing {
+  id              String   @id @default(cuid())
+  year            Int      // Ano eleitoral
+  totalReceived   Decimal  @db.Decimal(18, 2)
+  totalSpent      Decimal  @db.Decimal(18, 2)
+  currency        String   @default("BRL")
+  sourceUrl       String?  // URL no TSE
+  donors          Json?    // Top doadores resumidos
+
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([candidateId, year])
+  @@index([candidateId])
+  @@index([year])
+}
+
+model ConsistencyScore {
+  id             String   @id @default(cuid())
+  theme          String   // Tema (ex: Saúde, Educação, Economia)
+  score          Int      // 0–100 (maior = mais consistente)
+  label          String   // "Alto" | "Médio" | "Baixo" | "Sem dados"
+  explanation    String   @db.Text // Explicação gerada pelo LLM
+  contradictions Json?    // Array de { proposal, vote, description }
+  proposalCount  Int      @default(0)
+  voteCount      Int      @default(0)
+  computedAt     DateTime @default(now())
+
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([candidateId, theme])
+  @@index([candidateId])
+}

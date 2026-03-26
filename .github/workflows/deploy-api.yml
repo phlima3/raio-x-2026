@@ -1,0 +1,71 @@
+name: Deploy API (Railway)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/api/**'
+      - '.github/workflows/deploy-api.yml'
+
+jobs:
+  deploy:
+    name: Deploy to Railway
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Install dependencies
+        working-directory: packages/api
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        working-directory: packages/api
+        run: pnpm prisma generate
+
+      - name: Build
+        working-directory: packages/api
+        run: pnpm build
+
+      - name: Deploy to Railway
+        working-directory: packages/api
+        run: railway up --service api --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+  migrate:
+    name: Run DB Migrations
+    runs-on: ubuntu-latest
+    needs: deploy
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: packages/api
+        run: pnpm install --frozen-lockfile
+
+      - name: Run migrations
+        working-directory: packages/api
+        run: pnpm prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}

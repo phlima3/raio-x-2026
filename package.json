@@ -1,0 +1,23 @@
+{
+  "name": "raio-x-2026",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Plataforma de transparência eleitoral brasileira - Eleições 2026",
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=packages/api\" \"npm run dev --workspace=packages/web\"",
+    "dev:api": "npm run dev --workspace=packages/api",
+    "dev:web": "npm run dev --workspace=packages/web",
+    "dev:scraper": "npm run dev --workspace=packages/scraper",
+    "build": "npm run build --workspaces",
+    "lint": "npm run lint --workspaces",
+    "db:migrate": "npm run db:migrate --workspace=packages/api",
+    "db:generate": "npm run db:generate --workspace=packages/api",
+    "db:studio": "npm run db:studio --workspace=packages/api",
+    "scraper:sync": "npm run sync --workspace=packages/scraper"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.4.5"
+  }
+}
