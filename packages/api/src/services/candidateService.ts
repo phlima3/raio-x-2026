@@ -98,12 +98,10 @@ export async function getCandidateBySlug(slug: string) {
     })
     if (bySlug) return { ...bySlug, slug }
 
-    // Fallback: reconstruct slug from name/party/state (for candidates without slug column yet)
+    // Fallback: filter by state then match slug in JS (handles accented names like "Flávio")
     const parsed = parseSlug(slug)
     const candidates = await prisma.candidate.findMany({
-      where: parsed
-        ? { state: { equals: parsed.state.toUpperCase() }, name: { startsWith: parsed.namePart, mode: 'insensitive' } }
-        : { name: { contains: slug, mode: 'insensitive' } },
+      where: parsed ? { state: { equals: parsed.state.toUpperCase() } } : {},
       include: {
         proposals: { orderBy: { proposedAt: 'desc' }, take: 50 },
         votingRecords: { orderBy: { votedAt: 'desc' }, take: 100 },
