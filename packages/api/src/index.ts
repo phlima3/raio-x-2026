@@ -15,7 +15,13 @@ const PORT = process.env.API_PORT ?? 3001
 
 // ── Global middleware ─────────────────────────────────────────────────────────
 app.use(helmet())
-app.use(cors({ origin: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000' }))
+const corsOrigins = [
+  'http://localhost:3000',
+  'https://raio-x-2026.com.br',
+  'https://www.raio-x-2026.com.br',
+  process.env.FRONTEND_URL,
+].filter(Boolean) as string[]
+app.use(cors({ origin: corsOrigins }))
 app.use(express.json())
 app.use(rateLimiter)
 
