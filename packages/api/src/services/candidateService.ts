@@ -86,8 +86,20 @@ export async function listCandidates(filters: CandidateFilters) {
 
 export async function getCandidateBySlug(slug: string) {
   return withCache(cacheKey.candidateDetail(slug), TTL.CANDIDATE_DETAIL, async () => {
-    const parsed = parseSlug(slug)
+    // Try direct slug column lookup first (fast path)
+    const bySlug = await prisma.candidate.findFirst({
+      where: { slug },
+      include: {
+        proposals: { orderBy: { proposedAt: 'desc' }, take: 50 },
+        votingRecords: { orderBy: { votedAt: 'desc' }, take: 100 },
+        assetDeclarations: { orderBy: { year: 'desc' } },
+        campaignFinancings: { orderBy: { year: 'desc' } },
+      },
+    })
+    if (bySlug) return { ...bySlug, slug }
 
+    // Fallback: reconstruct slug from name/party/state (for candidates without slug column yet)
+    const parsed = parseSlug(slug)
     const candidates = await prisma.candidate.findMany({
       where: parsed
         ? { state: { equals: parsed.state.toUpperCase() }, name: { startsWith: parsed.namePart, mode: 'insensitive' } }

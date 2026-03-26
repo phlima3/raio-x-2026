@@ -195,6 +195,7 @@ async function seed(): Promise<void> {
       await prisma.candidate.update({
         where: { id: existing.id },
         data: {
+          slug,
           photoUrl: c.photoUrl ?? existing.photoUrl,
           siteUrl: c.siteUrl ?? existing.siteUrl,
           bio: c.bio ?? existing.bio,
@@ -206,6 +207,7 @@ async function seed(): Promise<void> {
     } else {
       await prisma.candidate.create({
         data: {
+          slug,
           name: c.name,
           party: c.party,
           state: c.state,
@@ -215,7 +217,6 @@ async function seed(): Promise<void> {
           bio: c.bio ?? null,
           isIncumbent: c.isIncumbent ?? false,
           electionYear: 2026,
-          // Store slug in bio summary temporarily until a slug column is added
         },
       })
       created++

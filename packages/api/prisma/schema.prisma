@@ -46,6 +46,7 @@ model Candidate {
   tseId           String?  @unique // ID no TSE
   camaraId        String?  @unique // ID na API da Câmara dos Deputados
   senadoId        String?  @unique // ID na API do Senado Federal
+  slug            String?  @unique // URL slug (ex: lula-pt-sp)
   name            String
   socialName      String?
   party           String   // Sigla do partido (ex: PT, PL, MDB)
