@@ -14,7 +14,9 @@
     "process:proposals": "tsx src/jobs/weeklyProposals.ts",
     "populate": "tsx src/jobs/populateRealData.ts",
     "populate:senado": "tsx src/jobs/populateRealData.ts senado",
-    "populate:sites": "tsx src/jobs/populateRealData.ts sites"
+    "populate:sites": "tsx src/jobs/populateRealData.ts sites",
+    "import:gemini": "tsx src/scripts/importGeminiData.ts",
+    "import:gemini:dry": "tsx src/scripts/importGeminiData.ts -- --dry-run"
   },
   "dependencies": {
     "@google/generative-ai": "^0.14.1",

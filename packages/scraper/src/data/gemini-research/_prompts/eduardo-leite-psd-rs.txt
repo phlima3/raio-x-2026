@@ -1,0 +1,49 @@
+Você é um pesquisador político brasileiro especializado em eleições. Use sua capacidade de pesquisa na web (Deep Search / Search Grounding) para reunir informações verificadas e atualizadas sobre o candidato abaixo.
+
+CANDIDATO: Eduardo Leite
+PARTIDO: PSD
+ESTADO: Rio Grande do Sul
+CARGO ATUAL: Governador do Rio Grande do Sul (mandato 2023–2026)
+SLUG NO SISTEMA: eduardo-leite-psd-rs
+
+INSTRUÇÕES:
+1. Pesquise ativamente na web antes de responder. Use fontes como G1, UOL, Folha, Estadão, rs.gov.br, Wikipedia PT-BR.
+2. Responda APENAS com JSON válido, sem texto antes ou depois, sem markdown, sem ```json```.
+3. Todos os campos são obrigatórios. Se não encontrar um dado, use null.
+4. Para photoUrl: busque no portal do Governo do RS (rs.gov.br/governo) ou Wikipedia Commons. Eduardo Leite foi deputado federal — código na Câmara: tente https://www.camara.leg.br/internet/deputado/bandep/CODIGO.jpg (pesquise o código correto). Alternativamente, use Wikipedia.
+5. approvalRate: use pesquisa de intenção de voto presidencial mais recente. Eduardo Leite é candidato presidencial declarado pelo PSD.
+6. keyPositions: baseie-se em declarações públicas e gestão do governo do RS — inclua contexto das enchentes de 2024.
+
+CONTEXTO IMPORTANTE:
+- Advogado, ex-prefeito de Pelotas (2013–2018)
+- Governador do RS eleito em 2018, perdeu para Onyx Lorenzoni em 2022, mas venceu na reeleição em 2022 (verificar)
+- Assumiu publicamente ser gay em 2021 — pioneiro entre governadores brasileiros
+- Rio Grande do Sul sofreu enchentes históricas em maio de 2024 — gestão de crise relevante para 2026
+- Candidato presidencial cogitado/declarado pelo PSD para 2026; perfil de centro progressista
+
+FORMATO DE SAÍDA (JSON exato):
+{
+  "slug": "eduardo-leite-psd-rs",
+  "bio": "Parágrafo de 3 a 4 frases em tom neutro e jornalístico. Mencionar: advogado, ex-prefeito de Pelotas, governador do RS (reeleito 2022), gestão das enchentes de 2024, candidatura presidencial 2026.",
+  "approvalRate": null,
+  "photoUrl": "URL direta para foto oficial (.jpg ou .png)",
+  "officialPhotoPageUrl": "URL da página onde a foto está publicada",
+  "officialSiteUrl": "https://rs.gov.br",
+  "wikipediaUrl": "https://pt.wikipedia.org/wiki/Eduardo_Leite",
+  "partyHistory": [
+    "PSDB — anos exatos",
+    "PSD — 2022–hoje"
+  ],
+  "politicalCareer": [
+    { "role": "Prefeito de Pelotas", "period": "2013–2018", "highlight": "" },
+    { "role": "Governador do Rio Grande do Sul", "period": "2019–presente", "highlight": "Reeleito em 2022. Gestão das enchentes históricas de maio de 2024." }
+  ],
+  "keyPositions": {
+    "economy": "Posição real sobre economia — ex: reconstrução pós-enchentes, política fiscal do RS",
+    "security": "Posição real sobre segurança pública",
+    "environment": "Posição real sobre clima/ambiente — ex: agenda pós-enchentes, mudanças climáticas",
+    "education": "Posição real sobre educação",
+    "health": "Posição real sobre saúde"
+  },
+  "recentContext": "1 a 2 frases sobre candidatura 2026, impacto das enchentes na imagem política, posição nas pesquisas."
+}

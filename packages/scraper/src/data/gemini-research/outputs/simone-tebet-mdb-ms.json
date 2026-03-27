@@ -1,0 +1,27 @@
+{
+  "slug": "simone-tebet-mdb-ms",
+  "bio": "Simone Nassar Tebet é advogada e política sul-mato-grossense, ex-prefeita de Três Lagoas (2005–2012), ex-senadora por Mato Grosso do Sul (2015–2023) e ministra do Planejamento e Orçamento do governo Lula desde 2023. Candidata à Presidência em 2022 pelo MDB, obteve o terceiro lugar com 4,9 milhões de votos. Em março de 2026, deixou o MDB após quase três décadas e filiou-se ao PSB para disputar o Senado por São Paulo.",
+  "approvalRate": null,
+  "photoUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Simone_Tebet_em_2023.jpg/440px-Simone_Tebet_em_2023.jpg",
+  "officialPhotoPageUrl": "https://pt.wikipedia.org/wiki/Simone_Tebet",
+  "officialSiteUrl": "https://simonetebet.com.br/",
+  "wikipediaUrl": "https://pt.wikipedia.org/wiki/Simone_Tebet",
+  "partyHistory": [
+    "MDB — 1997–2026",
+    "PSB — 2026–hoje"
+  ],
+  "politicalCareer": [
+    { "role": "Prefeita de Três Lagoas (MS)", "period": "2005–2012", "highlight": "Primeira mulher eleita prefeita da cidade; reeleita com 76% dos votos" },
+    { "role": "Vice-Governadora do Mato Grosso do Sul", "period": "2011–2015", "highlight": "Na chapa de André Puccinelli (MDB)" },
+    { "role": "Senadora Federal por Mato Grosso do Sul", "period": "2015–2023", "highlight": "Primeira mulher a presidir a CCJ do Senado; candidata à presidência do Senado; candidata à Presidência em 2022 (3º lugar)" },
+    { "role": "Ministra do Planejamento e Orçamento", "period": "2023–2026", "highlight": "Nomeada por Lula após apoio no 2º turno de 2022; focada em responsabilidade fiscal e arcabouço fiscal" }
+  ],
+  "keyPositions": {
+    "economy": "Defende responsabilidade fiscal como base para responsabilidade social. Prioriza reforma tributária, redução de juros e combate à inflação. Integra sustentabilidade e economia verde nas políticas econômicas.",
+    "security": "Propõe recriação do Ministério da Segurança Pública e integração das forças policiais. Defende inteligência e tecnologia contra o crime organizado e fechamento de fronteiras.",
+    "environment": "Incorpora economia verde e sustentabilidade em todas as políticas públicas. Vê a sustentabilidade como central ao modelo de desenvolvimento.",
+    "education": "Coloca educação no topo das prioridades: defende educação em tempo integral, nova base curricular conectada ao mercado de trabalho e zeragem de filas para creches.",
+    "health": "Defende que saúde e educação não devem ser afetadas por cortes fiscais. Prioriza fortalecimento do SUS e universalização do acesso à saúde."
+  },
+  "recentContext": "Simone Tebet deixou o MDB em 21 de março de 2026 e filiou-se ao PSB para disputar o Senado por São Paulo, abandonando a corrida presidencial. Lidera pesquisas para a vaga senatorial em SP com 22-25% das intenções de voto."
+}

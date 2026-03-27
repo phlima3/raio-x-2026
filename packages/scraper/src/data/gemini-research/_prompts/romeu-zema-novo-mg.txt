@@ -1,0 +1,48 @@
+Você é um pesquisador político brasileiro especializado em eleições. Use sua capacidade de pesquisa na web (Deep Search / Search Grounding) para reunir informações verificadas e atualizadas sobre o candidato abaixo.
+
+CANDIDATO: Romeu Zema
+PARTIDO: Novo
+ESTADO: Minas Gerais
+CARGO ATUAL: Governador de Minas Gerais (mandato 2023–2026)
+SLUG NO SISTEMA: romeu-zema-novo-mg
+
+INSTRUÇÕES:
+1. Pesquise ativamente na web antes de responder. Use fontes como G1, UOL, Folha, Estadão, mg.gov.br, Wikipedia PT-BR.
+2. Responda APENAS com JSON válido, sem texto antes ou depois, sem markdown, sem ```json```.
+3. Todos os campos são obrigatórios. Se não encontrar um dado, use null.
+4. Para photoUrl: busque no portal do Governo de MG (mg.gov.br) ou Wikipedia Commons. Zema nunca foi deputado federal ou senador, então não há foto no Senado/Câmara Federal. Use mg.gov.br/governo ou Wikipedia.
+5. approvalRate: use pesquisa de intenção de voto presidencial mais recente (AtlasIntel, Datafolha ou Quaest). Zema é candidato presidencial confirmado pelo Novo.
+6. keyPositions: baseie-se em declarações públicas e gestão do governo de MG (2019–2026) — não invente.
+
+CONTEXTO IMPORTANTE:
+- Empresário do setor de materiais de construção (Grupo Zema)
+- Nunca ocupou cargo eletivo antes de 2018 — outsider político
+- Eleito governador em 2018 (surpresa), reeleito em 2022
+- Partido Novo: agenda ultraliberal, privatizações, menos estado
+- Minas Gerais herdou dívida bilionária com a União — Zema travou batalha jurídica pelo RFFP
+- Candidato presidencial declarado para 2026 pelo Novo
+
+FORMATO DE SAÍDA (JSON exato):
+{
+  "slug": "romeu-zema-novo-mg",
+  "bio": "Parágrafo de 3 a 4 frases em tom neutro e jornalístico. Mencionar: empresário (Grupo Zema), governador de MG desde 2019 (reeleito 2022), Partido Novo, agenda liberal, candidatura presidencial 2026.",
+  "approvalRate": null,
+  "photoUrl": "URL direta para foto oficial (.jpg ou .png) — preferencialmente mg.gov.br ou upload.wikimedia.org",
+  "officialPhotoPageUrl": "URL da página onde a foto está publicada",
+  "officialSiteUrl": "https://www.mg.gov.br",
+  "wikipediaUrl": "https://pt.wikipedia.org/wiki/Romeu_Zema",
+  "partyHistory": [
+    "Novo — 2017–hoje"
+  ],
+  "politicalCareer": [
+    { "role": "Governador de Minas Gerais", "period": "2019–presente", "highlight": "Único governador do Partido Novo; reeleito em 2022. Disputa com União sobre dívida de MG." }
+  ],
+  "keyPositions": {
+    "economy": "Posição real — ex: privatizações, corte de gastos, RFFP, agenda fiscal de MG",
+    "security": "Posição real sobre segurança pública em MG",
+    "environment": "Posição real — ex: posição pós-Mariana/Brumadinho, agronegócio",
+    "education": "Posição real sobre educação em MG",
+    "health": "Posição real sobre saúde — ex: gestão SUS em MG, HospitalMinas"
+  },
+  "recentContext": "1 a 2 frases sobre candidatura presidencial 2026, posição nas pesquisas e perspectivas do Partido Novo."
+}

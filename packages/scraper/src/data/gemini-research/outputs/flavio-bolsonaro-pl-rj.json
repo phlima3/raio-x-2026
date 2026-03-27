@@ -1,0 +1,29 @@
+{
+  "slug": "flavio-bolsonaro-pl-rj",
+  "bio": "Flávio Nantes Bolsonaro é advogado e político brasileiro, filho primogênito do ex-presidente Jair Bolsonaro. Iniciou sua carreira como vereador no Rio de Janeiro em 2001, foi deputado estadual na Alerj por quatro mandatos (2003–2018) e elegeu-se senador pelo Rio de Janeiro em 2018, com mandato até 2027. Filiado ao PL desde 2021, é o principal pré-candidato do partido à Presidência da República em 2026, especialmente após a confirmação da inelegibilidade de Jair Bolsonaro pelo TSE.",
+  "approvalRate": 48,
+  "photoUrl": "https://www.senado.leg.br/senadores/img/fotos-oficiais/senador5982.jpg",
+  "officialPhotoPageUrl": "https://www25.senado.leg.br/web/senadores/senador/-/perfil/5982",
+  "officialSiteUrl": "https://www.flaviobolsonaro.net",
+  "wikipediaUrl": "https://pt.wikipedia.org/wiki/Flávio_Bolsonaro",
+  "partyHistory": [
+    "PP — 2001–2003",
+    "PFL/DEM — 2003–2007",
+    "PSC — 2007–2018",
+    "PSL — 2018–2021",
+    "PL — 2021–hoje"
+  ],
+  "politicalCareer": [
+    { "role": "Vereador do Rio de Janeiro", "period": "2001–2003", "highlight": "Eleito aos 19 anos, o vereador mais jovem da história do Rio" },
+    { "role": "Deputado Estadual (ALERJ)", "period": "2003–2018", "highlight": "Quatro mandatos consecutivos. Investigado no caso Queiroz — suposta prática de 'rachadinha' no gabinete" },
+    { "role": "Senador pelo Rio de Janeiro", "period": "2019–presente", "highlight": "Pré-candidato à Presidência pelo PL para 2026. Líder nas pesquisas entre candidatos da direita" }
+  ],
+  "keyPositions": {
+    "economy": "Defende agenda liberal com privatizações, redução do tamanho do Estado, corte de gastos públicos e reforma tributária simplificadora. Votou a favor do teto de gastos e se posiciona contra o aumento da carga tributária.",
+    "security": "Posição linha-dura: defende flexibilização do porte de armas, endurecimento de penas, redução da maioridade penal e ampliação do excludente de ilicitude para forças de segurança.",
+    "environment": "Postura alinhada ao agronegócio e ruralistas. Crítico da fiscalização ambiental do Ibama e das políticas climáticas do governo Lula. Votou contra o Marco Temporal das Terras Indígenas.",
+    "education": "Defensor do homeschooling (educação domiciliar) e do programa Escola Sem Partido. Crítico do que chama de 'doutrinação ideológica' nas escolas. Apoiou a militarização de escolas públicas.",
+    "health": "Durante a pandemia, defendeu o uso de cloroquina e questionou a eficácia das vacinas contra COVID-19. Posiciona-se contra o aborto em todas as circunstâncias, incluindo nos casos já previstos em lei."
+  },
+  "recentContext": "Com a confirmação da inelegibilidade de Jair Bolsonaro pelo TSE em junho de 2023, Flávio consolidou-se como principal nome do PL para a Presidência em 2026. Pesquisas de março de 2026 (AtlasIntel) mostram empate técnico com Lula, com Flávio em 47,6% contra 46,6% de Lula em cenário de segundo turno."
+}

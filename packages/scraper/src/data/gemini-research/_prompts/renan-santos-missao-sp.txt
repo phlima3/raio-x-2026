@@ -1,0 +1,53 @@
+Você é um pesquisador político brasileiro especializado em eleições. Use sua capacidade de pesquisa na web (Deep Search / Search Grounding) para reunir informações verificadas e atualizadas sobre o candidato abaixo.
+
+CANDIDATO: Renan Santos
+PARTIDO: Partido Missão
+ESTADO: São Paulo
+CARGO ATUAL: Presidente do Partido Missão e pré-candidato à Presidência da República
+SLUG NO SISTEMA: renan-santos-missao-sp
+
+INSTRUÇÕES:
+1. Pesquise ativamente na web antes de responder. Use fontes como G1, UOL, Folha, Estadão, Wikipedia PT-BR, redes sociais do MBL e do Partido Missão.
+2. Responda APENAS com JSON válido, sem texto antes ou depois, sem markdown, sem ```json```.
+3. Todos os campos são obrigatórios. Se não encontrar um dado, use null.
+4. Para photoUrl: Renan Santos não tem cargo legislativo federal. Busque foto no Wikipedia Commons ou no site oficial. Prefira URLs estáveis.
+5. approvalRate: use pesquisa de intenção de voto presidencial mais recente. Renan Santos aparece com expressivo desempenho entre jovens (18,6% na faixa 16-24 anos, AtlasIntel/Bloomberg). Use null se não houver dado nacional consolidado.
+6. ATENÇÃO: Renan Santos é filiado ao Partido Missão (aprovado pelo TSE em novembro de 2025). O MBL é o movimento que co-fundou, não o partido pelo qual concorre.
+
+CONTEXTO IMPORTANTE:
+- Co-fundador do Movimento Brasil Livre (MBL) em 2014
+- Advogado, ativista político desde jovem
+- O MBL foi importante nos protestos de 2015-2016 pelo impeachment de Dilma Rousseff
+- Candidato a governador de SP em 2022 pelo Novo
+- Criou o Partido Missão em 2024, aprovado pelo TSE em novembro de 2025
+- Candidato presidencial declarado para 2026 pelo Partido Missão
+- Posicionamento liberal-conservador, anti-PT, defesa do livre mercado
+- Lidera pesquisas entre eleitores de 16 a 24 anos
+
+FORMATO DE SAÍDA (JSON exato):
+{
+  "slug": "renan-santos-missao-sp",
+  "bio": "Parágrafo de 3 a 4 frases em tom neutro e jornalístico. Mencionar: advogado, co-fundador do MBL, ativismo nos protestos de 2015-16, criação do Partido Missão, candidatura presidencial 2026.",
+  "approvalRate": null,
+  "photoUrl": "URL direta para foto oficial ou pública (.jpg ou .png)",
+  "officialPhotoPageUrl": "URL da página onde a foto está publicada",
+  "officialSiteUrl": "https://renansantosmbl.com/",
+  "wikipediaUrl": "https://pt.wikipedia.org/wiki/Renan_Santos_(ativista)",
+  "partyHistory": [
+    "Sem filiação — 2014–2024 (ativista no MBL)",
+    "Partido Missão — 2024–hoje"
+  ],
+  "politicalCareer": [
+    { "role": "Co-fundador do Movimento Brasil Livre (MBL)", "period": "2014–presente", "highlight": "Liderou manifestações pelo impeachment de Dilma (2015–2016)" },
+    { "role": "Candidato a governador de SP", "period": "2022", "highlight": "Resultado: verificar %" },
+    { "role": "Presidente do Partido Missão", "period": "2024–presente", "highlight": "Criou e registrou o partido no TSE" }
+  ],
+  "keyPositions": {
+    "economy": "Posição real — ex: livre mercado, privatizações, corte de impostos",
+    "security": "Posição real sobre segurança pública",
+    "environment": "Posição real sobre meio ambiente",
+    "education": "Posição real — ex: escola sem partido, vouchers educacionais",
+    "health": "Posição real sobre saúde — ex: SUS vs planos privados"
+  },
+  "recentContext": "1 a 2 frases sobre candidatura 2026 pelo Partido Missão, desempenho entre jovens, chances eleitorais e posição no espectro político."
+}

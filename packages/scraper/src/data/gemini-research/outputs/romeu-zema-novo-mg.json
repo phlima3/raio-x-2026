@@ -1,0 +1,25 @@
+{
+  "slug": "romeu-zema-novo-mg",
+  "bio": "Romeu Zema Neto é empresário e político mineiro filiado ao Partido Novo, fundador e líder do Grupo Zema (conglomerado varejista com mais de 430 lojas). Foi governador de Minas Gerais por dois mandatos (2019–2026), eleito em 2018 com 72,8% no segundo turno e reeleito em 2022 com 56,18% no primeiro turno. Em março de 2026, renunciou ao governo para disputar a Presidência da República pelo Novo, com intenção de voto entre 13% e 17% nas pesquisas.",
+  "approvalRate": 55,
+  "photoUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Romeu_Zema_em_2023.jpg/440px-Romeu_Zema_em_2023.jpg",
+  "officialPhotoPageUrl": "https://pt.wikipedia.org/wiki/Romeu_Zema",
+  "officialSiteUrl": "https://www.mg.gov.br",
+  "wikipediaUrl": "https://pt.wikipedia.org/wiki/Romeu_Zema",
+  "partyHistory": [
+    "Novo — 2018–hoje"
+  ],
+  "politicalCareer": [
+    { "role": "Empresário e CEO do Grupo Zema", "period": "1990–2018", "highlight": "Expandiu o Grupo Zema de 4 para mais de 430 lojas em diversos estados" },
+    { "role": "Governador de Minas Gerais (1º mandato)", "period": "2019–2022", "highlight": "Primeiro superávit fiscal em décadas (R$ 2,2 bilhões em 2022); acordo de R$ 37 bilhões pela tragédia de Brumadinho" },
+    { "role": "Governador de Minas Gerais (2º mandato)", "period": "2023–2026", "highlight": "Renunciou em março de 2026 para disputar a Presidência; gerou 1 milhão de empregos; R$ 500 bilhões em investimentos privados" }
+  ],
+  "keyPositions": {
+    "economy": "Agenda liberal: responsabilidade fiscal, privatizações, redução do tamanho do Estado, atração de investimentos privados. Gerou primeiro superávit fiscal de MG em décadas. Critica economia 'movida a esteroides' baseada em gastos públicos.",
+    "security": "Posicionou Minas como um dos estados mais seguros do Brasil, com 76% de taxa de resolução de homicídios em 2023. Investimento em inteligência e tecnologia policial.",
+    "environment": "Firmou o maior acordo de reparação ambiental da história do Brasil (R$ 37 bilhões) em 2021 pelos impactos da tragédia de Brumadinho. Postura pragmática sobre meio ambiente.",
+    "education": "Programa 'Mãos à Obra na Escola' reformou mais de 1.700 escolas em 575 municípios. Expandiu escolas em tempo integral de 12 mil para 91 mil vagas (2019–2022).",
+    "health": "Gestão focada em eficiência e parcerias público-privadas para modernização da rede hospitalar. Manteve investimentos contínuos com saúde fiscal equilibrada."
+  },
+  "recentContext": "Romeu Zema renunciou ao governo de MG em março de 2026 para disputar a Presidência pelo Partido Novo, sendo sucedido pelo vice Mateus Simões (PSD). Com 13,8% a 17% de intenção de voto, posiciona-se como alternativa liberal e declara apoio a qualquer candidato contra o PT em eventual segundo turno."
+}

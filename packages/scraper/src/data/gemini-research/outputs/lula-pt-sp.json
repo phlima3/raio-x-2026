@@ -1,0 +1,26 @@
+{
+  "slug": "luiz-inacio-lula-da-silva-pt-sp",
+  "bio": "Luiz Inácio Lula da Silva é metalúrgico, líder sindical e político brasileiro, fundador do Partido dos Trabalhadores em 1980. Foi presidente do Brasil de 2003 a 2010, período marcado por crescimento econômico e expansão de programas sociais. Preso em 2018 durante a Operação Lava Jato, teve suas condenações anuladas pelo STF em 2021, elegendo-se novamente em 2022. Atualmente no terceiro mandato presidencial, busca a reeleição em outubro de 2026 enfrentando alta desaprovação e cenário competitivo contra Flávio Bolsonaro.",
+  "approvalRate": 44,
+  "photoUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Lula_-_foto_oficial_-_05_jan_2023_%28cropped%29.jpg/440px-Lula_-_foto_oficial_-_05_jan_2023_%28cropped%29.jpg",
+  "officialPhotoPageUrl": "https://pt.wikipedia.org/wiki/Luiz_Inácio_Lula_da_Silva",
+  "officialSiteUrl": "https://www.gov.br/planalto",
+  "wikipediaUrl": "https://pt.wikipedia.org/wiki/Luiz_Inácio_Lula_da_Silva",
+  "partyHistory": [
+    "PT — 1980–hoje"
+  ],
+  "politicalCareer": [
+    { "role": "Líder sindical e fundador do PT", "period": "1975–1989", "highlight": "Presidente do Sindicato dos Metalúrgicos do ABC; liderou greves durante a ditadura; fundou o PT em 1980" },
+    { "role": "Deputado Federal por São Paulo", "period": "1987–1991", "highlight": "Constituinte, participou da elaboração da Constituição de 1988" },
+    { "role": "Presidente da República (1º e 2º mandatos)", "period": "2003–2010", "highlight": "Crescimento econômico, Bolsa Família, Brasil Sem Miséria; saiu com 87% de aprovação" },
+    { "role": "Presidente da República (3º mandato)", "period": "2023–presente", "highlight": "Reconstrução institucional, Novo PAC (R$ 1,7 trilhão), geração de 3,2 milhões de empregos formais" }
+  ],
+  "keyPositions": {
+    "economy": "Valorização do salário mínimo com ganho real; menor taxa de desemprego em 12 anos (6,6%); investimento de R$ 1,7 trilhão no Novo PAC até 2026; retorno do Brasil ao top 10 das economias mundiais.",
+    "security": "Fortalecimento do pacto federativo em segurança pública; políticas integradas entre governo federal e estados; combate ao crime organizado com respeito aos direitos humanos.",
+    "environment": "Redução de 46% no desmatamento da Amazônia em 2024 e 25,7% no Cerrado; compromisso com transição energética e sustentabilidade; fortalecimento da Funai e combate ao garimpo ilegal.",
+    "education": "Construção de 100 novos Institutos Federais de Educação; orçamento de R$ 233,7 bilhões em 2026; investimento em educação básica, ensino superior e programas de permanência estudantil.",
+    "health": "Orçamento de R$ 271,3 bilhões para o SUS em 2026; expansão da cobertura de exames, cirurgias e medicamentos; manutenção e modernização da rede pública de saúde."
+  },
+  "recentContext": "Em março de 2026, Lula lidera pesquisas de primeiro turno com ~52% das intenções (AtlasIntel), mas enfrenta aprovação de apenas 44% (Quaest) e desaprovação de 61% (PoderData). No segundo turno, aparece tecnicamente empatado com Flávio Bolsonaro (46,6% vs 47,6%), configurando eleição altamente competitiva."
+}

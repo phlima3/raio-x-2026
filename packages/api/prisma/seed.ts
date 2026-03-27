@@ -87,11 +87,11 @@ const PRESIDENTS: SeedCandidate[] = [
   },
   {
     name: 'Renan Santos',
-    party: 'MBL',
+    party: 'Missão',
     state: 'SP',
     position: Position.PRESIDENTE,
     siteUrl: 'https://mbl.org.br',
-    bio: 'Coordenador nacional do Movimento Brasil Livre (MBL). Ativista e político liberal.',
+    bio: 'Co-fundador do MBL e fundador do Partido Missão (aprovado pelo TSE em 2025). Ativista e político liberal, pré-candidato à Presidência em 2026.',
     isIncumbent: false,
   },
   {

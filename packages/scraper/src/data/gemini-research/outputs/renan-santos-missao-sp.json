@@ -1,0 +1,71 @@
+{
+  "slug": "renan-santos-missao-sp",
+  "bio": "Renan Antônio Ferreira dos Santos é advogado, ativista político e co-fundador do Movimento Brasil Livre (MBL) em 2014, um dos movimentos que organizaram as manifestações contra o governo Dilma Rousseff. Em 2024, liderou a criação do Partido Missão, aprovado pelo TSE em novembro de 2025, e lançou-se como pré-candidato à Presidência da República em 2026 com agenda focada em combate ao crime organizado, desfavelização e responsabilidade fiscal.",
+  "approvalRate": null,
+  "photoUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Renan_Santos_MBL.jpg/440px-Renan_Santos_MBL.jpg",
+  "officialPhotoPageUrl": "https://pt.wikipedia.org/wiki/Renan_Santos_(ativista)",
+  "officialSiteUrl": "https://renansantosmbl.com/",
+  "wikipediaUrl": "https://pt.wikipedia.org/wiki/Renan_Santos_(ativista)",
+  "partyHistory": [
+    "Sem filiação — 2014–2024 (ativista no MBL)",
+    "Partido Missão — 2024–hoje"
+  ],
+  "politicalCareer": [
+    { "role": "Co-fundador do Movimento Brasil Livre (MBL)", "period": "2014", "highlight": "Mobilizou protestos contra Dilma Rousseff e em defesa da Operação Lava Jato" },
+    { "role": "Líder do MBL", "period": "2014–2024", "highlight": "Organizou manifestações nacionais com grande participação via redes sociais" },
+    { "role": "Presidente do Partido Missão", "period": "2024–presente", "highlight": "Liderou criação do novo partido aprovado pelo TSE em novembro de 2025" },
+    { "role": "Pré-candidato à Presidência da República", "period": "2025–2026", "highlight": "Segundo lugar entre eleitores de 16-24 anos em pesquisa AtlasIntel/Bloomberg com 18,6%" }
+  ],
+  "keyPositions": {
+    "economy": "Interiorização das atividades produtivas, principalmente no Nordeste, para gerar classe média e romper ciclo de dependência política. Fusão de municípios deficitários que dependem de verbas federais para sobreviver. Responsabilidade gerencial: políticos que não entregarem melhorias em educação, saneamento, saúde e segurança devem perder direitos políticos e o fundo partidário deve ser restrito a partidos com resultados comprovados. Mutirão anti Bolsa-Família: municípios com mais de 30% de beneficiários devem promover mutirões de emprego e pessoas em idade ativa que recusarem trabalho perdem o benefício em 3 meses.",
+    "security": "Reconhecimento oficial de que o Brasil vive uma guerra contra o crime organizado (PCC, Comando Vermelho). Aplicação do Direito Penal do Inimigo para faccionados: sem ampla defesa, sem trânsito em julgado — quebra de sigilos, prisão e depoimentos com máxima urgência. Programa massivo de desfavelização: plano nacional de habitação, reurbanização, educação e emprego para eliminar os QGs das facções e romper a cadeia de reprodução de desvantagem social.",
+    "environment": "Posições não claramente definidas nas fontes disponíveis; foco primário da campanha está em economia e segurança.",
+    "education": "Desfavelização inclui componente educacional como parte do plano de reurbanização. Responsabilidade gerencial vincula fundo partidário a resultados em índices de educação.",
+    "health": "Responsabilidade gerencial vincula direitos políticos de gestores a resultados em índices de saúde pública."
+  },
+  "recentContext": "Renan Santos é pré-candidato presidencial pelo Partido Missão e lidera pesquisas de intenção de voto entre a Geração Z (16-24 anos), posicionando-se como alternativa de direita liberal. Publicou em novembro de 2025 suas 7 propostas de governo no Instagram (@renansantosmbl), com foco em combate ao crime, desfavelização e reformas fiscais.",
+  "proposals": [
+    {
+      "number": 1,
+      "title": "Guerra contra o Crime Organizado",
+      "body": "A Missão reconhece que já existe uma guerra acontecendo no Brasil hoje. PCC e Comando Vermelho já declaram suas intenções de exercer domínio territorial em algumas regiões, já possuem exércitos atuando, já implementam suas próprias leis e têm até suas próprias culturas. O Estado brasileiro finge que não existe, ou que são apenas pequenas gangues em conflito. Está na hora de reconhecer que o Brasil não vive um período de paz. E não vai ser com mais pedidos de 'paz' que vamos parar essa guerra.",
+      "theme": "security"
+    },
+    {
+      "number": 2,
+      "title": "Direito Penal do Inimigo",
+      "body": "Faccionados do Comando Vermelho e Primeiro Comando da Capital não são 'apenas bandidos comuns'; eles exercem poder político sobre territórios dominados, ameaçando não apenas a população local, mas a soberania do Estado brasileiro. Portanto eles não devem ter um processo criminal com ampla defesa, diversos juízes, Ministério Público, trânsito em julgado etc. O estado precisa agir com a maior rapidez possível. Quebra de sigilos, prisão, depoimentos etc., tudo deve ser feito com urgência.",
+      "theme": "security"
+    },
+    {
+      "number": 3,
+      "title": "Desfavelização",
+      "body": "Favelas não são apenas lugares com condições subhumanas de vida. Se tornaram QGs de facções, que sequestram os trabalhadores que lá vivem. Além disso, a cultura que sai desses lugares, os problemas e a falta de perspectiva e de melhora de vida não devem ser romantizados. O Brasil precisa de um gigantesco plano de habitação, reurbanização, educação e emprego para acabar com tudo que a favela representa hoje. E a cadeia de reprodução de desvantagem — famílias sem figura paterna — são o maior alimento para a criação do crime organizado. Isso precisa ser tratado com seriedade, para termos menos soldados e uma nação menos doente.",
+      "theme": "security"
+    },
+    {
+      "number": 4,
+      "title": "Interiorizar as atividades produtivas",
+      "body": "As regiões mais pobres do Brasil são o paraíso de políticos corruptos, que aproveitam a pobreza das pessoas para comprar votos, desviar recursos e se perpetuarem no poder. Levar atividades produtivas para os interiores, principalmente do Nordeste, é gerar classe média, quebrar o ciclo que alimenta há décadas a liderança dessas pessoas nessa verdadeira escravidão moderna.",
+      "theme": "economy"
+    },
+    {
+      "number": 5,
+      "title": "Responsabilidade gerencial",
+      "body": "O Brasil precisa mudar o sistema de incentivos que elege seus políticos. Políticos que não entregarem melhorias claras nos índices de educação, saneamento, saúde e segurança devem perder seus direitos políticos. O fundo partidário e eleitoral e demais departamentos devem também ser destinados apenas a partidos cujos gestores conseguem apresentar melhorias em todos os índices do Brasil.",
+      "theme": "economy"
+    },
+    {
+      "number": 6,
+      "title": "Fusão de municípios",
+      "body": "Municípios que dependem de verbas federais ou estaduais para pagar suas próprias contas devem deixar de existir e se fundir com outros municípios próximos. Chega de bancar cidades deficitárias. No geral, cidades do Centro-Sul do país pagam mais do que deveriam em impostos para manter cidades do Centro-Norte e Nordeste vivendo e pedindo mais dinheiro para pagar salários de político. Nada de bom pode vir dessa lógica.",
+      "theme": "economy"
+    },
+    {
+      "number": 7,
+      "title": "Mutirão anti Bolsa-Família",
+      "body": "Municípios com mais de 30% da população recebendo Bolsa-Família devem promover mutirões de emprego. Pessoas em idade economicamente ativa que se recusarem a trabalhar deverão perder o direito de receber Bolsa-Família em três meses.",
+      "theme": "economy"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+Você é um pesquisador político brasileiro especializado em eleições. Use sua capacidade de pesquisa na web (Deep Search / Search Grounding) para reunir informações verificadas e atualizadas sobre o candidato abaixo.
+
+CANDIDATO: Luiz Inácio Lula da Silva
+PARTIDO: PT (Partido dos Trabalhadores)
+ESTADO: São Paulo
+CARGO ATUAL: Presidente da República (mandato 2023–2026)
+SLUG NO SISTEMA: luiz-inacio-lula-da-silva-pt-sp
+
+INSTRUÇÕES:
+1. Pesquise ativamente na web antes de responder. Use fontes como G1, UOL, Folha, Estadão, senado.leg.br, camara.leg.br, planalto.gov.br, Wikipedia PT-BR.
+2. Responda APENAS com JSON válido, sem texto antes ou depois, sem markdown, sem ```json```.
+3. Todos os campos são obrigatórios. Se não encontrar um dado, use null.
+4. Para photoUrl: busque a foto oficial no portal do Planalto (gov.br/planalto) ou no Wikipedia Commons. Prefira URLs que terminem em .jpg ou .png e que sejam de domínios governamentais ou upload.wikimedia.org.
+5. approvalRate: use o número inteiro mais recente de pesquisa de aprovação (Datafolha ou Quaest). Ex: 38 para 38%.
+6. keyPositions: baseie-se em declarações públicas, programas de governo e votações recentes — não invente.
+
+FORMATO DE SAÍDA (JSON exato):
+{
+  "slug": "luiz-inacio-lula-da-silva-pt-sp",
+  "bio": "Parágrafo de 3 a 4 frases em tom neutro e jornalístico. Mencionar: origem (metalúrgico, ABC Paulista), fundação do PT, presidências anteriores (2003-2010), condenação e anistia, retorno ao Planalto em 2023. Atualizar com contexto de 2025-2026.",
+  "approvalRate": 38,
+  "photoUrl": "URL direta para foto oficial (.jpg ou .png) — preferencialmente planalto.gov.br ou upload.wikimedia.org",
+  "officialPhotoPageUrl": "URL da página onde a foto acima está publicada (para verificação)",
+  "officialSiteUrl": "https://pt.org.br",
+  "wikipediaUrl": "https://pt.wikipedia.org/wiki/Luiz_Inácio_Lula_da_Silva",
+  "partyHistory": [
+    "PT — 1980 até hoje (fundador)"
+  ],
+  "politicalCareer": [
+    { "role": "Presidente da República", "period": "2003–2010", "highlight": "Programas Bolsa Família e PAC; crescimento econômico; pré-sal" },
+    { "role": "Presidente da República", "period": "2023–presente", "highlight": "Reeleito em 2022 contra Bolsonaro; agenda de reindustrialização e transição energética" }
+  ],
+  "keyPositions": {
+    "economy": "Posição real e recente sobre economia — ex: intervencionismo estatal, reindustrialização, Novo PAC",
+    "security": "Posição real sobre segurança pública — ex: política de drogas, armamento, forças de segurança",
+    "environment": "Posição real sobre meio ambiente — ex: desmatamento zero, COP, transição energética",
+    "education": "Posição real sobre educação — ex: ProUni, expansão federal, alfabetização",
+    "health": "Posição real sobre saúde — ex: Mais Médicos, SUS, agenda de saúde pública"
+  },
+  "recentContext": "1 a 2 frases sobre o contexto mais relevante para a eleição de 2026 — estado da campanha, aprovação, alianças, polêmicas recentes."
+}

@@ -1,0 +1,26 @@
+{
+  "slug": "eduardo-leite-psd-rs",
+  "bio": "Eduardo Leite é advogado e político gaúcho, ex-prefeito de Pelotas (2017–2018) e governador do Rio Grande do Sul desde 2019, reeleito em 2022. Filiado ao PSD desde maio de 2025 após longa trajetória no PSDB, tornou-se o primeiro governador brasileiro a assumir publicamente sua homossexualidade, em 2021. Sua gestão foi marcada pela resposta às enchentes históricas de maio de 2024, que devastaram o estado, e é pré-candidato à Presidência da República em 2026 pelo PSD.",
+  "approvalRate": 3,
+  "photoUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Eduardo_Leite_em_2023.jpg/440px-Eduardo_Leite_em_2023.jpg",
+  "officialPhotoPageUrl": "https://pt.wikipedia.org/wiki/Eduardo_Leite",
+  "officialSiteUrl": "https://rs.gov.br",
+  "wikipediaUrl": "https://pt.wikipedia.org/wiki/Eduardo_Leite",
+  "partyHistory": [
+    "PSDB — 2002–2025",
+    "PSD — 2025–hoje"
+  ],
+  "politicalCareer": [
+    { "role": "Prefeito de Pelotas", "period": "2017–2018", "highlight": "Eleito aos 30 anos, o prefeito mais jovem da história de Pelotas" },
+    { "role": "Governador do Rio Grande do Sul (1º mandato)", "period": "2019–2022", "highlight": "Primeiro governador abertamente gay do Brasil. Implementou reformas fiscais e previdenciárias no estado." },
+    { "role": "Governador do Rio Grande do Sul (2º mandato)", "period": "2023–presente", "highlight": "Gestão das enchentes históricas de maio de 2024 no RS, que deixaram mais de 170 mortos e 600 mil desabrigados." }
+  ],
+  "keyPositions": {
+    "economy": "Perfil reformista de centro: promoveu ajuste fiscal no RS com reforma da previdência estadual e privatizações (CEEE, Sulgás, CRM). Defende equilíbrio fiscal com responsabilidade social e reconstrução econômica pós-enchentes.",
+    "security": "Postura moderada em segurança pública: investiu em inteligência policial e programas de prevenção. Não se alinha ao discurso armamentista da direita nem à pauta de desmilitarização da esquerda.",
+    "environment": "Agenda climática ganhou centralidade após as enchentes de 2024. Defende investimentos em infraestrutura de contenção de cheias, adaptação climática e reconstrução sustentável do RS.",
+    "education": "Investiu em educação integral e formação técnica no RS. Defende escola em tempo integral e modernização curricular sem viés ideológico.",
+    "health": "Apoiou vacinação em massa durante a pandemia e fortalecimento do SUS estadual. Gestão da crise sanitária pós-enchentes com mobilização de hospitais de campanha."
+  },
+  "recentContext": "Eduardo Leite disputa a indicação presidencial do PSD com Ratinho Junior, mas pesquisas de março de 2026 mostram baixa intenção de voto nacional (~3%). A gestão das enchentes de 2024 lhe rendeu visibilidade nacional, mas o PSD tende a apoiar Ronaldo Caiado como candidato principal da terceira via."
+}

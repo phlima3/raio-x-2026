@@ -1,0 +1,49 @@
+Você é um pesquisador político brasileiro especializado em eleições. Use sua capacidade de pesquisa na web (Deep Search / Search Grounding) para reunir informações verificadas e atualizadas sobre o candidato abaixo.
+
+CANDIDATO: Carlos Massa Ratinho Junior
+PARTIDO: PSD
+ESTADO: Paraná
+CARGO ATUAL: Governador do Paraná (mandato 2023–2026)
+SLUG NO SISTEMA: ratinho-junior-psd-pr
+
+INSTRUÇÕES:
+1. Pesquise ativamente na web antes de responder. Use fontes como G1, UOL, Folha, Estadão, pr.gov.br, Wikipedia PT-BR.
+2. Responda APENAS com JSON válido, sem texto antes ou depois, sem markdown, sem ```json```.
+3. Todos os campos são obrigatórios. Se não encontrar um dado, use null.
+4. Para photoUrl: busque no portal do Governo do PR (pr.gov.br) ou Wikipedia Commons. Ratinho Junior foi deputado estadual — não há foto na Câmara Federal.
+5. approvalRate: use pesquisa de aprovação como governador do PR (Datafolha PR ou similar). Ratinho Junior tem aprovação historicamente alta no Paraná. Use null se não houver dado recente.
+6. keyPositions: baseie-se em declarações públicas e gestão do governo do Paraná.
+
+CONTEXTO IMPORTANTE:
+- Filho do apresentador Carlos Massa (o Ratinho, SBT)
+- Empresário e político; ex-deputado estadual do PR
+- Governador eleito em 2018, reeleito com enorme margem em 2022 (mais de 65%)
+- PSD: partido de centro que apoia Lula no plano federal mas mantém autonomia estadual
+- Gestão técnica bem avaliada; perfil moderado de centro
+- Paraná: estado do agronegócio, indústria e desenvolvimento acelerado
+
+FORMATO DE SAÍDA (JSON exato):
+{
+  "slug": "ratinho-junior-psd-pr",
+  "bio": "Parágrafo de 3 a 4 frases em tom neutro e jornalístico. Mencionar: filho do apresentador Ratinho, empresário, governador do PR desde 2019 (reeleito 2022 com mais de 65%), PSD, perfil moderado.",
+  "approvalRate": null,
+  "photoUrl": "URL direta para foto oficial (.jpg ou .png) — preferencialmente pr.gov.br ou upload.wikimedia.org",
+  "officialPhotoPageUrl": "URL da página onde a foto está publicada",
+  "officialSiteUrl": "https://ratinhojunior.com.br",
+  "wikipediaUrl": "https://pt.wikipedia.org/wiki/Carlos_Massa_Ratinho_Junior",
+  "partyHistory": [
+    "PSD — verificar anos de filiação"
+  ],
+  "politicalCareer": [
+    { "role": "Deputado Estadual (Paraná)", "period": "período exato", "highlight": "" },
+    { "role": "Governador do Paraná", "period": "2019–presente", "highlight": "Reeleito em 2022 com mais de 65% dos votos. Alta aprovação." }
+  ],
+  "keyPositions": {
+    "economy": "Posição real — ex: atração de investimentos, agronegócio, desenvolvimento industrial",
+    "security": "Posição real sobre segurança pública no PR",
+    "environment": "Posição real sobre meio ambiente — ex: gestão do litoral, agro",
+    "education": "Posição real sobre educação",
+    "health": "Posição real sobre saúde"
+  },
+  "recentContext": "1 a 2 frases sobre perspectivas para 2026 (reeleição) e posicionamento nacional dentro do PSD."
+}

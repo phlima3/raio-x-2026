@@ -1,0 +1,49 @@
+Você é um pesquisador político brasileiro especializado em eleições. Use sua capacidade de pesquisa na web (Deep Search / Search Grounding) para reunir informações verificadas e atualizadas sobre o candidato abaixo.
+
+CANDIDATO: Jerônimo Rodrigues
+PARTIDO: PT (Partido dos Trabalhadores)
+ESTADO: Bahia
+CARGO ATUAL: Governador da Bahia (mandato 2023–2026)
+SLUG NO SISTEMA: jeronimo-rodrigues-pt-ba
+
+INSTRUÇÕES:
+1. Pesquise ativamente na web antes de responder. Use fontes como G1, UOL, Folha, Estadão, ba.gov.br, Wikipedia PT-BR.
+2. Responda APENAS com JSON válido, sem texto antes ou depois, sem markdown, sem ```json```.
+3. Todos os campos são obrigatórios. Se não encontrar um dado, use null.
+4. Para photoUrl: busque no portal do Governo da Bahia (ba.gov.br) ou Wikipedia Commons. Jerônimo não é deputado federal ou senador atual.
+5. approvalRate: use pesquisa de aprovação como governador da Bahia (Datafolha BA ou similar). Use null se não houver dado recente.
+6. keyPositions: baseie-se em declarações públicas e gestão do governo da Bahia.
+
+CONTEXTO IMPORTANTE:
+- Educador e militante do PT há décadas
+- Ex-Secretário da Educação da Bahia no governo Rui Costa
+- Eleito governador da Bahia em 2022, derrotando ACM Neto (União Brasil) em disputa acirrada no 2o turno
+- Governador desde janeiro de 2023
+- Aliado de Lula; posicionamento de esquerda petista
+- Bahia é o maior estado do Nordeste — governado pelo PT/PCdoB de forma ininterrupta desde 2007
+
+FORMATO DE SAÍDA (JSON exato):
+{
+  "slug": "jeronimo-rodrigues-pt-ba",
+  "bio": "Parágrafo de 3 a 4 frases em tom neutro e jornalístico. Mencionar: educador, militante do PT, ex-Secretário da Educação, eleito governador da Bahia em 2022 (derrotando ACM Neto), aliado de Lula.",
+  "approvalRate": null,
+  "photoUrl": "URL direta para foto oficial (.jpg ou .png) — preferencialmente ba.gov.br ou upload.wikimedia.org",
+  "officialPhotoPageUrl": "URL da página onde a foto está publicada",
+  "officialSiteUrl": "https://www.ba.gov.br",
+  "wikipediaUrl": "https://pt.wikipedia.org/wiki/Jerônimo_Rodrigues",
+  "partyHistory": [
+    "PT — toda a carreira"
+  ],
+  "politicalCareer": [
+    { "role": "Secretário da Educação da Bahia", "period": "período exato (governo Rui Costa)", "highlight": "" },
+    { "role": "Governador da Bahia", "period": "2023–presente", "highlight": "Derrotou ACM Neto (União Brasil) no 2o turno de 2022." }
+  ],
+  "keyPositions": {
+    "economy": "Posição real sobre economia — ex: desenvolvimento do Nordeste, programas sociais",
+    "security": "Posição real sobre segurança pública na Bahia",
+    "environment": "Posição real sobre meio ambiente — ex: caatinga, energias renováveis no NE",
+    "education": "Posição real sobre educação — agenda central da carreira dele",
+    "health": "Posição real sobre saúde"
+  },
+  "recentContext": "1 a 2 frases sobre gestão atual, perspectivas para 2026 (reeleição) e papel no campo político petista."
+}

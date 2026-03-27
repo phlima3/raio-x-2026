@@ -1,0 +1,51 @@
+Você é um pesquisador político brasileiro especializado em eleições. Use sua capacidade de pesquisa na web (Deep Search / Search Grounding) para reunir informações verificadas e atualizadas sobre o candidato abaixo.
+
+CANDIDATO: Flávio Bolsonaro
+PARTIDO: PL (Partido Liberal)
+ESTADO: Rio de Janeiro
+CARGO ATUAL: Senador pelo Rio de Janeiro (mandato 2019–2027)
+SLUG NO SISTEMA: flavio-bolsonaro-pl-rj
+
+INSTRUÇÕES:
+1. Pesquise ativamente na web antes de responder. Use fontes como G1, UOL, Folha, Estadão, senado.leg.br, Wikipedia PT-BR, flaviobolsonaro.net.
+2. Responda APENAS com JSON válido, sem texto antes ou depois, sem markdown, sem ```json```.
+3. Todos os campos são obrigatórios. Se não encontrar um dado, use null.
+4. Para photoUrl: busque a foto oficial no portal do Senado Federal (senado.leg.br/senadores). O código de senador de Flávio Bolsonaro no Senado é 5982. URL padrão de fotos: https://www.senado.leg.br/senadores/img/fotos-oficiais/5982.jpg — verifique se está acessível. Se não, use Wikipedia Commons.
+5. approvalRate: use pesquisa de intenção de voto presidencial mais recente (AtlasIntel, Datafolha ou Quaest). Ex: 15 para 15%. Se não houver pesquisa específica dele, use null.
+6. keyPositions: baseie-se em votações no Senado, declarações públicas e programa do PL — não invente.
+
+CONTEXTO IMPORTANTE:
+- Flávio é filho primogênito do ex-presidente Jair Bolsonaro
+- Envolvido no caso "Queiroz" (rachadinha no gabinete da Alerj)
+- Senador desde 2019, reeleito para mandato até 2027
+- Cotado como candidato presidencial pelo PL caso Jair Bolsonaro permaneça inelegível
+
+FORMATO DE SAÍDA (JSON exato):
+{
+  "slug": "flavio-bolsonaro-pl-rj",
+  "bio": "Parágrafo de 3 a 4 frases em tom neutro e jornalístico. Mencionar: carreira política no RJ (vereador, deputado estadual), senador desde 2019, filiação ao PL, relação familiar com Jair Bolsonaro, candidatura presidencial 2026.",
+  "approvalRate": null,
+  "photoUrl": "URL direta para foto oficial (.jpg ou .png)",
+  "officialPhotoPageUrl": "URL da página do Senado com o perfil de Flávio Bolsonaro",
+  "officialSiteUrl": "https://www.flaviobolsonaro.net",
+  "wikipediaUrl": "https://pt.wikipedia.org/wiki/Flávio_Bolsonaro",
+  "partyHistory": [
+    "PP — 2001–2016",
+    "PSC — 2016–2018",
+    "PSL — 2018–2021",
+    "PL — 2021–hoje"
+  ],
+  "politicalCareer": [
+    { "role": "Vereador do Rio de Janeiro", "period": "2001–2003", "highlight": "" },
+    { "role": "Deputado Estadual (ALERJ)", "period": "2003–2018", "highlight": "Caso Queiroz — investigação de suposta 'rachadinha'" },
+    { "role": "Senador pelo Rio de Janeiro", "period": "2019–presente", "highlight": "Candidato presidencial pelo PL para 2026" }
+  ],
+  "keyPositions": {
+    "economy": "Posição real sobre economia — ex: agenda liberal, privatizações, corte de gastos",
+    "security": "Posição real sobre segurança — ex: armamento, penas mais duras, Forças Armadas",
+    "environment": "Posição real sobre meio ambiente",
+    "education": "Posição real sobre educação — ex: homeschooling, reforma curricular",
+    "health": "Posição real sobre saúde — ex: cloroquina, vacinas, SUS"
+  },
+  "recentContext": "1 a 2 frases sobre o contexto mais relevante para 2026 — situação de Jair Bolsonaro (inelegibilidade), posição nas pesquisas, estratégia do PL."
+}

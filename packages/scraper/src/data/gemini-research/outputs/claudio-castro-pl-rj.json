@@ -1,0 +1,38 @@
+{
+  "slug": "claudio-castro-pl-rj",
+  "bio": "Cláudio Castro é um político fluminense e pastor evangélico que iniciou sua trajetória como deputado estadual na Alerj pelo PSC. Eleito vice-governador na chapa de Wilson Witzel em 2018, assumiu o governo do Rio de Janeiro em 2020 após o impeachment de Witzel por corrupção na pandemia, sendo reeleito em 2022 com mais de 58% dos votos no primeiro turno pelo PL. Em março de 2026, renunciou ao cargo para se desincompatibilizar visando candidatura ao Senado, mas foi condenado pelo TSE por abuso de poder político e econômico no escândalo das folhas de pagamento secretas da Ceperj, tornando-se inelegível até 2030.",
+  "approvalRate": null,
+  "photoUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Cl%C3%A1udio_Castro_em_2022.jpg/440px-Cl%C3%A1udio_Castro_em_2022.jpg",
+  "officialPhotoPageUrl": "https://pt.wikipedia.org/wiki/Cl%C3%A1udio_Castro",
+  "officialSiteUrl": "https://claudiocastro.com.br",
+  "wikipediaUrl": "https://pt.wikipedia.org/wiki/Cl%C3%A1udio_Castro",
+  "partyHistory": [
+    "PSC — até 2021",
+    "PL — 2021–hoje"
+  ],
+  "politicalCareer": [
+    {
+      "role": "Deputado Estadual (ALERJ)",
+      "period": "2007–2018",
+      "highlight": "Múltiplos mandatos como deputado estadual pelo Rio de Janeiro"
+    },
+    {
+      "role": "Vice-Governador do Rio de Janeiro",
+      "period": "2019–2020",
+      "highlight": "Eleito na chapa de Wilson Witzel (PSC) em 2018"
+    },
+    {
+      "role": "Governador do Rio de Janeiro",
+      "period": "2020–2026",
+      "highlight": "Assumiu após impeachment de Witzel; reeleito em 2022 com ~58% no 1º turno; renunciou em março de 2026"
+    }
+  ],
+  "keyPositions": {
+    "economy": "Priorizou a renegociação da dívida do estado do Rio com a União através do Regime de Recuperação Fiscal, buscando equilíbrio das contas públicas e atração de investimentos privados.",
+    "security": "Investiu em operações policiais de grande porte contra o tráfico e milícias no RJ, com política de confronto que gerou controvérsia por operações letais em comunidades, como a do Jacarezinho.",
+    "environment": "Postura alinhada ao agronegócio e desenvolvimento econômico, sem destaque em pautas ambientais significativas durante a gestão.",
+    "education": "Implementou programas de escola em tempo integral e expansão do ensino técnico no estado do Rio de Janeiro.",
+    "health": "Gestão marcada pela resposta à pandemia de COVID-19 herdada do governo Witzel, com investimentos em hospitais de campanha e vacinação."
+  },
+  "recentContext": "Cláudio Castro renunciou ao governo do RJ em 23 de março de 2026 para concorrer ao Senado, mas foi condenado pelo TSE no dia seguinte por abuso de poder no escândalo Ceperj, ficando inelegível até 2030. A crise gerou um vácuo sucessório inédito no estado, com eleição indireta na Alerj para escolher um governador-tampão."
+}

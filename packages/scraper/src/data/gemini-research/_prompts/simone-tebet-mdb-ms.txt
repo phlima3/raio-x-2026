@@ -1,0 +1,52 @@
+Você é um pesquisador político brasileiro especializado em eleições. Use sua capacidade de pesquisa na web (Deep Search / Search Grounding) para reunir informações verificadas e atualizadas sobre o candidato abaixo.
+
+CANDIDATO: Simone Tebet
+PARTIDO: MDB
+ESTADO: Mato Grosso do Sul
+CARGO ATUAL: Ministra do Planejamento e Orçamento (desde 2023)
+SLUG NO SISTEMA: simone-tebet-mdb-ms
+
+INSTRUÇÕES:
+1. Pesquise ativamente na web antes de responder. Use fontes como G1, UOL, Folha, Estadão, senado.leg.br, planejamento.gov.br, Wikipedia PT-BR.
+2. Responda APENAS com JSON válido, sem texto antes ou depois, sem markdown, sem ```json```.
+3. Todos os campos são obrigatórios. Se não encontrar um dado, use null.
+4. Para photoUrl: Simone Tebet foi senadora — busque no Senado Federal. Código do Senado: 5527. Tente https://www.senado.leg.br/senadores/img/fotos-oficiais/5527.jpg. Se não funcionar, use planejamento.gov.br/ministro ou Wikipedia Commons.
+5. approvalRate: use pesquisa de intenção de voto presidencial mais recente. Em 2022 ela obteve ~4,2% no 1o turno. Se não houver pesquisa recente para 2026, use null.
+6. keyPositions: baseie-se em atuação como ministra (2023–2026), candidatura 2022 e histórico no Senado.
+
+CONTEXTO IMPORTANTE:
+- Advogada, filha do ex-governador do MS Ramez Tebet
+- Senadora pelo MS (2015–2022), presidenta do Senado por período
+- Candidata presidencial em 2022 pelo MDB — 3o lugar no 1o turno (~4,2%)
+- Apoia Lula no 2o turno em 2022; nomeada Ministra do Planejamento em 2023
+- Posicionamento de centro progressista; agenda de desenvolvimento sustentável e combate à desigualdade
+- Situação em relação à candidatura 2026: ainda é ministra de Lula — verificar se declarou candidatura
+
+FORMATO DE SAÍDA (JSON exato):
+{
+  "slug": "simone-tebet-mdb-ms",
+  "bio": "Parágrafo de 3 a 4 frases em tom neutro e jornalístico. Mencionar: advogada, ex-senadora pelo MS, candidata presidencial em 2022 (3o lugar), Ministra do Planejamento desde 2023, posicionamento de centro.",
+  "approvalRate": null,
+  "photoUrl": "URL direta para foto oficial (.jpg ou .png)",
+  "officialPhotoPageUrl": "URL da página onde a foto está publicada",
+  "officialSiteUrl": "https://simonetebet.com.br",
+  "wikipediaUrl": "https://pt.wikipedia.org/wiki/Simone_Tebet",
+  "partyHistory": [
+    "MDB — toda a carreira"
+  ],
+  "politicalCareer": [
+    { "role": "Vereadora em Três Lagoas (MS)", "period": "anos exatos", "highlight": "" },
+    { "role": "Deputada Estadual (MS)", "period": "anos exatos", "highlight": "" },
+    { "role": "Senadora pelo Mato Grosso do Sul", "period": "2015–2022", "highlight": "Presidenta do Senado Federal (2021–2023)" },
+    { "role": "Candidata à Presidência da República", "period": "2022", "highlight": "3o lugar no 1o turno com ~4,2%; apoiou Lula no 2o turno" },
+    { "role": "Ministra do Planejamento e Orçamento", "period": "2023–presente", "highlight": "" }
+  ],
+  "keyPositions": {
+    "economy": "Posição real — ex: planejamento fiscal, agenda de desenvolvimento, arcabouço fiscal",
+    "security": "Posição real sobre segurança pública",
+    "environment": "Posição real — ex: agenda climática, desenvolvimento sustentável",
+    "education": "Posição real sobre educação",
+    "health": "Posição real sobre saúde"
+  },
+  "recentContext": "1 a 2 frases sobre situação em relação a 2026 — ainda ministra, eventual candidatura pelo MDB, posição no cenário eleitoral."
+}

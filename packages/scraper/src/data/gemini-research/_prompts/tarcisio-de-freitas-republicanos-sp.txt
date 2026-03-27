@@ -1,0 +1,50 @@
+Você é um pesquisador político brasileiro especializado em eleições. Use sua capacidade de pesquisa na web (Deep Search / Search Grounding) para reunir informações verificadas e atualizadas sobre o candidato abaixo.
+
+CANDIDATO: Tarcísio de Freitas
+PARTIDO: Republicanos
+ESTADO: São Paulo
+CARGO ATUAL: Governador de São Paulo (mandato 2023–2026)
+SLUG NO SISTEMA: tarcisio-de-freitas-republicanos-sp
+
+INSTRUÇÕES:
+1. Pesquise ativamente na web antes de responder. Use fontes como G1, UOL, Folha, Estadão, sp.gov.br, Wikipedia PT-BR.
+2. Responda APENAS com JSON válido, sem texto antes ou depois, sem markdown, sem ```json```.
+3. Todos os campos são obrigatórios. Se não encontrar um dado, use null.
+4. Para photoUrl: busque no portal do Governo de SP (sp.gov.br/governo/tarcisio-de-freitas) ou Wikipedia Commons. Tarcísio não tem foto no Senado/Câmara (cargo federal era de ministro/técnico).
+5. approvalRate: use pesquisa de aprovação como governador (Datafolha SP) ou intenção de voto presidencial 2026 (ele é o favorito da direita). Use o número mais recente disponível.
+6. keyPositions: baseie-se em declarações públicas e gestão do governo de SP — gestão com forte componente de segurança pública e privatizações.
+
+CONTEXTO IMPORTANTE:
+- Engenheiro e militar (ex-oficial do Exército)
+- Trabalhou no DNIT e depois como secretário do Ministério da Infraestrutura
+- Ministro da Infraestrutura no governo Bolsonaro (2019–2022)
+- Eleito governador de SP em 2022 com 55% dos votos (2o turno contra Fernando Haddad)
+- PRINCIPAL FAVORITO da direita para candidatura presidencial em 2026 — amplamente mencionado em pesquisas
+- Posicionamento de direita, defensor de privatizações, linha dura em segurança pública
+- Polêmicas: declarações sobre Forças Armadas e democracia
+
+FORMATO DE SAÍDA (JSON exato):
+{
+  "slug": "tarcisio-de-freitas-republicanos-sp",
+  "bio": "Parágrafo de 3 a 4 frases em tom neutro e jornalístico. Mencionar: engenheiro e ex-militar, ex-Ministro da Infraestrutura (governo Bolsonaro), governador de SP desde 2023, principal nome da direita para 2026.",
+  "approvalRate": 55,
+  "photoUrl": "URL direta para foto oficial (.jpg ou .png) — preferencialmente sp.gov.br ou upload.wikimedia.org",
+  "officialPhotoPageUrl": "URL da página onde a foto está publicada",
+  "officialSiteUrl": "https://tarcisiofreitas.com.br",
+  "wikipediaUrl": "https://pt.wikipedia.org/wiki/Tarcísio_de_Freitas",
+  "partyHistory": [
+    "Republicanos — 2022–hoje"
+  ],
+  "politicalCareer": [
+    { "role": "Ministro da Infraestrutura", "period": "2019–2022 (governo Bolsonaro)", "highlight": "Implementou leilões de rodovias e ferrovias; privatizações de infraestrutura" },
+    { "role": "Governador de São Paulo", "period": "2023–presente", "highlight": "Eleito em 2022 com 55%. Políticas de segurança pública (Rota, intervenção no litoral)." }
+  ],
+  "keyPositions": {
+    "economy": "Posição real — ex: privatizações, concessões, PPPs, corte de gastos estaduais",
+    "security": "Posição real — ex: rearmamento policial, linha dura, operações no litoral e periferia",
+    "environment": "Posição real sobre meio ambiente",
+    "education": "Posição real sobre educação — ex: escolas cívico-militares",
+    "health": "Posição real sobre saúde"
+  },
+  "recentContext": "1 a 2 frases sobre candidatura presidencial 2026 — quando/se declarou, posição nas pesquisas, relação com Bolsonaro e PL vs. Republicanos."
+}

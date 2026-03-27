@@ -1,0 +1,54 @@
+Você é um pesquisador político brasileiro especializado em eleições. Use sua capacidade de pesquisa na web (Deep Search / Search Grounding) para reunir informações verificadas e atualizadas sobre o candidato abaixo.
+
+CANDIDATO: Aldo Rebelo
+PARTIDO: Solidariedade
+ESTADO: São Paulo
+CARGO ATUAL: Sem cargo eletivo (ex-senador, ex-ministro)
+SLUG NO SISTEMA: aldo-rebelo-solidariedade-sp
+
+INSTRUÇÕES:
+1. Pesquise ativamente na web antes de responder. Use fontes como G1, UOL, Folha, Estadão, camara.leg.br, senado.leg.br, Wikipedia PT-BR.
+2. Responda APENAS com JSON válido, sem texto antes ou depois, sem markdown, sem ```json```.
+3. Todos os campos são obrigatórios. Se não encontrar um dado, use null.
+4. Para photoUrl: Aldo Rebelo foi deputado federal por muitos mandatos. Código na Câmara: 73824. Tente https://www.camara.leg.br/internet/deputado/bandep/73824.jpg. Se não funcionar, use Wikipedia Commons.
+5. approvalRate: Aldo Rebelo é candidato presidencial menor — provável null ou menos de 1%. Use null se não houver dado.
+6. keyPositions: baseie-se em histórico legislativo e declarações públicas — perfil heterodoxo, combinando esquerda nacionalista com posições conservadoras.
+
+CONTEXTO IMPORTANTE:
+- Veterano político, décadas de carreira
+- Ex-deputado federal por SP por múltiplos mandatos (PCdoB/PCB)
+- Ex-Ministro do Esporte (governo Lula), ex-Ministro da Ciência e Tecnologia, ex-Ministro da Defesa (governo Dilma)
+- Migrou para posições mais nacionalistas e heterodoxas — não se alinha facilmente ao eixo esq/dir clássico
+- Atualmente no Solidariedade
+- Candidato presidencial para 2026 — verificar se candidatura está confirmada
+- Crítico do globalismo e defensor do desenvolvimento nacional
+
+FORMATO DE SAÍDA (JSON exato):
+{
+  "slug": "aldo-rebelo-solidariedade-sp",
+  "bio": "Parágrafo de 3 a 4 frases em tom neutro e jornalístico. Mencionar: trajetória no PCdoB, múltiplos mandatos como deputado federal, ex-ministro de Lula e Dilma (Esporte, Defesa), posicionamento nacionalista, candidatura 2026.",
+  "approvalRate": null,
+  "photoUrl": "URL direta para foto oficial (.jpg ou .png)",
+  "officialPhotoPageUrl": "URL da página onde a foto está publicada",
+  "officialSiteUrl": "https://www.aldorebelo.com.br",
+  "wikipediaUrl": "https://pt.wikipedia.org/wiki/Aldo_Rebelo",
+  "partyHistory": [
+    "PCdoB — décadas (verificar anos exatos)",
+    "Solidariedade — ano de migração–hoje"
+  ],
+  "politicalCareer": [
+    { "role": "Deputado Federal por São Paulo", "period": "1991–2015 (múltiplos mandatos)", "highlight": "Presidente da Câmara (2005–2007)" },
+    { "role": "Ministro do Esporte", "period": "2011–2015 (governo Dilma)", "highlight": "Organizou Copa 2014 e Olimpíadas 2016" },
+    { "role": "Ministro da Ciência e Tecnologia", "period": "período exato", "highlight": "" },
+    { "role": "Ministro da Defesa", "period": "período exato", "highlight": "" },
+    { "role": "Senador por São Paulo", "period": "período exato — verificar se houve mandato no Senado", "highlight": "" }
+  ],
+  "keyPositions": {
+    "economy": "Posição real — ex: desenvolvimento nacional, indústria, crítica ao neoliberalismo",
+    "security": "Posição real sobre segurança",
+    "environment": "Posição real — ex: soberania nacional sobre recursos naturais",
+    "education": "Posição real sobre educação",
+    "health": "Posição real sobre saúde"
+  },
+  "recentContext": "1 a 2 frases sobre candidatura 2026, posicionamento atual no Solidariedade, relevância no cenário eleitoral."
+}

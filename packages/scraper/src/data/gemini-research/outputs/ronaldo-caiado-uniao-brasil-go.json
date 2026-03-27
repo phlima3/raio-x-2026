@@ -1,0 +1,28 @@
+{
+  "slug": "ronaldo-caiado-uniao-brasil-go",
+  "bio": "Ronaldo Ramos Caiado é médico ortopedista e político goiano, governador de Goiás desde 2019 (reeleito em 2022 em primeiro turno). Com mais de três décadas de vida pública — cinco mandatos como deputado federal e um como senador —, é histórico defensor do agronegócio e da direita moderada. Pré-candidato à Presidência pela União Brasil em 2026, posiciona-se como principal nome da 'terceira via' entre Lula e o campo bolsonarista, com aprovação de 80% como governador.",
+  "approvalRate": 80,
+  "photoUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Ronaldo_Caiado_em_2023.jpg/440px-Ronaldo_Caiado_em_2023.jpg",
+  "officialPhotoPageUrl": "https://pt.wikipedia.org/wiki/Ronaldo_Caiado",
+  "officialSiteUrl": "http://ronaldocaiado.com.br",
+  "wikipediaUrl": "https://pt.wikipedia.org/wiki/Ronaldo_Caiado",
+  "partyHistory": [
+    "PSD — 1989–2002",
+    "PSDB — 2007–2014",
+    "DEM — 2015–2022",
+    "União Brasil — 2022–hoje"
+  ],
+  "politicalCareer": [
+    { "role": "Deputado Federal por Goiás", "period": "1991–2015", "highlight": "Cinco mandatos consecutivos; foco em agronegócio e reforma administrativa" },
+    { "role": "Senador Federal por Goiás", "period": "2015–2019", "highlight": "Eleito com 47,57% dos votos; defendeu segurança jurídica do setor agrário e redução da maioridade penal" },
+    { "role": "Governador de Goiás", "period": "2019–presente", "highlight": "Reeleito em 2022 em 1º turno; aprovação de 80%; PIB de Goiás cresceu 4,4% em 2023; reforma administrativa com economia de R$ 400 milhões" }
+  ],
+  "keyPositions": {
+    "economy": "Responsabilidade fiscal e crescimento econômico; reforma administrativa; atração de investimentos privados; PIB de Goiás em crescimento acelerado (4,4% em 2023); defesa do agronegócio como motor da economia brasileira.",
+    "security": "Resultados expressivos em Goiás: latrocínios caíram 82%, roubos de veículos 57,9%. Defende redução da maioridade penal e segurança jurídica para proprietários rurais.",
+    "environment": "Convergência com agronegócio sustentável; foco em desenvolvimento econômico com preservação de interesses dos produtores rurais do Cerrado.",
+    "education": "Investimento 6x maior que administração anterior em Goiás (R$ 2,6 bilhões vs R$ 450 milhões); melhor desempenho do Brasil no IDEB em ensino médio (4,8 pontos).",
+    "health": "Modernização via parcerias público-privadas, incluindo o Hospital de Urgência de Goiânia (HUGO); 62% de aprovação em saúde nas pesquisas estaduais."
+  },
+  "recentContext": "Ronaldo Caiado é o principal pré-candidato da terceira via para 2026 pela União Brasil, com 14-15% nas pesquisas de março (Datafolha). Enfrenta dificuldades internas no partido e avalia migrar para PSD, Podemos ou Republicanos. Aposta em sua aprovação de 80% como governador para construir viabilidade nacional."
+}

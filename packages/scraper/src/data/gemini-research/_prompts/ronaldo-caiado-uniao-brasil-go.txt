@@ -1,0 +1,49 @@
+Você é um pesquisador político brasileiro especializado em eleições. Use sua capacidade de pesquisa na web (Deep Search / Search Grounding) para reunir informações verificadas e atualizadas sobre o candidato abaixo.
+
+CANDIDATO: Ronaldo Caiado
+PARTIDO: União Brasil
+ESTADO: Goiás
+CARGO ATUAL: Governador de Goiás (mandato 2023–2026)
+SLUG NO SISTEMA: ronaldo-caiado-uniao-brasil-go
+
+INSTRUÇÕES:
+1. Pesquise ativamente na web antes de responder. Use fontes como G1, UOL, Folha, Estadão, senado.leg.br, goias.gov.br, Wikipedia PT-BR.
+2. Responda APENAS com JSON válido, sem texto antes ou depois, sem markdown, sem ```json```.
+3. Todos os campos são obrigatórios. Se não encontrar um dado, use null.
+4. Para photoUrl: busque no portal do Governo de Goiás (goias.gov.br) ou Wikipedia Commons. Caiado já foi senador — código no Senado: 783. Tente https://www.senado.leg.br/senadores/img/fotos-oficiais/783.jpg. Se não funcionar, use Wikipedia.
+5. approvalRate: use a pesquisa de intenção de voto presidencial mais recente (AtlasIntel, Datafolha ou Quaest). Ex: 8 para 8%.
+6. keyPositions: baseie-se em declarações públicas e gestão do governo de Goiás — não invente.
+
+CONTEXTO IMPORTANTE:
+- Médico ortopedista, veio de família tradicional de fazendeiros de Goiás (família Caiado)
+- Ex-senador (2011–2018), governador eleito em 2018, reeleito em 2022
+- Forte aliado do agronegócio; posicionamento de centro-direita
+- Cogita candidatura presidencial em 2026 pelo União Brasil; frequentemente citado em pesquisas
+
+FORMATO DE SAÍDA (JSON exato):
+{
+  "slug": "ronaldo-caiado-uniao-brasil-go",
+  "bio": "Parágrafo de 3 a 4 frases em tom neutro e jornalístico. Mencionar: médico ortopedista, ex-senador, governador de Goiás desde 2019 (reeleito 2022), posicionamento de centro-direita, candidatura presidencial 2026.",
+  "approvalRate": null,
+  "photoUrl": "URL direta para foto oficial (.jpg ou .png)",
+  "officialPhotoPageUrl": "URL da página onde a foto está publicada",
+  "officialSiteUrl": "http://ronaldocaiado.com.br",
+  "wikipediaUrl": "https://pt.wikipedia.org/wiki/Ronaldo_Caiado",
+  "partyHistory": [
+    "DEM — anos de filiação",
+    "União Brasil — 2022–hoje (fusão DEM + PSL)"
+  ],
+  "politicalCareer": [
+    { "role": "Deputado Federal por GO", "period": "1991–2011", "highlight": "Presidente da UDR (União Democrática Ruralista)" },
+    { "role": "Senador por Goiás", "period": "2011–2018", "highlight": "" },
+    { "role": "Governador de Goiás", "period": "2019–presente", "highlight": "Reeleito em 2022 com mais de 70% dos votos" }
+  ],
+  "keyPositions": {
+    "economy": "Posição real sobre economia — ex: gestão fiscal, agronegócio, privatizações estaduais",
+    "security": "Posição real sobre segurança pública",
+    "environment": "Posição real sobre meio ambiente — ex: preservação do Cerrado, agro x ambiente",
+    "education": "Posição real sobre educação",
+    "health": "Posição real sobre saúde — ex: gestão SUS em Goiás"
+  },
+  "recentContext": "1 a 2 frases sobre candidatura 2026, alianças, posição nas pesquisas e estratégia eleitoral."
+}

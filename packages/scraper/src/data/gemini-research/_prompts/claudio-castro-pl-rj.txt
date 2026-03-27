@@ -1,0 +1,52 @@
+Você é um pesquisador político brasileiro especializado em eleições. Use sua capacidade de pesquisa na web (Deep Search / Search Grounding) para reunir informações verificadas e atualizadas sobre o candidato abaixo.
+
+CANDIDATO: Cláudio Castro
+PARTIDO: PL (Partido Liberal)
+ESTADO: Rio de Janeiro
+CARGO ATUAL: Governador do Rio de Janeiro (mandato 2023–2026)
+SLUG NO SISTEMA: claudio-castro-pl-rj
+
+INSTRUÇÕES:
+1. Pesquise ativamente na web antes de responder. Use fontes como G1, UOL, Folha, Estadão, rj.gov.br, Wikipedia PT-BR.
+2. Responda APENAS com JSON válido, sem texto antes ou depois, sem markdown, sem ```json```.
+3. Todos os campos são obrigatórios. Se não encontrar um dado, use null.
+4. Para photoUrl: busque no portal do Governo do RJ (rj.gov.br) ou Wikipedia Commons. Cláudio Castro foi deputado estadual — não há foto na Câmara Federal ou Senado Federal.
+5. approvalRate: use pesquisa de aprovação como governador do RJ (Datafolha RJ ou similar) mais recente. Use null se não houver.
+6. keyPositions: baseie-se em declarações públicas e gestão do governo do RJ.
+
+CONTEXTO IMPORTANTE:
+- Pastor evangélico antes de entrar na política
+- Deputado estadual pelo RJ antes de ser vice-governador
+- Eleito vice-governador de Wilson Witzel (PSC) em 2018
+- Assumiu o governo em 2020 após afastamento e posterior impeachment de Witzel (envolvido em corrupção na pandemia)
+- Reeleito governador em 2022 com mais de 60% dos votos no 1o turno
+- Filiado ao PL (partido de Bolsonaro); aliado da direita conservadora
+- Desafios: segurança pública no RJ (milícias, tráfico), dívida do estado
+
+FORMATO DE SAÍDA (JSON exato):
+{
+  "slug": "claudio-castro-pl-rj",
+  "bio": "Parágrafo de 3 a 4 frases em tom neutro e jornalístico. Mencionar: pastor evangélico, ex-deputado estadual, vice-governador eleito em 2018, assumiu com impeachment de Witzel, reeleito em 2022.",
+  "approvalRate": null,
+  "photoUrl": "URL direta para foto oficial (.jpg ou .png)",
+  "officialPhotoPageUrl": "URL da página onde a foto está publicada",
+  "officialSiteUrl": "https://claudiocastro.com.br",
+  "wikipediaUrl": "https://pt.wikipedia.org/wiki/Cláudio_Castro",
+  "partyHistory": [
+    "PSC — até ano exato",
+    "PL — ano–hoje"
+  ],
+  "politicalCareer": [
+    { "role": "Deputado Estadual (ALERJ)", "period": "2007–2018 (múltiplos mandatos)", "highlight": "" },
+    { "role": "Vice-Governador do Rio de Janeiro", "period": "2019–2020", "highlight": "" },
+    { "role": "Governador do Rio de Janeiro", "period": "2020–presente", "highlight": "Assumiu após impeachment de Witzel; reeleito em 2022 com ~60% no 1o turno." }
+  ],
+  "keyPositions": {
+    "economy": "Posição real sobre economia — ex: gestão fiscal do RJ, refinanciamento da dívida estadual",
+    "security": "Posição real — ex: atuação contra milícias e tráfico no RJ, policiamento",
+    "environment": "Posição real sobre meio ambiente",
+    "education": "Posição real sobre educação",
+    "health": "Posição real sobre saúde"
+  },
+  "recentContext": "1 a 2 frases sobre perspectivas para 2026 — reeleição ao governo ou candidatura a outro cargo, posição no cenário político."
+}

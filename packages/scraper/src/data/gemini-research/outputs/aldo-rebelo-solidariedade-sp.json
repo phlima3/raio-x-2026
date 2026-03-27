@@ -1,0 +1,48 @@
+{
+  "slug": "aldo-rebelo-solidariedade-sp",
+  "bio": "Aldo Rebelo é um veterano político com forte viés nacionalista, cuja trajetória inclui quatro décadas de militância no PCdoB e seis mandatos consecutivos como deputado federal por São Paulo, chegando a presidir a Câmara dos Deputados. Integrou os governos petistas como Ministro da Coordenação Política de Lula e ocupou as pastas do Esporte, da Ciência e Tecnologia e da Defesa sob Dilma Rousseff. Nos últimos anos, migrou para posições mais conservadoras, heterodoxas e críticas ao globalismo, passando por diversas legendas partidárias até filiar-se ao Democracia Cristã (DC). Atualmente, figura no cenário político como pré-candidato à Presidência da República para as eleições de 2026, defendendo a soberania, o desenvolvimento nacional e o reequilíbrio entre os Poderes.",
+  "approvalRate": null,
+  "photoUrl": "https://www.camara.leg.br/internet/deputado/bandep/73428.jpg",
+  "officialPhotoPageUrl": "https://www.camara.leg.br/deputados/73428/biografia",
+  "officialSiteUrl": "https://www.aldorebelo.com.br",
+  "wikipediaUrl": "https://pt.wikipedia.org/wiki/Aldo_Rebelo",
+  "partyHistory": [
+    "PCdoB — 1985 a 2017",
+    "Solidariedade (2018–2019) e passagens pelo PSB, PDT e MDB até ingressar no Democracia Cristã (DC) — 2025–hoje"
+  ],
+  "politicalCareer": [
+    {
+      "role": "Deputado Federal por São Paulo",
+      "period": "1991–2015",
+      "highlight": "Seis mandatos consecutivos; Presidente da Câmara dos Deputados (2005–2007)"
+    },
+    {
+      "role": "Ministro do Esporte",
+      "period": "2011–2015",
+      "highlight": "Coordenou a preparação do Brasil para a Copa do Mundo de 2014 e Olimpíadas de 2016"
+    },
+    {
+      "role": "Ministro da Ciência, Tecnologia e Inovação",
+      "period": "Jan 2015–Out 2015",
+      "highlight": "Nomeado no segundo mandato de Dilma Rousseff; gestão marcada por postura cética em relação ao ambientalismo internacional"
+    },
+    {
+      "role": "Ministro da Defesa",
+      "period": "Out 2015–Mai 2016",
+      "highlight": "Permaneceu na pasta até o afastamento de Dilma Rousseff no processo de impeachment"
+    },
+    {
+      "role": "Senador por São Paulo",
+      "period": null,
+      "highlight": "Nunca exerceu o cargo (concorreu ao Senado em 2022 pelo PDT, mas não foi eleito, obtendo 1,07% dos votos)"
+    }
+  ],
+  "keyPositions": {
+    "economy": "Defende um projeto nacional de desenvolvimento centrado na reindustrialização do Brasil, forte atuação do Estado em setores estratégicos e oposição frontal à dependência econômica e ao neoliberalismo.",
+    "security": "Adota uma visão conservadora e de Estado forte, priorizando a valorização das Forças Armadas, a proteção rígida das fronteiras e a autoridade pública contra o crime organizado.",
+    "environment": "É forte crítico da agenda climática internacional e da atuação de ONGs na Amazônia. Defende a soberania do Brasil sobre seus recursos naturais e apoia a exploração mineral e agropecuária sob a premissa do desenvolvimento interno.",
+    "education": "Apoia uma educação voltada para o patriotismo, os valores nacionais e o desenvolvimento tecnológico, visando conectar as universidades à base industrial brasileira para garantir autossuficiência.",
+    "health": "Defende o fortalecimento do Sistema Único de Saúde (SUS) atrelado à criação de um complexo industrial-tecnológico em saúde, reduzindo a dependência brasileira da importação de remédios e insumos essenciais."
+  },
+  "recentContext": "Em janeiro de 2026, Aldo Rebelo lançou oficialmente sua pré-candidatura à Presidência da República pelo Democracia Cristã (DC), após deixar sua atuação na Prefeitura de São Paulo pelo MDB. Com um discurso de revalorização da democracia e duras críticas ao ativismo judicial, ele busca se posicionar como uma alternativa nacionalista viável frente à polarização esquerda-direita."
+}
