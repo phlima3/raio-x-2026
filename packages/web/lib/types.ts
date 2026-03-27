@@ -110,3 +110,14 @@ export interface ApiDetailResponse<T> {
   success: boolean
   data: T
 }
+
+export interface NewsItem {
+  id: string
+  title: string
+  summary: string
+  sourceUrl: string
+  publishedAt: string
+  topic: string
+  hasContradiction: boolean
+  contradictionNote: string | null
+}

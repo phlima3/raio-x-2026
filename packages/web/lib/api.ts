@@ -5,6 +5,7 @@ import type {
   ComparisonResult,
   ApiListResponse,
   ApiDetailResponse,
+  NewsItem,
 } from './types'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
@@ -84,6 +85,16 @@ export async function fetchCandidateConsistency(slug: string) {
     voteCount: number
     computedAt: string
   }>>>(`/api/candidates/${slug}/consistency`, 0, { cache: 'no-store' })
+}
+
+// ── News ──────────────────────────────────────────────────────────────────────
+
+export async function fetchCandidateNews(slug: string, contradictionsOnly = false) {
+  const qs = contradictionsOnly ? '?contradictionsOnly=true' : ''
+  return apiFetch<ApiDetailResponse<NewsItem[]>>(
+    `/api/candidates/${slug}/news${qs}`,
+    3600,
+  )
 }
 
 // ── Comparison ────────────────────────────────────────────────────────────────

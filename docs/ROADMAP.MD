@@ -237,31 +237,31 @@ Plataforma de transparência eleitoral brasileira para as Eleições Gerais de o
 
 ### 6.1 — Painel de notícias
 
-- [ ] `NewsPanel.tsx` — lista de declarações recentes consumindo `GET /api/candidates/:slug/news`
-- [ ] Destacar itens com `hasContradiction: true` (badge vermelho "Contradição detectada")
-- [ ] Link para fonte original (`sourceUrl`)
-- [ ] Integrar na página do candidato (`/candidatos/[slug]`)
+- [x] `NewsPanel.tsx` — lista de declarações recentes consumindo `GET /api/candidates/:slug/news`
+- [x] Destacar itens com `hasContradiction: true` (badge vermelho "Contradição detectada")
+- [x] Link para fonte original (`sourceUrl`)
+- [x] Integrar na página do candidato (`/candidatos/[slug]`)
 
 ### 6.2 — Responsividade mobile
 
-- [ ] Header do candidato (foto + nome + badges) — stack vertical em telas < 640px
-- [ ] `ProposalBlock` — accordion legível em mobile
-- [ ] Tabela de votações (`TransparencyPanel`) — scroll horizontal ou cards em mobile
+- [x] Header do candidato (foto + nome + badges) — stack vertical em telas < 640px
+- [x] `ProposalBlock` — accordion legível em mobile
+- [x] Tabela de votações (`TransparencyPanel`) — scroll horizontal ou cards em mobile
 - [ ] Comparador — tabs de tema empilhadas verticalmente em mobile
 
 ### 6.3 — Empty states
 
-- [ ] Votações: "Sem histórico de votações disponível" (com contexto: deputados/senadores só aparecem após sync)
-- [ ] Bens: "Declaração de bens disponível após agosto/2026 (TSE)"
-- [ ] Financiamento: "Dados de financiamento disponíveis após agosto/2026 (TSE)"
-- [ ] Notícias: "Nenhuma declaração recente encontrada"
-- [ ] Propostas: "Propostas serão adicionadas após convenções partidárias (julho/2026)"
+- [x] Votações: "Histórico de votações não disponível para este candidato"
+- [x] Bens: "Declaração de bens disponível após agosto de 2026 (TSE)"
+- [x] Financiamento: "Dados de financiamento disponíveis após agosto de 2026 (TSE)"
+- [x] Notícias: "Nenhuma declaração recente encontrada"
+- [x] Propostas: "Propostas serão adicionadas após as convenções partidárias (julho de 2026)"
 
 ### 6.4 — Melhorias no CandidateCard e home
 
-- [ ] `approvalRate` badge no card da listagem (quando disponível)
+- [x] `approvalRate` badge no card da listagem (quando disponível)
 - [ ] Preview de 1 proposta no card (tooltip ou subtítulo)
-- [ ] Skeleton loading nos cards durante fetch
+- [x] Skeleton loading nos cards (`CandidateCardSkeleton` exportado)
 
 ### 6.5 — Filtros de proposta por tema
 

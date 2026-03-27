@@ -6,6 +6,7 @@ import { fetchCandidate, fetchCandidates } from '@/lib/api'
 import { ProposalBlock } from '@/components/ProposalBlock'
 import { TransparencyPanel } from '@/components/TransparencyPanel'
 import { ConsistencyPanel } from '@/components/ConsistencyPanel'
+import { NewsPanel } from '@/components/NewsPanel'
 
 interface Props {
   params: { slug: string }
@@ -95,7 +96,7 @@ export default async function CandidatePage({ params }: Props) {
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
         <div className="flex flex-col sm:flex-row gap-5">
           {/* Photo */}
-          <div className="relative w-24 h-24 rounded-2xl overflow-hidden bg-brand-100 flex-shrink-0 flex items-center justify-center self-start">
+          <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden bg-brand-100 flex-shrink-0 flex items-center justify-center self-center sm:self-start">
             {candidate.photoUrl ? (
               <Image
                 src={candidate.photoUrl}
@@ -112,8 +113,8 @@ export default async function CandidatePage({ params }: Props) {
           </div>
 
           {/* Info */}
-          <div className="flex-1">
-            <div className="flex flex-wrap items-start gap-2 mb-1">
+          <div className="flex-1 text-center sm:text-left">
+            <div className="flex flex-wrap items-start justify-center sm:justify-start gap-2 mb-1">
               <h1 className="text-2xl font-bold text-gray-900 leading-tight">
                 {candidate.name}
               </h1>
@@ -141,7 +142,7 @@ export default async function CandidatePage({ params }: Props) {
             )}
 
             {candidate.approvalRate != null && (
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center justify-center sm:justify-start gap-2 mb-3">
                 <span className="text-xs text-gray-500">Aprovação:</span>
                 <span className={`text-sm font-semibold ${
                   candidate.approvalRate >= 50 ? 'text-green-600' :
@@ -162,7 +163,7 @@ export default async function CandidatePage({ params }: Props) {
             )}
 
             {/* Quick links */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap justify-center sm:justify-start gap-2">
               {candidate.siteUrl && (
                 <a
                   href={candidate.siteUrl}
@@ -219,9 +220,9 @@ export default async function CandidatePage({ params }: Props) {
 
         {!hasProposals ? (
           <div className="bg-white rounded-xl border border-dashed border-gray-200 p-8 text-center text-gray-400 text-sm">
-            Nenhuma proposta registrada ainda.
+            Propostas serão adicionadas após as convenções partidárias (julho de 2026).
             <br />
-            <span className="text-xs mt-1 block">Os dados são coletados semanalmente dos sites dos candidatos.</span>
+            <span className="text-xs mt-1 block">Os dados são coletados dos sites e programas de governo dos candidatos.</span>
           </div>
         ) : (
           <div className="space-y-8">
@@ -248,6 +249,15 @@ export default async function CandidatePage({ params }: Props) {
           Comparação entre as propostas declaradas e o histórico de votações no Congresso.
         </p>
         <ConsistencyPanel candidateSlug={params.slug} />
+      </section>
+
+      {/* News */}
+      <section className="mb-10">
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Declarações Recentes</h2>
+        <p className="text-sm text-gray-500 mb-5">
+          Declarações e posições públicas recentes monitoradas nos principais veículos de imprensa.
+        </p>
+        <NewsPanel candidateSlug={params.slug} />
       </section>
 
       {/* Transparency */}

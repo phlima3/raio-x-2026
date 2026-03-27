@@ -87,10 +87,13 @@ export function TransparencyPanel({ candidateSlug }: TransparencyPanelProps) {
             {activeTab === 'voting' && (
               <div>
                 {data.voting.length === 0 ? (
-                  <p className="text-gray-400 text-sm">Nenhuma votação registrada.</p>
+                  <div className="py-6 text-center text-gray-400 text-sm">
+                    <p>Histórico de votações não disponível para este candidato.</p>
+                    <p className="text-xs mt-1 text-gray-300">Os dados são sincronizados diariamente com a Câmara dos Deputados e o Senado Federal.</p>
+                  </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                  <div className="overflow-x-auto -mx-2 px-2">
+                    <table className="w-full text-sm min-w-[480px]">
                       <thead>
                         <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
                           <th className="pb-2 font-medium w-20">Voto</th>
@@ -122,7 +125,7 @@ export function TransparencyPanel({ candidateSlug }: TransparencyPanelProps) {
                                   v.proposalName
                                 )}
                               </td>
-                              <td className="py-2 text-right text-gray-400">
+                              <td className="py-2 text-right text-gray-400 whitespace-nowrap">
                                 {new Date(v.votedAt).toLocaleDateString('pt-BR')}
                               </td>
                             </tr>
@@ -144,7 +147,10 @@ export function TransparencyPanel({ candidateSlug }: TransparencyPanelProps) {
             {activeTab === 'assets' && (
               <div>
                 {data.assets.length === 0 ? (
-                  <p className="text-gray-400 text-sm">Nenhuma declaração de bens disponível.</p>
+                  <div className="py-6 text-center text-gray-400 text-sm">
+                    <p>Declaração de bens disponível após agosto de 2026 (TSE).</p>
+                    <p className="text-xs mt-1 text-gray-300">Os dados do TSE ficam disponíveis após o prazo de registro de candidatos.</p>
+                  </div>
                 ) : (
                   <div className="space-y-4">
                     {data.assets.map((a) => (
@@ -181,7 +187,10 @@ export function TransparencyPanel({ candidateSlug }: TransparencyPanelProps) {
             {activeTab === 'financing' && (
               <div>
                 {!data.financing ? (
-                  <p className="text-gray-400 text-sm">Dados de financiamento não disponíveis.</p>
+                  <div className="py-6 text-center text-gray-400 text-sm">
+                    <p>Dados de financiamento disponíveis após agosto de 2026 (TSE).</p>
+                    <p className="text-xs mt-1 text-gray-300">Os dados do TSE ficam disponíveis após o prazo de registro de candidatos.</p>
+                  </div>
                 ) : (
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">

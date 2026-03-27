@@ -40,8 +40,8 @@ export function ProposalBlock({
   return (
     <div className="border border-gray-200 rounded-lg p-4 mb-3 bg-white hover:border-brand-200 transition-colors">
       {/* Title + status */}
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <h4 className="font-semibold text-gray-900 text-sm leading-snug flex-1">{title}</h4>
+      <div className="flex flex-wrap items-start gap-2 mb-2">
+        <h4 className="font-semibold text-gray-900 text-sm leading-snug flex-1 min-w-0">{title}</h4>
         <span className={`text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap flex-shrink-0 ${statusCfg.className}`}>
           {statusCfg.label}
         </span>

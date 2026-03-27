@@ -22,7 +22,14 @@ interface CandidateCardProps {
   photoUrl?: string | null
   ballotNumber?: number | null
   isIncumbent?: boolean
+  approvalRate?: number | null
   slug: string
+}
+
+function approvalBadgeClass(rate: number): string {
+  if (rate >= 50) return 'bg-green-50 text-green-700'
+  if (rate >= 35) return 'bg-yellow-50 text-yellow-700'
+  return 'bg-red-50 text-red-700'
 }
 
 export function CandidateCard({
@@ -33,6 +40,7 @@ export function CandidateCard({
   photoUrl,
   ballotNumber,
   isIncumbent,
+  approvalRate,
   slug,
 }: CandidateCardProps) {
   const initials = name
@@ -85,6 +93,11 @@ export function CandidateCard({
               Incumbente
             </span>
           )}
+          {approvalRate != null && (
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${approvalBadgeClass(approvalRate)}`}>
+              {approvalRate}% aprovação
+            </span>
+          )}
           {ballotNumber && (
             <span className="text-xs text-gray-400 ml-auto">
               Nº {ballotNumber}
@@ -93,5 +106,23 @@ export function CandidateCard({
         </div>
       </article>
     </Link>
+  )
+}
+
+export function CandidateCardSkeleton() {
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 animate-pulse">
+      <div className="flex items-start gap-4 mb-3">
+        <div className="w-14 h-14 rounded-full bg-gray-200 flex-shrink-0" />
+        <div className="flex-1 min-w-0 space-y-2 pt-1">
+          <div className="h-4 bg-gray-200 rounded w-3/4" />
+          <div className="h-3 bg-gray-100 rounded w-1/2" />
+        </div>
+      </div>
+      <div className="pt-3 border-t border-gray-50 flex gap-2">
+        <div className="h-5 bg-gray-100 rounded-full w-20" />
+        <div className="h-5 bg-gray-100 rounded-full w-16" />
+      </div>
+    </div>
   )
 }
