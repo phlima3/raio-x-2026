@@ -104,6 +104,7 @@ export default async function CandidatePage({ params }: Props) {
                 sizes="96px"
                 className="object-cover"
                 priority
+                unoptimized
               />
             ) : (
               <span className="text-2xl font-bold text-brand-600">{initials}</span>

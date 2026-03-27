@@ -56,6 +56,7 @@ export function CandidateCard({
                 fill
                 sizes="56px"
                 className="object-cover"
+                unoptimized
               />
             ) : (
               <span className="text-lg font-bold text-brand-600">{initials}</span>
