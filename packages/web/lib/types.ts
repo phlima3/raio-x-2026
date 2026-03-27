@@ -86,6 +86,7 @@ export interface CandidateDetail extends CandidateSummary {
   siteUrl: string | null
   email: string | null
   coalitionName: string | null
+  approvalRate: number | null
   proposals: Proposal[]
   votingRecords: VotingRecord[]
   assetDeclarations: AssetDeclaration[]

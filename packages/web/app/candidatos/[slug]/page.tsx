@@ -134,9 +134,30 @@ export default async function CandidatePage({ params }: Props) {
             </p>
 
             {candidate.coalitionName && (
-              <p className="text-sm text-gray-500 mb-3">
+              <p className="text-sm text-gray-500 mb-2">
                 Coligação: <span className="font-medium">{candidate.coalitionName}</span>
               </p>
+            )}
+
+            {candidate.approvalRate != null && (
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs text-gray-500">Aprovação:</span>
+                <span className={`text-sm font-semibold ${
+                  candidate.approvalRate >= 50 ? 'text-green-600' :
+                  candidate.approvalRate >= 35 ? 'text-yellow-600' : 'text-red-500'
+                }`}>
+                  {candidate.approvalRate}%
+                </span>
+                <div className="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${
+                      candidate.approvalRate >= 50 ? 'bg-green-500' :
+                      candidate.approvalRate >= 35 ? 'bg-yellow-400' : 'bg-red-400'
+                    }`}
+                    style={{ width: `${candidate.approvalRate}%` }}
+                  />
+                </div>
+              </div>
             )}
 
             {/* Quick links */}

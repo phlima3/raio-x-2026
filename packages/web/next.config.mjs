@@ -7,6 +7,18 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'dadosabertos.tse.jus.br',
       },
+      {
+        protocol: 'https',
+        hostname: 'upload.wikimedia.org',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.senado.leg.br',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.camara.leg.br',
+      },
     ],
   },
 
