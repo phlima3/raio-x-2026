@@ -1,13 +1,13 @@
 -- Enable unaccent extension for accent-insensitive search ("flavio" matches "Flávio")
 CREATE EXTENSION IF NOT EXISTS unaccent;
 
--- Wrapper IMMUTABLE necessário para usar unaccent() em índice
--- (unaccent() é STABLE por padrão; PostgreSQL exige IMMUTABLE em expressões de índice)
+-- Wrapper IMMUTABLE para usar unaccent() em índice.
+-- Usa a forma de 2 argumentos (função C, não SQL wrapper) para evitar problema de inlining.
 CREATE OR REPLACE FUNCTION immutable_unaccent(text)
   RETURNS text
   LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT
 AS $$
-  SELECT unaccent($1);
+  SELECT public.unaccent('unaccent'::regdictionary, $1);
 $$;
 
 -- Index para buscas accent-insensitive no nome do candidato
