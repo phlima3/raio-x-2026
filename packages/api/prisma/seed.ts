@@ -199,9 +199,10 @@ async function seed(): Promise<void> {
         where: { id: existing.id },
         data: {
           slug,
-          photoUrl: c.photoUrl ?? existing.photoUrl,
-          siteUrl: c.siteUrl ?? existing.siteUrl,
-          bio: c.bio ?? existing.bio,
+          // Prefer existing DB values over seed defaults — external imports (Gemini) take priority
+          photoUrl: existing.photoUrl ?? c.photoUrl ?? null,
+          siteUrl: existing.siteUrl ?? c.siteUrl ?? null,
+          bio: existing.bio ?? c.bio ?? null,
           isIncumbent: c.isIncumbent ?? existing.isIncumbent,
         },
       })
