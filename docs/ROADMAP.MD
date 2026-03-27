@@ -6,14 +6,15 @@ Plataforma de transparência eleitoral brasileira para as Eleições Gerais de o
 
 ## Status atual (março/2026)
 
-| Serviço       | Status                            |
-| ------------- | --------------------------------- |
-| Web (Next.js) | ✅ Rodando em :3000               |
-| API (Express) | ✅ Rodando em :3001               |
-| PostgreSQL    | ✅ Healthy em :5433               |
-| Redis         | ✅ Healthy em :6379               |
-| Migrations    | ✅ Init + `camaraId`/`senadoId`   |
-| Gemini API    | ⏳ Pendente (free tier bloqueado) |
+| Serviço            | Status                                                   |
+| ------------------ | -------------------------------------------------------- |
+| Web (Next.js)      | ✅ Produção: raio-x-2026.com.br (Vercel)                 |
+| API (Express)      | ✅ Produção: api-production-bf20.up.railway.app (Railway) |
+| PostgreSQL         | ✅ Railway (internal: postgres.railway.internal:5432)     |
+| Redis              | ✅ Railway (configurado via REDIS_URL)                    |
+| Migrations         | ✅ Init + camaraId/senadoId + unaccent                   |
+| Dados reais        | ✅ 12 candidatos com bios + fotos + 5 propostas Gemini   |
+| Enriquecimento LLM | ✅ Gemini Deep Search (manual) → importGeminiData.ts     |
 
 ---
 
@@ -57,6 +58,17 @@ Plataforma de transparência eleitoral brasileira para as Eleições Gerais de o
 - [x] Criar seed com os candidatos presidenciais confirmados (8 candidatos)
 - [x] Criar seed com candidatos a governador dos 7 estados prioritários (SP, MG, RJ, RS, BA, PR, GO)
 - [x] `pnpm db:seed` em `packages/api` — `prisma/seed.ts`
+- [x] Seed prioriza valores existentes no banco (Gemini imports) sobre defaults hardcoded
+
+### 1.5 — Enriquecimento com Gemini Deep Search ✅
+
+- [x] Prompts otimizados por candidato em `packages/scraper/src/data/gemini-research/_prompts/`
+- [x] Outputs JSON por candidato em `packages/scraper/src/data/gemini-research/outputs/` (12 arquivos)
+- [x] `importGeminiData.ts` — lê JSONs, valida com Zod, upserta bio/foto/siteUrl/bioSummary + 5 proposals/tema
+- [x] Preflight idempotente: Renan Santos MBL → Missão (party + slug corrigidos)
+- [x] GitHub Actions job `import-gemini` em `scraper.yml` com `PROD_DATABASE_URL`
+- [x] Busca accent-insensitive via PostgreSQL `unaccent` extension (migration aplicada)
+- [x] Todos os 12 candidatos com bios ricas, fotos e propostas por tema em produção
 
 ---
 
@@ -190,15 +202,15 @@ Plataforma de transparência eleitoral brasileira para as Eleições Gerais de o
 - [ ] Atualizar "declarações recentes" no perfil
 - [ ] Alertas de contradição com posições anteriores
 
-### 5.3 — Deploy em produção ✅ (parcial)
+### 5.3 — Deploy em produção ✅
 
 - [x] CI/CD com GitHub Actions:
   - `ci.yml` — type check + build em PRs e push para develop
   - `deploy-web.yml` — deploy Next.js para Vercel em push para main
   - `deploy-api.yml` — deploy API para Railway + migrate em push para main
-  - `scraper.yml` — sync diário (Câmara/Senado) e semanal (sites + LLM) via cron
-- [ ] Configurar domínio público (aguarda registro de domínio)
-- [ ] Configurar secrets no GitHub: `VERCEL_TOKEN`, `RAILWAY_TOKEN`, `PROD_DATABASE_URL`, etc.
+  - `scraper.yml` — sync diário (Câmara/Senado), semanal (sites + LLM), `import-gemini`, `populate`, `fix-migration`
+- [x] Domínio `raio-x-2026.com.br` apontando para Vercel (Hostinger DNS)
+- [x] Secrets configurados: `PROD_DATABASE_URL`, `PROD_REDIS_URL`, `GROQ_API_KEY`, `GEMINI_API_KEY`
 - [ ] Monitoramento de uptime (UptimeRobot / Vercel Analytics)
 
 ### 5.4 — Lançamento público
@@ -222,6 +234,13 @@ Plataforma de transparência eleitoral brasileira para as Eleições Gerais de o
 
 ## Próxima ação imediata
 
-**→ Lançamento público (Fase 5.4)**
+**→ Qualidade de conteúdo e features pré-convenções (Fase 5.2 + 6)**
 
-Fases 1–5.1 e 5.3 (CI/CD) estão completas. Próximo passo: configurar secrets do GitHub (`VERCEL_TOKEN`, `RAILWAY_TOKEN`, `PROD_DATABASE_URL`, `PROD_REDIS_URL`), registrar domínio, e fazer o seed de produção. Fase 5.2 (monitoramento de notícias via Gemini Search Grounding) aguarda resolução da quota do Gemini.
+O site está no ar com dados reais. Candidatos têm bios ricas, fotos e propostas por tema. Próximas prioridades:
+
+1. **Fotos faltando** — Tarcísio de Freitas não tem foto (Wikipedia URL retorna erro no Next.js Image). Investigar `next/image` unoptimized ou domínio permitido.
+2. **Fase 5.2** — Monitoramento de notícias via Gemini Search Grounding (busca automática de declarações recentes).
+3. **UX** — Melhorar página de candidato: mostrar `bioSummary` (contexto eleitoral recente), aprovação, carreira política.
+4. **Monitoramento** — Uptime robot + alertas de falha nos cron jobs.
+5. **Pré-convenções (julho/2026)** — Atualizar candidatos confirmados, PDFs de programas de governo.
+6. **TSE (agosto/2026)** — Importar declaração de bens e financiamento de campanha quando disponíveis.
