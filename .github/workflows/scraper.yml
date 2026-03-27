@@ -14,6 +14,7 @@ on:
         default: 'populate'
         type: choice
         options:
+          - import-gemini
           - populate
           - daily
           - weekly
@@ -149,3 +150,55 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           SCRAPER_CONCURRENCY: '2'
         timeout-minutes: 60
+
+  import-gemini:
+    name: Import Gemini Research Data
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'import-gemini'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: packages/scraper
+        run: pnpm install --frozen-lockfile
+
+      - name: Install API deps (for Prisma)
+        working-directory: packages/api
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        working-directory: packages/api
+        run: pnpm prisma generate
+
+      - name: Fix Renan Santos party (MBL → Missão)
+        working-directory: packages/scraper
+        run: |
+          pnpm exec tsx -e "
+          import 'dotenv/config';
+          import { PrismaClient } from '@prisma/client';
+          const prisma = new PrismaClient();
+          async function run() {
+            const n = await prisma.\$executeRaw\`UPDATE \"Candidate\" SET party = 'Missão', slug = 'renan-santos-missao-sp' WHERE name = 'Renan Santos' AND state = 'SP' AND position = 'PRESIDENTE' AND party = 'MBL'\`;
+            console.log('Renan fix:', n, 'record(s) updated');
+            await prisma.\$disconnect();
+          }
+          run().catch(console.error);
+          "
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+
+      - name: Import Gemini research data
+        working-directory: packages/scraper
+        run: pnpm run import:gemini
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+        timeout-minutes: 10
