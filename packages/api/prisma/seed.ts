@@ -30,6 +30,7 @@ interface SeedCandidate {
   siteUrl?: string
   bio?: string
   isIncumbent?: boolean
+  partyHistory?: string[]
 }
 
 const PRESIDENTS: SeedCandidate[] = [
@@ -41,6 +42,7 @@ const PRESIDENTS: SeedCandidate[] = [
     siteUrl: 'https://pt.org.br',
     bio: 'Presidente da República em exercício. Ex-presidente de 2003 a 2010. Metalúrgico e sindicalista, fundador do Partido dos Trabalhadores.',
     isIncumbent: true,
+    partyHistory: ['PT'],
   },
   {
     name: 'Flávio Bolsonaro',
@@ -50,6 +52,7 @@ const PRESIDENTS: SeedCandidate[] = [
     siteUrl: 'https://www.flaviobolsonaro.net',
     bio: 'Senador pelo Rio de Janeiro. Filho do ex-presidente Jair Bolsonaro. Advogado e político filiado ao Partido Liberal.',
     isIncumbent: false,
+    partyHistory: ['PTB', 'PSC', 'PSL', 'Republicanos', 'PL'],
   },
   {
     name: 'Ronaldo Caiado',
@@ -59,6 +62,7 @@ const PRESIDENTS: SeedCandidate[] = [
     siteUrl: 'http://ronaldocaiado.com.br',
     bio: 'Governador de Goiás. Médico e político, filiado ao União Brasil. Ex-senador e deputado federal.',
     isIncumbent: false,
+    partyHistory: ['DEM', 'União Brasil'],
   },
   {
     name: 'Romeu Zema',
@@ -67,6 +71,7 @@ const PRESIDENTS: SeedCandidate[] = [
     position: Position.PRESIDENTE,
     bio: 'Governador de Minas Gerais. Empresário e político filiado ao Partido Novo, conhecido pela gestão liberal do estado.',
     isIncumbent: false,
+    partyHistory: ['Novo'],
   },
   {
     name: 'Eduardo Leite',
@@ -75,6 +80,7 @@ const PRESIDENTS: SeedCandidate[] = [
     position: Position.PRESIDENTE,
     bio: 'Governador do Rio Grande do Sul. Advogado e político filiado ao PSD. Reeleito em 2022 com ampla margem de votos.',
     isIncumbent: false,
+    partyHistory: ['PSDB', 'PSD'],
   },
   {
     name: 'Simone Tebet',
@@ -84,6 +90,7 @@ const PRESIDENTS: SeedCandidate[] = [
     siteUrl: 'https://simonetebet.com.br',
     bio: 'Ministra do Planejamento e Orçamento. Senadora e ex-candidata à presidência em 2022. Filiada ao MDB.',
     isIncumbent: false,
+    partyHistory: ['PMDB', 'MDB'],
   },
   {
     name: 'Renan Santos',
@@ -93,6 +100,7 @@ const PRESIDENTS: SeedCandidate[] = [
     siteUrl: 'https://mbl.org.br',
     bio: 'Co-fundador do MBL e fundador do Partido Missão (aprovado pelo TSE em 2025). Ativista e político liberal, pré-candidato à Presidência em 2026.',
     isIncumbent: false,
+    partyHistory: ['MBL', 'Missão'],
   },
   {
     name: 'Aldo Rebelo',
@@ -102,6 +110,7 @@ const PRESIDENTS: SeedCandidate[] = [
     siteUrl: 'https://www.aldorebelo.com.br',
     bio: 'Ex-ministro, ex-deputado federal e ex-senador. Político veterano filiado ao Solidariedade.',
     isIncumbent: false,
+    partyHistory: ['PCdoB', 'Solidariedade'],
   },
 ]
 
@@ -204,6 +213,10 @@ async function seed(): Promise<void> {
           siteUrl: existing.siteUrl ?? c.siteUrl ?? null,
           bio: existing.bio ?? c.bio ?? null,
           isIncumbent: c.isIncumbent ?? existing.isIncumbent,
+          // Fill partyHistory if empty in DB; never overwrite if already populated
+          partyHistory: (existing.partyHistory?.length ?? 0) > 0
+            ? existing.partyHistory
+            : (c.partyHistory ?? []),
         },
       })
       updated++
@@ -221,6 +234,7 @@ async function seed(): Promise<void> {
           bio: c.bio ?? null,
           isIncumbent: c.isIncumbent ?? false,
           electionYear: 2026,
+          partyHistory: c.partyHistory ?? [],
         },
       })
       created++
