@@ -198,8 +198,12 @@ Plataforma de transparência eleitoral brasileira para as Eleições Gerais de o
 
 ### 5.2 — Monitoramento de notícias
 
-- [ ] Gemini Search Grounding para rastrear declarações recentes
-- [ ] Atualizar "declarações recentes" no perfil
+- [x] Gemini Search Grounding para rastrear declarações recentes (`newsProcessor.ts`)
+- [x] `NewsItem` model no banco com migration (`20260327000000_add_news_items`)
+- [x] Job semanal `weeklyNews.ts` — itera candidatos × 5 temas, salva no banco
+- [x] Endpoint `GET /api/candidates/:slug/news` — retorna itens ordenados por data
+- [x] GitHub Actions job `weekly-news` em `scraper.yml`
+- [ ] Atualizar UI: mostrar "declarações recentes" no perfil do candidato (Track A)
 - [ ] Alertas de contradição com posições anteriores
 
 ### 5.3 — Deploy em produção ✅
@@ -211,7 +215,7 @@ Plataforma de transparência eleitoral brasileira para as Eleições Gerais de o
   - `scraper.yml` — sync diário (Câmara/Senado), semanal (sites + LLM), `import-gemini`, `populate`, `fix-migration`
 - [x] Domínio `raio-x-2026.com.br` apontando para Vercel (Hostinger DNS)
 - [x] Secrets configurados: `PROD_DATABASE_URL`, `PROD_REDIS_URL`, `GROQ_API_KEY`, `GEMINI_API_KEY`
-- [ ] Monitoramento de uptime (UptimeRobot / Vercel Analytics)
+- [x] Monitoramento de uptime — `GET /health` com checks de DB + Redis; configurar UptimeRobot (ver abaixo)
 
 ### 5.4 — Lançamento público
 
@@ -232,15 +236,32 @@ Plataforma de transparência eleitoral brasileira para as Eleições Gerais de o
 
 ---
 
+## Configurar UptimeRobot (manual)
+
+1. Acesse https://uptimerobot.com e crie uma conta gratuita
+2. Clique em **Add New Monitor** → tipo **HTTP(s)**
+3. **Monitor 1 — API health**
+   - URL: `https://api-production-bf20.up.railway.app/health`
+   - Interval: 5 minutes
+   - Alert contact: seu e-mail
+4. **Monitor 2 — Frontend**
+   - URL: `https://raio-x-2026.com.br`
+   - Interval: 5 minutes
+   - Alert contact: seu e-mail
+5. O endpoint `/health` retorna HTTP 200 com `{ status: "ok", db: "ok", redis: "ok" }` quando tudo está bem, ou HTTP 503 com `status: "degraded"` em caso de falha.
+
+---
+
 ## Próxima ação imediata
 
-**→ Qualidade de conteúdo e features pré-convenções (Fase 5.2 + 6)**
+**→ UX frontend + integração do painel de notícias (Track A)**
 
-O site está no ar com dados reais. Candidatos têm bios ricas, fotos e propostas por tema. Próximas prioridades:
+O site está no ar com dados reais, backend de notícias pronto (`/api/candidates/:slug/news`). Próximas prioridades:
 
-1. **Fotos faltando** — Tarcísio de Freitas não tem foto (Wikipedia URL retorna erro no Next.js Image). Investigar `next/image` unoptimized ou domínio permitido.
-2. **Fase 5.2** — Monitoramento de notícias via Gemini Search Grounding (busca automática de declarações recentes).
-3. **UX** — Melhorar página de candidato: mostrar `bioSummary` (contexto eleitoral recente), aprovação, carreira política.
-4. **Monitoramento** — Uptime robot + alertas de falha nos cron jobs.
-5. **Pré-convenções (julho/2026)** — Atualizar candidatos confirmados, PDFs de programas de governo.
-6. **TSE (agosto/2026)** — Importar declaração de bens e financiamento de campanha quando disponíveis.
+1. ✅ **Fotos** — `upload.wikimedia.org` + Senado/Câmara adicionados ao `next.config.mjs`.
+2. ✅ **UX básica** — `bioSummary` + `approvalRate` (badge + barra) na página do candidato.
+3. **NewsPanel** — Componente `NewsPanel.tsx` consumindo `/api/candidates/:slug/news` (backend pronto).
+4. **Responsividade mobile** — Header do candidato, ProposalBlock e tabela de votações.
+5. **Empty states** — Mensagens úteis quando não há dados (votos, bens, notícias).
+6. **Pré-convenções (julho/2026)** — Atualizar candidatos confirmados, PDFs de programas de governo.
+7. **TSE (agosto/2026)** — Importar declaração de bens e financiamento de campanha quando disponíveis.
