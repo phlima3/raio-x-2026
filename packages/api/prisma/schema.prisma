@@ -63,6 +63,8 @@ model Candidate {
   ballotNumber    Int?
   electionYear    Int      @default(2026)
   isIncumbent     Boolean  @default(false)
+  approvalRate    Int?     // Índice de aprovação 0–100
+  partyHistory    String[] // Partidos anteriores em ordem cronológica
 
   proposals          Proposal[]
   votingRecords      VotingRecord[]

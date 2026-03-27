@@ -112,6 +112,7 @@ async function importCandidate(output: GeminiOutput): Promise<void> {
           ...(output.recentContext ? { bioSummary: output.recentContext } : {}),
           ...(output.photoUrl ? { photoUrl: output.photoUrl } : {}),
           ...(output.officialSiteUrl ? { siteUrl: output.officialSiteUrl } : {}),
+          ...(output.approvalRate != null ? { approvalRate: output.approvalRate } : {}),
         },
       })
     }
