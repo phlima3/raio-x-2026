@@ -14,6 +14,7 @@ on:
         default: 'populate'
         type: choice
         options:
+          - fix-migration
           - import-gemini
           - populate
           - daily
@@ -185,3 +186,35 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
         timeout-minutes: 10
+
+  fix-migration:
+    name: Fix Failed Migration
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'fix-migration'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install API deps
+        working-directory: packages/api
+        run: pnpm install --frozen-lockfile
+
+      - name: Resolve failed migration (mark as rolled-back)
+        working-directory: packages/api
+        run: pnpm prisma migrate resolve --rolled-back 20260326030000_add_unaccent
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+
+      - name: Re-run all pending migrations
+        working-directory: packages/api
+        run: pnpm prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
