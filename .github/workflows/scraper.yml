@@ -175,28 +175,15 @@ jobs:
         working-directory: packages/api
         run: pnpm install --no-frozen-lockfile
 
-      - name: Generate Prisma client
+      - name: Generate Prisma client (api)
         working-directory: packages/api
         run: pnpm prisma generate
 
-      - name: Fix Renan Santos party (MBL → Missão)
+      - name: Generate Prisma client (scraper)
         working-directory: packages/scraper
-        run: |
-          pnpm exec tsx -e "
-          import 'dotenv/config';
-          import { PrismaClient } from '@prisma/client';
-          const prisma = new PrismaClient();
-          async function run() {
-            const n = await prisma.\$executeRaw\`UPDATE \"Candidate\" SET party = 'Missão', slug = 'renan-santos-missao-sp' WHERE name = 'Renan Santos' AND state = 'SP' AND position = 'PRESIDENTE' AND party = 'MBL'\`;
-            console.log('Renan fix:', n, 'record(s) updated');
-            await prisma.\$disconnect();
-          }
-          run().catch(console.error);
-          "
-        env:
-          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+        run: pnpm exec prisma generate --schema=../api/prisma/schema.prisma
 
-      - name: Import Gemini research data
+      - name: Import Gemini research data (includes Renan preflight fix)
         working-directory: packages/scraper
         run: pnpm run import:gemini
         env:
