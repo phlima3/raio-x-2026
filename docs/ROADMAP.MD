@@ -6,15 +6,18 @@ Plataforma de transparência eleitoral brasileira para as Eleições Gerais de o
 
 ## Status atual (março/2026)
 
-| Serviço            | Status                                                   |
-| ------------------ | -------------------------------------------------------- |
-| Web (Next.js)      | ✅ Produção: raio-x-2026.com.br (Vercel)                 |
-| API (Express)      | ✅ Produção: api-production-bf20.up.railway.app (Railway) |
-| PostgreSQL         | ✅ Railway (internal: postgres.railway.internal:5432)     |
-| Redis              | ✅ Railway (configurado via REDIS_URL)                    |
-| Migrations         | ✅ Init + camaraId/senadoId + unaccent                   |
-| Dados reais        | ✅ 12 candidatos com bios + fotos + 5 propostas Gemini   |
-| Enriquecimento LLM | ✅ Gemini Deep Search (manual) → importGeminiData.ts     |
+| Serviço            | Status                                                                              |
+| ------------------ | ----------------------------------------------------------------------------------- |
+| Web (Next.js)      | ✅ Produção: raio-x-2026.com.br (Vercel)                                            |
+| API (Express)      | ✅ Produção: api-production-bf20.up.railway.app (Railway)                           |
+| PostgreSQL         | ✅ Railway (internal: postgres.railway.internal:5432)                               |
+| Redis              | ✅ Railway (configurado via REDIS_URL)                                              |
+| Migrations         | ✅ Init + camaraId/senadoId + unaccent + news + contradiction + approvalRate/partyHistory + fix_photo_urls |
+| Dados reais        | ✅ 12 candidatos com bios + fotos locais + 5 propostas Gemini + approvalRate        |
+| Fotos              | ✅ Hospedadas em /public/images/candidates/ (sem dependência externa, 12 JPEGs)    |
+| Enriquecimento LLM | ✅ Gemini Deep Search (manual) → seed + migration aplicada em produção              |
+| CI/CD              | ✅ Vercel (web) + Railway (API via git push) + migrations independentes no Actions  |
+| UX básica          | ✅ bioSummary + approvalRate (badge + barra de progresso) na página do candidato    |
 
 ---
 
@@ -59,6 +62,7 @@ Plataforma de transparência eleitoral brasileira para as Eleições Gerais de o
 - [x] Criar seed com candidatos a governador dos 7 estados prioritários (SP, MG, RJ, RS, BA, PR, GO)
 - [x] `pnpm db:seed` em `packages/api` — `prisma/seed.ts`
 - [x] Seed prioriza valores existentes no banco (Gemini imports) sobre defaults hardcoded
+- [x] `partyHistory` dos 8 presidenciáveis no seed (DB ganha se já preenchido)
 
 ### 1.5 — Enriquecimento com Gemini Deep Search ✅
 
@@ -196,32 +200,73 @@ Plataforma de transparência eleitoral brasileira para as Eleições Gerais de o
 - [x] Endpoint `GET /api/candidates/:slug/consistency` — computa on-demand, cacheia
 - [x] Exibir contradições detectadas no perfil do candidato (`ConsistencyPanel.tsx`)
 
-### 5.2 — Monitoramento de notícias
+### 5.2 — Monitoramento de notícias ✅
 
 - [x] Gemini Search Grounding para rastrear declarações recentes (`newsProcessor.ts`)
 - [x] `NewsItem` model no banco com migration (`20260327000000_add_news_items`)
 - [x] Job semanal `weeklyNews.ts` — itera candidatos × 5 temas, salva no banco
 - [x] Endpoint `GET /api/candidates/:slug/news` — retorna itens ordenados por data
 - [x] GitHub Actions job `weekly-news` em `scraper.yml`
-- [ ] Atualizar UI: mostrar "declarações recentes" no perfil do candidato (Track A)
-- [ ] Alertas de contradição com posições anteriores
+- [x] Alertas de contradição — `contradictionDetector.ts` + campos `hasContradiction`/`contradictionNote` no `NewsItem`; `weeklyNews.ts` detecta ao salvar; `?contradictionsOnly=true` no endpoint
+- [ ] **UI: `NewsPanel.tsx`** — exibir declarações recentes na página do candidato *(Fase 6)*
 
 ### 5.3 — Deploy em produção ✅
 
 - [x] CI/CD com GitHub Actions:
   - `ci.yml` — type check + build em PRs e push para develop
   - `deploy-web.yml` — deploy Next.js para Vercel em push para main
-  - `deploy-api.yml` — deploy API para Railway + migrate em push para main
+  - `deploy-api.yml` — deploy API para Railway (via git integration) + migrate independente no Actions
   - `scraper.yml` — sync diário (Câmara/Senado), semanal (sites + LLM), `import-gemini`, `populate`, `fix-migration`
+- [x] Job `migrate` desacoplado do job `deploy` — migrations rodam independentemente via `PROD_DATABASE_URL`
 - [x] Domínio `raio-x-2026.com.br` apontando para Vercel (Hostinger DNS)
 - [x] Secrets configurados: `PROD_DATABASE_URL`, `PROD_REDIS_URL`, `GROQ_API_KEY`, `GEMINI_API_KEY`
 - [x] Monitoramento de uptime — `GET /health` com checks de DB + Redis; configurar UptimeRobot (ver abaixo)
+- [x] Railway GitHub App reautorizado para repo privado
 
 ### 5.4 — Lançamento público
 
 - [ ] Cobertura dos candidatos presidenciais confirmados (pós-convenções, agosto)
 - [ ] 7 estados prioritários com governadores
 - [ ] Divulgação
+
+---
+
+## Fase 6 — UX Frontend (próxima fase)
+
+> Melhorar a experiência do usuário final antes do lançamento público.
+
+### 6.1 — Painel de notícias
+
+- [ ] `NewsPanel.tsx` — lista de declarações recentes consumindo `GET /api/candidates/:slug/news`
+- [ ] Destacar itens com `hasContradiction: true` (badge vermelho "Contradição detectada")
+- [ ] Link para fonte original (`sourceUrl`)
+- [ ] Integrar na página do candidato (`/candidatos/[slug]`)
+
+### 6.2 — Responsividade mobile
+
+- [ ] Header do candidato (foto + nome + badges) — stack vertical em telas < 640px
+- [ ] `ProposalBlock` — accordion legível em mobile
+- [ ] Tabela de votações (`TransparencyPanel`) — scroll horizontal ou cards em mobile
+- [ ] Comparador — tabs de tema empilhadas verticalmente em mobile
+
+### 6.3 — Empty states
+
+- [ ] Votações: "Sem histórico de votações disponível" (com contexto: deputados/senadores só aparecem após sync)
+- [ ] Bens: "Declaração de bens disponível após agosto/2026 (TSE)"
+- [ ] Financiamento: "Dados de financiamento disponíveis após agosto/2026 (TSE)"
+- [ ] Notícias: "Nenhuma declaração recente encontrada"
+- [ ] Propostas: "Propostas serão adicionadas após convenções partidárias (julho/2026)"
+
+### 6.4 — Melhorias no CandidateCard e home
+
+- [ ] `approvalRate` badge no card da listagem (quando disponível)
+- [ ] Preview de 1 proposta no card (tooltip ou subtítulo)
+- [ ] Skeleton loading nos cards durante fetch
+
+### 6.5 — Filtros de proposta por tema
+
+- [ ] Pills/tabs de tema na página do candidato (economia, saúde, educação, segurança, meio ambiente)
+- [ ] Atualização de URL sem reload ao trocar de tema (`?tema=economia`)
 
 ---
 
@@ -254,14 +299,15 @@ Plataforma de transparência eleitoral brasileira para as Eleições Gerais de o
 
 ## Próxima ação imediata
 
-**→ UX frontend + integração do painel de notícias (Track A)**
+**→ Fase 6: UX frontend (packages/web/ apenas)**
 
-O site está no ar com dados reais, backend de notícias pronto (`/api/candidates/:slug/news`). Próximas prioridades:
+O site está no ar com dados reais e fotos locais. Backend de notícias pronto. Próximas prioridades em ordem de impacto:
 
-1. ✅ **Fotos** — `upload.wikimedia.org` + Senado/Câmara adicionados ao `next.config.mjs`.
-2. ✅ **UX básica** — `bioSummary` + `approvalRate` (badge + barra) na página do candidato.
-3. **NewsPanel** — Componente `NewsPanel.tsx` consumindo `/api/candidates/:slug/news` (backend pronto).
-4. **Responsividade mobile** — Header do candidato, ProposalBlock e tabela de votações.
-5. **Empty states** — Mensagens úteis quando não há dados (votos, bens, notícias).
-6. **Pré-convenções (julho/2026)** — Atualizar candidatos confirmados, PDFs de programas de governo.
-7. **TSE (agosto/2026)** — Importar declaração de bens e financiamento de campanha quando disponíveis.
+1. ✅ **Fotos** — 12 JPEGs locais em `/public/images/candidates/`. Sem dependência externa.
+2. ✅ **UX básica** — `bioSummary` + `approvalRate` (badge + barra de progresso) na página do candidato.
+3. **NewsPanel** — `NewsPanel.tsx` consumindo `GET /api/candidates/:slug/news` (backend pronto, endpoint estável).
+4. **Empty states** — Mensagens contextuais quando não há dados (votos, bens, notícias, propostas).
+5. **Responsividade mobile** — Header do candidato, ProposalBlock, tabela de votações.
+6. **CandidateCard melhorado** — `approvalRate` badge na listagem + skeleton loading.
+7. **Pré-convenções (julho/2026)** — Atualizar candidatos confirmados, PDFs de programas de governo.
+8. **TSE (agosto/2026)** — Importar declaração de bens e financiamento de campanha quando disponíveis.
