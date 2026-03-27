@@ -2,7 +2,7 @@
   "slug": "renan-santos-missao-sp",
   "bio": "Renan Antônio Ferreira dos Santos é advogado, ativista político e co-fundador do Movimento Brasil Livre (MBL) em 2014, um dos movimentos que organizaram as manifestações contra o governo Dilma Rousseff. Em 2024, liderou a criação do Partido Missão, aprovado pelo TSE em novembro de 2025, e lançou-se como pré-candidato à Presidência da República em 2026 com agenda focada em combate ao crime organizado, desfavelização e responsabilidade fiscal.",
   "approvalRate": 45,
-  "photoUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Renan_Santos_MBL.jpg/440px-Renan_Santos_MBL.jpg",
+  "photoUrl": "/images/candidates/renan-santos.jpg",
   "officialPhotoPageUrl": "https://pt.wikipedia.org/wiki/Renan_Santos_(ativista)",
   "officialSiteUrl": "https://renansantosmbl.com/",
   "wikipediaUrl": "https://pt.wikipedia.org/wiki/Renan_Santos_(ativista)",
@@ -11,10 +11,26 @@
     "Partido Missão — 2024–hoje"
   ],
   "politicalCareer": [
-    { "role": "Co-fundador do Movimento Brasil Livre (MBL)", "period": "2014", "highlight": "Mobilizou protestos contra Dilma Rousseff e em defesa da Operação Lava Jato" },
-    { "role": "Líder do MBL", "period": "2014–2024", "highlight": "Organizou manifestações nacionais com grande participação via redes sociais" },
-    { "role": "Presidente do Partido Missão", "period": "2024–presente", "highlight": "Liderou criação do novo partido aprovado pelo TSE em novembro de 2025" },
-    { "role": "Pré-candidato à Presidência da República", "period": "2025–2026", "highlight": "Segundo lugar entre eleitores de 16-24 anos em pesquisa AtlasIntel/Bloomberg com 18,6%" }
+    {
+      "role": "Co-fundador do Movimento Brasil Livre (MBL)",
+      "period": "2014",
+      "highlight": "Mobilizou protestos contra Dilma Rousseff e em defesa da Operação Lava Jato"
+    },
+    {
+      "role": "Líder do MBL",
+      "period": "2014–2024",
+      "highlight": "Organizou manifestações nacionais com grande participação via redes sociais"
+    },
+    {
+      "role": "Presidente do Partido Missão",
+      "period": "2024–presente",
+      "highlight": "Liderou criação do novo partido aprovado pelo TSE em novembro de 2025"
+    },
+    {
+      "role": "Pré-candidato à Presidência da República",
+      "period": "2025–2026",
+      "highlight": "Segundo lugar entre eleitores de 16-24 anos em pesquisa AtlasIntel/Bloomberg com 18,6%"
+    }
   ],
   "keyPositions": {
     "economy": "Interiorização das atividades produtivas, principalmente no Nordeste, para gerar classe média e romper ciclo de dependência política. Fusão de municípios deficitários que dependem de verbas federais para sobreviver. Responsabilidade gerencial: políticos que não entregarem melhorias em educação, saneamento, saúde e segurança devem perder direitos políticos e o fundo partidário deve ser restrito a partidos com resultados comprovados. Mutirão anti Bolsa-Família: municípios com mais de 30% de beneficiários devem promover mutirões de emprego e pessoas em idade ativa que recusarem trabalho perdem o benefício em 3 meses.",

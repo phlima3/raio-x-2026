@@ -2,7 +2,7 @@
   "slug": "tarcisio-de-freitas-republicanos-sp",
   "bio": "Tarcísio Gomes de Freitas é engenheiro civil e ex-capitão do Exército Brasileiro, atualmente governador de São Paulo pelo Republicanos desde janeiro de 2023. Foi Ministro da Infraestrutura no governo Bolsonaro (2019–2022), onde presidiu mais de 80 leilões de concessão com R$ 100 bilhões em investimentos. Considerado um dos nomes mais fortes da direita para 2026, mantém ambiguidade sobre candidatura presidencial enquanto lidera pesquisas para reeleição em São Paulo.",
   "approvalRate": 51,
-  "photoUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Tarcísio_de_Freitas_em_2023.jpg/440px-Tarcísio_de_Freitas_em_2023.jpg",
+  "photoUrl": "/images/candidates/tarcisio-de-freitas.jpg",
   "officialPhotoPageUrl": "https://pt.wikipedia.org/wiki/Tarcísio_de_Freitas",
   "officialSiteUrl": "https://www.sp.gov.br",
   "wikipediaUrl": "https://pt.wikipedia.org/wiki/Tarcísio_de_Freitas",
@@ -11,10 +11,26 @@
     "Republicanos — 2022–hoje"
   ],
   "politicalCareer": [
-    { "role": "Diretor-Executivo do DNIT", "period": "2011–2015", "highlight": "Gestão de infraestrutura de transportes nos governos Dilma e Temer" },
-    { "role": "Secretário do PPI (Programa de Parcerias de Investimentos)", "period": "2016–2018", "highlight": "Coordenação de projetos de investimento no governo Temer" },
-    { "role": "Ministro da Infraestrutura", "period": "2019–2022", "highlight": "Mais de 80 leilões com R$ 100 bilhões em investimentos; privatizações de portos, aeroportos e expansão ferroviária" },
-    { "role": "Governador de São Paulo", "period": "2023–presente", "highlight": "Retomou 2.700 obras, recuperou 6.500 km de rodovias, entregou 20 mil moradias; privatização da Sabesp em 2024" }
+    {
+      "role": "Diretor-Executivo do DNIT",
+      "period": "2011–2015",
+      "highlight": "Gestão de infraestrutura de transportes nos governos Dilma e Temer"
+    },
+    {
+      "role": "Secretário do PPI (Programa de Parcerias de Investimentos)",
+      "period": "2016–2018",
+      "highlight": "Coordenação de projetos de investimento no governo Temer"
+    },
+    {
+      "role": "Ministro da Infraestrutura",
+      "period": "2019–2022",
+      "highlight": "Mais de 80 leilões com R$ 100 bilhões em investimentos; privatizações de portos, aeroportos e expansão ferroviária"
+    },
+    {
+      "role": "Governador de São Paulo",
+      "period": "2023–presente",
+      "highlight": "Retomou 2.700 obras, recuperou 6.500 km de rodovias, entregou 20 mil moradias; privatização da Sabesp em 2024"
+    }
   ],
   "keyPositions": {
     "economy": "Agenda pró-mercado e privatista: concessões, PPPs, redução do papel do Estado. Privatizou a Sabesp em 2024. Defende modernização da infraestrutura via iniciativa privada.",

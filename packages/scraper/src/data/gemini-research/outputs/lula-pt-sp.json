@@ -2,7 +2,7 @@
   "slug": "luiz-inacio-lula-da-silva-pt-sp",
   "bio": "Luiz Inácio Lula da Silva é metalúrgico, líder sindical e político brasileiro, fundador do Partido dos Trabalhadores em 1980. Foi presidente do Brasil de 2003 a 2010, período marcado por crescimento econômico e expansão de programas sociais. Preso em 2018 durante a Operação Lava Jato, teve suas condenações anuladas pelo STF em 2021, elegendo-se novamente em 2022. Atualmente no terceiro mandato presidencial, busca a reeleição em outubro de 2026 enfrentando alta desaprovação e cenário competitivo contra Flávio Bolsonaro.",
   "approvalRate": 44,
-  "photoUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Lula_-_foto_oficial_-_05_jan_2023_%28cropped%29.jpg/440px-Lula_-_foto_oficial_-_05_jan_2023_%28cropped%29.jpg",
+  "photoUrl": "/images/candidates/lula.jpg",
   "officialPhotoPageUrl": "https://pt.wikipedia.org/wiki/Luiz_Inácio_Lula_da_Silva",
   "officialSiteUrl": "https://www.gov.br/planalto",
   "wikipediaUrl": "https://pt.wikipedia.org/wiki/Luiz_Inácio_Lula_da_Silva",
@@ -10,10 +10,26 @@
     "PT — 1980–hoje"
   ],
   "politicalCareer": [
-    { "role": "Líder sindical e fundador do PT", "period": "1975–1989", "highlight": "Presidente do Sindicato dos Metalúrgicos do ABC; liderou greves durante a ditadura; fundou o PT em 1980" },
-    { "role": "Deputado Federal por São Paulo", "period": "1987–1991", "highlight": "Constituinte, participou da elaboração da Constituição de 1988" },
-    { "role": "Presidente da República (1º e 2º mandatos)", "period": "2003–2010", "highlight": "Crescimento econômico, Bolsa Família, Brasil Sem Miséria; saiu com 87% de aprovação" },
-    { "role": "Presidente da República (3º mandato)", "period": "2023–presente", "highlight": "Reconstrução institucional, Novo PAC (R$ 1,7 trilhão), geração de 3,2 milhões de empregos formais" }
+    {
+      "role": "Líder sindical e fundador do PT",
+      "period": "1975–1989",
+      "highlight": "Presidente do Sindicato dos Metalúrgicos do ABC; liderou greves durante a ditadura; fundou o PT em 1980"
+    },
+    {
+      "role": "Deputado Federal por São Paulo",
+      "period": "1987–1991",
+      "highlight": "Constituinte, participou da elaboração da Constituição de 1988"
+    },
+    {
+      "role": "Presidente da República (1º e 2º mandatos)",
+      "period": "2003–2010",
+      "highlight": "Crescimento econômico, Bolsa Família, Brasil Sem Miséria; saiu com 87% de aprovação"
+    },
+    {
+      "role": "Presidente da República (3º mandato)",
+      "period": "2023–presente",
+      "highlight": "Reconstrução institucional, Novo PAC (R$ 1,7 trilhão), geração de 3,2 milhões de empregos formais"
+    }
   ],
   "keyPositions": {
     "economy": "Valorização do salário mínimo com ganho real; menor taxa de desemprego em 12 anos (6,6%); investimento de R$ 1,7 trilhão no Novo PAC até 2026; retorno do Brasil ao top 10 das economias mundiais.",

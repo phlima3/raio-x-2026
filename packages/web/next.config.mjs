@@ -7,13 +7,14 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'dadosabertos.tse.jus.br',
       },
-      {
-        protocol: 'https',
-        hostname: 'upload.wikimedia.org',
-      },
+      // Fotos oficiais de parlamentares (fallback para candidatos não seedados via Gemini)
       {
         protocol: 'https',
         hostname: 'www.senado.leg.br',
+      },
+      {
+        protocol: 'https',
+        hostname: 'legis.senado.leg.br',
       },
       {
         protocol: 'https',

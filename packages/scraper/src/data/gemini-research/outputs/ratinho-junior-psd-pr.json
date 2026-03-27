@@ -2,7 +2,7 @@
   "slug": "ratinho-junior-psd-pr",
   "bio": "Carlos Roberto Massa Júnior, conhecido como Ratinho Junior, é político paranaense e filho do apresentador de TV Ratinho. Governador do Paraná pelo PSD desde 2019, foi reeleito em 2022 com 69,6% dos votos, alcançando aprovação de 85% — a mais alta entre governadores brasileiros. Chegou a ser cotado como pré-candidato à Presidência pelo PSD, mas desistiu oficialmente em março de 2026 para concluir seu mandato estadual.",
   "approvalRate": 85,
-  "photoUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Ratinho_Junior_em_2023.jpg/440px-Ratinho_Junior_em_2023.jpg",
+  "photoUrl": "/images/candidates/ratinho-junior.jpg",
   "officialPhotoPageUrl": "https://pt.wikipedia.org/wiki/Ratinho_Júnior",
   "officialSiteUrl": "https://www.parana.pr.gov.br",
   "wikipediaUrl": "https://pt.wikipedia.org/wiki/Ratinho_Júnior",
@@ -13,9 +13,21 @@
     "PSD — 2016–hoje"
   ],
   "politicalCareer": [
-    { "role": "Deputado Estadual do Paraná", "period": "2003–2005", "highlight": "Eleito aos 21 anos com 189 mil votos, recorde na Assembleia Legislativa do Paraná" },
-    { "role": "Deputado Federal pelo Paraná", "period": "2007–2019", "highlight": "Reeleito em 2010 com 360 mil votos, maior votação da história do Paraná à época" },
-    { "role": "Governador do Paraná", "period": "2019–presente", "highlight": "Reeleito em 2022 com 69,6% dos votos (4,2 milhões); aprovação de 85%; Paraná em 1º lugar no IDEB" }
+    {
+      "role": "Deputado Estadual do Paraná",
+      "period": "2003–2005",
+      "highlight": "Eleito aos 21 anos com 189 mil votos, recorde na Assembleia Legislativa do Paraná"
+    },
+    {
+      "role": "Deputado Federal pelo Paraná",
+      "period": "2007–2019",
+      "highlight": "Reeleito em 2010 com 360 mil votos, maior votação da história do Paraná à época"
+    },
+    {
+      "role": "Governador do Paraná",
+      "period": "2019–presente",
+      "highlight": "Reeleito em 2022 com 69,6% dos votos (4,2 milhões); aprovação de 85%; Paraná em 1º lugar no IDEB"
+    }
   ],
   "keyPositions": {
     "economy": "Modelo de gestão fiscal eficiente com atração de investimentos; PIB do Paraná cresceu de R$ 440 bilhões (2018) para R$ 718,9 bilhões (2024); estado é a 4ª maior economia do Brasil.",
