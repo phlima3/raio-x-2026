@@ -6,6 +6,7 @@ import {
   getCandidateTransparencyHandler,
   getCandidateConsistencyHandler,
   getCandidateStatsHandler,
+  getCandidateNewsHandler,
 } from '../controllers/candidates'
 
 const router: RouterType = Router()
@@ -27,5 +28,8 @@ router.get('/:slug/transparency', getCandidateTransparencyHandler)
 
 // GET /api/candidates/:slug/consistency — consistency scores (proposals vs. votes)
 router.get('/:slug/consistency', getCandidateConsistencyHandler)
+
+// GET /api/candidates/:slug/news — recent news/statements (Gemini Search Grounding)
+router.get('/:slug/news', getCandidateNewsHandler)
 
 export default router

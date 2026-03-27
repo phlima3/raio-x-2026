@@ -1,7 +1,11 @@
 import { Request, Response, NextFunction } from 'express'
+import { PrismaClient } from '@prisma/client'
 import { CandidateFiltersSchema } from '../types/candidate'
 import * as candidateService from '../services/candidateService'
 import * as consistencyService from '../services/consistencyService'
+import { withCache, TTL } from '../services/cacheService'
+
+const prisma = new PrismaClient()
 
 export async function listCandidatesHandler(
   req: Request,
@@ -113,6 +117,40 @@ export async function getCandidateTransparencyHandler(
         financing: candidate.campaignFinancings[0] ?? null,
       },
     })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function getCandidateNewsHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const { slug } = req.params
+    const candidate = await candidateService.getCandidateBySlug(slug)
+    if (!candidate) {
+      res.status(404).json({ success: false, error: 'Candidato não encontrado' })
+      return
+    }
+
+    const topic = typeof req.query.topic === 'string' ? req.query.topic : undefined
+
+    const news = await withCache(
+      `candidates:news:${slug}${topic ? `:${topic}` : ''}`,
+      TTL.CANDIDATE_DETAIL,
+      () =>
+        prisma.newsItem.findMany({
+          where: {
+            candidateId: candidate.id,
+            ...(topic ? { topic } : {}),
+          },
+          orderBy: [{ publishedAt: 'desc' }, { fetchedAt: 'desc' }],
+        }),
+    )
+
+    res.json({ success: true, data: news })
   } catch (err) {
     next(err)
   }

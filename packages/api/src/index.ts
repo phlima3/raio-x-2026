@@ -10,6 +10,7 @@ import candidatesRouter from './routes/candidates'
 import proposalsRouter from './routes/proposals'
 import comparisonRouter from './routes/comparison'
 import transparencyRouter from './routes/transparency'
+import healthRouter from './routes/health'
 
 const app: Express = express()
 const PORT = process.env.API_PORT ?? 3001
@@ -29,12 +30,8 @@ app.use(cors({ origin: corsOrigins }))
 app.use(express.json())
 app.use(rateLimiter)
 
-// ── Health check ──────────────────────────────────────────────────────────────
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() })
-})
-
 // ── Routes ────────────────────────────────────────────────────────────────────
+app.use('/health', healthRouter)
 app.use('/api/candidates', candidatesRouter)
 app.use('/api/proposals', proposalsRouter)
 app.use('/api/comparison', comparisonRouter)

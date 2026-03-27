@@ -69,6 +69,7 @@ model Candidate {
   assetDeclarations  AssetDeclaration[]
   campaignFinancings CampaignFinancing[]
   consistencyScores  ConsistencyScore[]
+  newsItems          NewsItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -182,4 +183,25 @@ model ConsistencyScore {
 
   @@unique([candidateId, theme])
   @@index([candidateId])
+}
+
+model NewsItem {
+  id          String    @id @default(cuid())
+  headline    String
+  summary     String    @db.Text
+  source      String?
+  url         String?
+  topic       String    // economia | seguranca | meioambiente | educacao | saude
+  publishedAt DateTime?
+  fetchedAt   DateTime  @default(now())
+
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([candidateId])
+  @@index([topic])
+  @@index([publishedAt])
 }

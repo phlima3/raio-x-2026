@@ -17,6 +17,7 @@
     "populate:sites": "tsx src/jobs/populateRealData.ts sites",
     "import:gemini": "tsx src/scripts/importGeminiData.ts",
     "import:gemini:dry": "tsx src/scripts/importGeminiData.ts -- --dry-run",
+    "news:weekly": "tsx src/jobs/weeklyNews.ts",
     "postinstall": "prisma generate --schema=../api/prisma/schema.prisma"
   },
   "dependencies": {

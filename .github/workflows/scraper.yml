@@ -19,6 +19,7 @@ on:
           - populate
           - daily
           - weekly
+          - weekly-news
           - all
 
 jobs:
@@ -186,6 +187,43 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
         timeout-minutes: 10
+
+  weekly-news:
+    name: Weekly News (Gemini Search Grounding)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && (github.event.inputs.job == 'weekly-news' || github.event.inputs.job == 'all')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: packages/scraper
+        run: pnpm install --frozen-lockfile
+
+      - name: Install API deps (for Prisma)
+        working-directory: packages/api
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        working-directory: packages/api
+        run: pnpm prisma generate
+
+      - name: Run weekly news sync
+        working-directory: packages/scraper
+        run: pnpm run news:weekly
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+          REDIS_URL: ${{ secrets.PROD_REDIS_URL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        timeout-minutes: 30
 
   fix-migration:
     name: Fix Failed Migration
