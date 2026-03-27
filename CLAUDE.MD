@@ -266,7 +266,27 @@ O arquivo NEXT_SESSION.md (notas de sessão) pode conter URLs de banco, API keys
 
 ### GitHub Actions: `workflow_dispatch` com opção `populate`
 
-O workflow `scraper.yml` tem 4 opções no `workflow_dispatch`: `populate`, `daily`, `weekly`, `all`. Usar `populate` para bootstrapping inicial de produção (instala Playwright, timeout 90min). Os jobs `daily` e `weekly` rodam automaticamente por cron.
+O workflow `scraper.yml` tem 6 opções no `workflow_dispatch`: `populate`, `daily`, `weekly`, `all`, `import-gemini`, `fix-migration`. Usar `populate` para bootstrapping inicial (Playwright, timeout 90min). `import-gemini` aplica os JSONs de `gemini-research/outputs/` na produção via `PROD_DATABASE_URL`.
+
+### Pipeline Gemini Deep Search (enriquecimento manual)
+
+Prompts otimizados por candidato em `packages/scraper/src/data/gemini-research/_prompts/`. Outputs JSON em `packages/scraper/src/data/gemini-research/outputs/` (12 arquivos, um por candidato). O script `importGeminiData.ts`:
+- Lê JSONs, valida com Zod, upserta `bio`, `bioSummary`, `photoUrl`, `siteUrl` no candidato
+- Cria/atualiza `Proposal` (5 por candidato: economia, segurança, meio ambiente, educação, saúde)
+- Preflight idempotente: corrige Renan Santos (MBL → Missão)
+- Roda via GitHub Actions job `import-gemini` com `PROD_DATABASE_URL`
+
+### `seed.ts` prioriza banco sobre defaults (CRÍTICO)
+
+O seed roda em cada startup do Railway. Lógica correta: `existing.bio ?? c.bio ?? null` (DB ganha). A lógica errada `c.bio ?? existing.bio` sobrescreve dados Gemini em cada restart. Nunca inverter essa ordem.
+
+### `railway up` vs `railway redeploy`
+
+`railway redeploy` reusa o último build ativo — NÃO puxa o código mais recente do git. Para forçar um build com código local atualizado, usar `railway up --detach` dentro de `packages/api`. Nunca fazer `railway redeploy` depois de `railway up` sem verificar qual build está sendo redeployado.
+
+### Unaccent extension no PostgreSQL
+
+Migration `20260326030000_add_unaccent` habilitada em produção. Função `immutable_unaccent(text)` em plpgsql com `LANGUAGE plpgsql IMMUTABLE STRICT SET search_path = public` e `RETURN public.unaccent($1)` — necessário para índice funcional. Sem o `SET search_path = public`, PostgreSQL rejeita a função em índice expressão.
 
 ---
 
