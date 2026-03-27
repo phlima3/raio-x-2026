@@ -173,7 +173,7 @@ jobs:
 
       - name: Install API deps (for Prisma)
         working-directory: packages/api
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
 
       - name: Generate Prisma client
         working-directory: packages/api
