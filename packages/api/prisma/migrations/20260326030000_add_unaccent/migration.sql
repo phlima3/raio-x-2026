@@ -1,13 +1,14 @@
 -- Enable unaccent extension for accent-insensitive search ("flavio" matches "Flávio")
 CREATE EXTENSION IF NOT EXISTS unaccent;
 
--- Wrapper IMMUTABLE para usar unaccent() em índice.
--- Usa a forma de 2 argumentos (função C, não SQL wrapper) para evitar problema de inlining.
+-- Wrapper IMMUTABLE em plpgsql (não é inlineable, evita problema de resolução antecipada)
 CREATE OR REPLACE FUNCTION immutable_unaccent(text)
   RETURNS text
-  LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT
+  LANGUAGE plpgsql IMMUTABLE STRICT
 AS $$
-  SELECT public.unaccent('unaccent'::regdictionary, $1);
+BEGIN
+  RETURN unaccent($1);
+END;
 $$;
 
 -- Index para buscas accent-insensitive no nome do candidato
