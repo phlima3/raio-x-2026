@@ -179,10 +179,6 @@ jobs:
         working-directory: packages/api
         run: pnpm prisma generate
 
-      - name: Generate Prisma client (scraper)
-        working-directory: packages/scraper
-        run: pnpm exec prisma generate --schema=../api/prisma/schema.prisma
-
       - name: Import Gemini research data (includes Renan preflight fix)
         working-directory: packages/scraper
         run: pnpm run import:gemini
