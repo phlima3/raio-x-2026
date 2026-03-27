@@ -186,14 +186,16 @@ model ConsistencyScore {
 }
 
 model NewsItem {
-  id          String    @id @default(cuid())
-  headline    String
-  summary     String    @db.Text
-  source      String?
-  url         String?
-  topic       String    // economia | seguranca | meioambiente | educacao | saude
-  publishedAt DateTime?
-  fetchedAt   DateTime  @default(now())
+  id                String    @id @default(cuid())
+  headline          String
+  summary           String    @db.Text
+  source            String?
+  url               String?
+  topic             String    // economia | seguranca | meioambiente | educacao | saude
+  publishedAt       DateTime?
+  fetchedAt         DateTime  @default(now())
+  hasContradiction  Boolean   @default(false)
+  contradictionNote String?   @db.Text
 
   candidateId String
   candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)

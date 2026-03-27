@@ -136,15 +136,21 @@ export async function getCandidateNewsHandler(
     }
 
     const topic = typeof req.query.topic === 'string' ? req.query.topic : undefined
+    const contradictionsOnly = req.query.contradictionsOnly === 'true'
+
+    const cacheKeySuffix = [topic, contradictionsOnly ? 'contradictions' : '']
+      .filter(Boolean)
+      .join(':')
 
     const news = await withCache(
-      `candidates:news:${slug}${topic ? `:${topic}` : ''}`,
+      `candidates:news:${slug}${cacheKeySuffix ? `:${cacheKeySuffix}` : ''}`,
       TTL.CANDIDATE_DETAIL,
       () =>
         prisma.newsItem.findMany({
           where: {
             candidateId: candidate.id,
             ...(topic ? { topic } : {}),
+            ...(contradictionsOnly ? { hasContradiction: true } : {}),
           },
           orderBy: [{ publishedAt: 'desc' }, { fetchedAt: 'desc' }],
         }),

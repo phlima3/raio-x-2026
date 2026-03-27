@@ -2,6 +2,7 @@ import 'dotenv/config'
 import cron from 'node-cron'
 import { PrismaClient } from '@prisma/client'
 import { fetchCandidateNews, TOPICS } from '../processors/newsProcessor'
+import { detectContradiction, TOPIC_TO_CATEGORY, type ProposalRef } from '../processors/contradictionDetector'
 import { logger } from '../utils/logger'
 
 // Weekly cron job: fetch recent news/statements for each candidate via Gemini Search Grounding
@@ -31,6 +32,7 @@ async function runWeeklyNewsSync(): Promise<void> {
   logger.info(`[weekly-news] Processing ${candidates.length} candidates × ${TOPICS.length} topics`)
 
   let totalSaved = 0
+  let totalContradictions = 0
   let totalErrors = 0
 
   for (const candidate of candidates) {
@@ -45,27 +47,51 @@ async function runWeeklyNewsSync(): Promise<void> {
           continue
         }
 
+        // Fetch proposals for this candidate+topic to check contradictions
+        const category = TOPIC_TO_CATEGORY[topic]
+        const proposals: ProposalRef[] = category
+          ? await prisma.proposal.findMany({
+              where: { candidateId: candidate.id, category },
+              select: { id: true, title: true, description: true, summary: true },
+            })
+          : []
+
         // Delete stale entries for this candidate+topic (replace strategy)
         await prisma.newsItem.deleteMany({
           where: { candidateId: candidate.id, topic },
         })
 
-        // Insert fresh items
-        const created = await prisma.newsItem.createMany({
-          data: items.map((item) => ({
-            candidateId: candidate.id,
-            headline: item.headline,
-            summary: item.summary,
-            source: item.source ?? null,
-            url: item.url ?? null,
-            topic,
-            publishedAt: item.date ? new Date(item.date) : null,
-          })),
-          skipDuplicates: true,
-        })
+        // Create each item individually to include contradiction analysis
+        for (const item of items) {
+          await sleep(500) // brief pause between Gemini calls
 
-        totalSaved += created.count
-        logger.info(`[weekly-news] ${candidate.name}/${topic}: saved ${created.count} items`)
+          const contradiction = await detectContradiction(item.headline, item.summary, proposals)
+          const hasContradiction = contradiction?.hasContradiction ?? false
+          const contradictionNote =
+            hasContradiction && contradiction?.explanation ? contradiction.explanation : null
+
+          await prisma.newsItem.create({
+            data: {
+              candidateId: candidate.id,
+              headline: item.headline,
+              summary: item.summary,
+              source: item.source ?? null,
+              url: item.url ?? null,
+              topic,
+              publishedAt: item.date ? new Date(item.date) : null,
+              hasContradiction,
+              contradictionNote,
+            },
+          })
+
+          if (hasContradiction) {
+            totalContradictions++
+            logger.info(`[weekly-news] Contradiction detected: ${candidate.name}/${topic} — "${item.headline}"`)
+          }
+        }
+
+        totalSaved += items.length
+        logger.info(`[weekly-news] ${candidate.name}/${topic}: saved ${items.length} items`)
       } catch (err) {
         totalErrors++
         logger.error(
@@ -76,7 +102,9 @@ async function runWeeklyNewsSync(): Promise<void> {
     }
   }
 
-  logger.info(`[weekly-news] Done — ${totalSaved} items saved, ${totalErrors} errors`)
+  logger.info(
+    `[weekly-news] Done — ${totalSaved} items saved, ${totalContradictions} contradictions detected, ${totalErrors} errors`,
+  )
   await prisma.$disconnect()
 }
 
