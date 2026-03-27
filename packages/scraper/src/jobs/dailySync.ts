@@ -17,8 +17,13 @@ const CRON_SCHEDULE = '0 6 * * *' // 06:00 UTC = 03:00 BRT
 async function runDailySync(): Promise<void> {
   logger.info('[daily-sync] Starting daily government API sync…')
 
+  // Fetch only votes from the last 2 days to avoid scanning full session history
+  const yesterday = new Date()
+  yesterday.setDate(yesterday.getDate() - 2)
+  const dateFrom = yesterday.toISOString().slice(0, 10) // YYYY-MM-DD
+
   const results = await Promise.allSettled([
-    syncCamara(),
+    syncCamara({}, { dateFrom }),
     syncSenado(),
     syncTse(),
   ])

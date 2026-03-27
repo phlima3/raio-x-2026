@@ -106,7 +106,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           CAMARA_API_URL: https://dadosabertos.camara.leg.br/api/v2
           SENADO_API_URL: https://legis.senado.leg.br/dadosabertos
-        timeout-minutes: 30
+        timeout-minutes: 60
 
   weekly-proposals:
     name: Weekly Proposals (Sites + LLM)

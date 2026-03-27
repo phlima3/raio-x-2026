@@ -534,9 +534,16 @@ async function saveProposicoes(
 /**
  * Full sync: lists deputies, upserts candidates, and persists their
  * voting records and proposals in parallel batches.
+ *
+ * @param filters - Deputy filters (partido, UF, etc.)
+ * @param votacoesFilters - Date window for vote fetching. For daily syncs,
+ *   pass `{ dateFrom: yesterday }` to avoid scanning the full session history.
  */
-export async function syncCamara(filters: DeputadoFilters = {}): Promise<void> {
-  logger.info('[camara] Starting sync…')
+export async function syncCamara(
+  filters: DeputadoFilters = {},
+  votacoesFilters: VotacoesFilters = {},
+): Promise<void> {
+  logger.info('[camara] Starting sync…', votacoesFilters)
 
   const deputados = await getDeputados(filters)
   logger.info(`[camara] ${deputados.length} deputados to process`)
@@ -555,7 +562,7 @@ export async function syncCamara(filters: DeputadoFilters = {}): Promise<void> {
           const candidateId = await saveDeputado(detail)
 
           const [votacoes, proposicoes] = await Promise.all([
-            getVotacoesByDeputado(dep.id),
+            getVotacoesByDeputado(dep.id, votacoesFilters),
             getProposicoesByDeputado(dep.id),
           ])
 
