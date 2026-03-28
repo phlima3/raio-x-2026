@@ -59,12 +59,12 @@ Plataforma de transparência eleitoral brasileira para as Eleições Gerais de o
 O TSE disponibiliza declarações de bens de eleições anteriores via CSV público.
 Candidatos que concorreram em 2018 e/ou 2022 já têm histórico importável agora.
 
-- [ ] Baixar CSVs de bens patrimoniais 2018 e 2022 de `dadosabertos.tse.jus.br/dados/bem_candidato`
-- [ ] Criar script `importTseHistorico.ts` em `packages/scraper/src/jobs/`
+- [x] Baixar CSVs de bens patrimoniais 2018 e 2022 de `dadosabertos.tse.jus.br/dados/bem_candidato`
+- [x] Criar script `importTseHistorico.ts` em `packages/scraper/src/jobs/`
   - Match por nome normalizado (unaccent + lowercase) contra candidatos do seed
   - Upsert em `AssetDeclaration` (year, totalValue, sourceUrl)
   - Idempotente: ignorar candidatos sem match
-- [ ] Adicionar job `import-tse-historico` no `scraper.yml` (workflow_dispatch manual)
+- [x] Adicionar job `import-tse-historico` no `scraper.yml` (workflow_dispatch manual)
 - [ ] Validar no Prisma Studio que bens 2018/2022 aparecem nos candidatos corretos
 
 **Fonte:** `https://dadosabertos.tse.jus.br/dados/bem_candidato`
