@@ -111,7 +111,7 @@ export function Comparator({ candidateSlugA, candidateSlugB, topic }: Comparator
 
       {/* Topic tabs */}
       {themes.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-none">
+        <div className="flex overflow-x-auto gap-2 pb-1 -mx-4 px-4 sm:flex-wrap sm:mx-0 sm:px-0 mb-4 scrollbar-none">
           {themes.map((theme) => (
             <button
               key={theme}
@@ -140,7 +140,7 @@ export function Comparator({ candidateSlugA, candidateSlugB, topic }: Comparator
 
       {/* Side-by-side proposals */}
       {activeComparison ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-brand-500 inline-block" />

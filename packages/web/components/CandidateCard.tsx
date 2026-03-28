@@ -23,6 +23,7 @@ interface CandidateCardProps {
   ballotNumber?: number | null
   isIncumbent?: boolean
   approvalRate?: number | null
+  firstProposalTitle?: string | null
   slug: string
 }
 
@@ -41,6 +42,7 @@ export function CandidateCard({
   ballotNumber,
   isIncumbent,
   approvalRate,
+  firstProposalTitle,
   slug,
 }: CandidateCardProps) {
   const initials = name
@@ -80,6 +82,11 @@ export function CandidateCard({
               {' · '}
               {state}
             </p>
+            {firstProposalTitle && (
+              <p className="text-xs text-gray-400 mt-1 truncate">
+                {firstProposalTitle}
+              </p>
+            )}
           </div>
         </div>
 

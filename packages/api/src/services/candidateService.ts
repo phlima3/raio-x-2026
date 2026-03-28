@@ -41,6 +41,7 @@ type CandidateRow = {
   ballotNumber: number | null
   isIncumbent: boolean
   electionYear: number
+  firstProposalTitle: string | null
 }
 
 export async function listCandidates(filters: CandidateFilters) {
@@ -73,7 +74,8 @@ export async function listCandidates(filters: CandidateFilters) {
         `,
         prisma.$queryRaw<CandidateRow[]>`
           SELECT c.id, c.name, c."socialName", c.party, c.state, c.position,
-                 c."photoUrl", c."ballotNumber", c."isIncumbent", c."electionYear"
+                 c."photoUrl", c."ballotNumber", c."isIncumbent", c."electionYear",
+                 (SELECT p.title FROM "Proposal" p WHERE p."candidateId" = c.id ORDER BY p."proposedAt" DESC NULLS LAST LIMIT 1) AS "firstProposalTitle"
           FROM "Candidate" c
           WHERE ${whereClause}
           ORDER BY c.position ASC, c.state ASC, c.name ASC
@@ -114,14 +116,20 @@ export async function listCandidates(filters: CandidateFilters) {
           ballotNumber: true,
           isIncumbent: true,
           electionYear: true,
+          proposals: {
+            take: 1,
+            orderBy: { proposedAt: 'desc' as const },
+            select: { title: true },
+          },
         },
       }),
     ])
 
     return {
-      data: candidates.map((c) => ({
+      data: candidates.map(({ proposals, ...c }) => ({
         ...c,
         slug: makeSlug(c.name, c.party, c.state),
+        firstProposalTitle: proposals[0]?.title ?? null,
       })),
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     }

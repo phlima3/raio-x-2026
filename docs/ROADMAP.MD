@@ -49,12 +49,26 @@ Plataforma de transparência eleitoral brasileira para as Eleições Gerais de o
 
 ### 1.3 — Integração TSE
 
-- [ ] Baixar CSV de candidatos registrados (disponível após agosto/2026)
-- [ ] Importar declaração de bens
-- [ ] Importar dados de financiamento de campanha
+- [ ] Baixar CSV de candidatos registrados *(disponível após agosto/2026)*
+- [ ] Importar declaração de bens 2026 *(disponível após agosto/2026)*
+- [ ] Importar dados de financiamento de campanha 2026 *(disponível após agosto/2026)*
 - [ ] Parser e inserção no banco
 
-**Fonte:** `https://dadosabertos.tse.jus.br`
+#### 1.3.1 — Histórico de bens TSE (atacável agora)
+
+O TSE disponibiliza declarações de bens de eleições anteriores via CSV público.
+Candidatos que concorreram em 2018 e/ou 2022 já têm histórico importável agora.
+
+- [ ] Baixar CSVs de bens patrimoniais 2018 e 2022 de `dadosabertos.tse.jus.br/dados/bem_candidato`
+- [ ] Criar script `importTseHistorico.ts` em `packages/scraper/src/jobs/`
+  - Match por nome normalizado (unaccent + lowercase) contra candidatos do seed
+  - Upsert em `AssetDeclaration` (year, totalValue, sourceUrl)
+  - Idempotente: ignorar candidatos sem match
+- [ ] Adicionar job `import-tse-historico` no `scraper.yml` (workflow_dispatch manual)
+- [ ] Validar no Prisma Studio que bens 2018/2022 aparecem nos candidatos corretos
+
+**Fonte:** `https://dadosabertos.tse.jus.br/dados/bem_candidato`
+*(arquivos: `bem_candidato_2018.csv`, `bem_candidato_2022.csv` — ~400MB cada, filtrar por CPF/nome)*
 
 ### 1.4 — Seed manual de candidatos (MVP) ✅
 
@@ -183,6 +197,8 @@ Plataforma de transparência eleitoral brasileira para as Eleições Gerais de o
 - [x] SSG (Static Site Generation) para páginas de candidatos (`generateStaticParams`)
 - [x] ISR (Incremental Static Regeneration) — `revalidate = 3600` na home
 - [x] Metadados OpenGraph para compartilhamento (`generateMetadata`)
+- [x] Sitemap dinâmico (`app/sitemap.ts`) — home, busca, comparar + todos os candidatos
+- [x] `loading.tsx` para home (8 skeletons) e busca (6 skeletons)
 
 ### 4.5 — Busca ✅
 
@@ -208,7 +224,7 @@ Plataforma de transparência eleitoral brasileira para as Eleições Gerais de o
 - [x] Endpoint `GET /api/candidates/:slug/news` — retorna itens ordenados por data
 - [x] GitHub Actions job `weekly-news` em `scraper.yml`
 - [x] Alertas de contradição — `contradictionDetector.ts` + campos `hasContradiction`/`contradictionNote` no `NewsItem`; `weeklyNews.ts` detecta ao salvar; `?contradictionsOnly=true` no endpoint
-- [ ] **UI: `NewsPanel.tsx`** — exibir declarações recentes na página do candidato *(Fase 6)*
+- [x] **UI: `NewsPanel.tsx`** — exibir declarações recentes na página do candidato *(Fase 6)*
 
 ### 5.3 — Deploy em produção ✅
 
@@ -247,7 +263,7 @@ Plataforma de transparência eleitoral brasileira para as Eleições Gerais de o
 - [x] Header do candidato (foto + nome + badges) — stack vertical em telas < 640px
 - [x] `ProposalBlock` — accordion legível em mobile
 - [x] Tabela de votações (`TransparencyPanel`) — scroll horizontal ou cards em mobile
-- [ ] Comparador — tabs de tema empilhadas verticalmente em mobile
+- [x] Comparador — tabs de tema empilhadas verticalmente em mobile
 
 ### 6.3 — Empty states
 
@@ -260,13 +276,13 @@ Plataforma de transparência eleitoral brasileira para as Eleições Gerais de o
 ### 6.4 — Melhorias no CandidateCard e home
 
 - [x] `approvalRate` badge no card da listagem (quando disponível)
-- [ ] Preview de 1 proposta no card (tooltip ou subtítulo)
+- [x] Preview de 1 proposta no card (tooltip ou subtítulo)
 - [x] Skeleton loading nos cards (`CandidateCardSkeleton` exportado)
 
 ### 6.5 — Filtros de proposta por tema
 
-- [ ] Pills/tabs de tema na página do candidato (economia, saúde, educação, segurança, meio ambiente)
-- [ ] Atualização de URL sem reload ao trocar de tema (`?tema=economia`)
+- [x] Pills/tabs de tema na página do candidato (economia, saúde, educação, segurança, meio ambiente)
+- [x] Atualização de URL sem reload ao trocar de tema (`?tema=economia`)
 
 ---
 

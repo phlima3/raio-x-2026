@@ -288,6 +288,14 @@ O seed roda em cada startup do Railway. Lógica correta: `existing.bio ?? c.bio 
 
 Migration `20260326030000_add_unaccent` habilitada em produção. Função `immutable_unaccent(text)` em plpgsql com `LANGUAGE plpgsql IMMUTABLE STRICT SET search_path = public` e `RETURN public.unaccent($1)` — necessário para índice funcional. Sem o `SET search_path = public`, PostgreSQL rejeita a função em índice expressão.
 
+### Componentes frontend da Fase 6 (UX)
+
+- `NewsPanel.tsx` — client component, busca `GET /api/candidates/:slug/news`, exibe badge "Contradição detectada" (vermelho) para `hasContradiction: true`, inclui `contradictionNote`, link para `sourceUrl`, skeleton loading e empty state.
+- `CandidateCardSkeleton` — exportado de `CandidateCard.tsx`, usar como fallback em Suspense ou `loading.tsx`.
+- `CandidateCard` aceita `approvalRate?: number | null` — badge colorido: verde ≥50%, amarelo ≥35%, vermelho <35%.
+- `TransparencyPanel` — empty states contextuais: votações (dados sincronizados diariamente), bens e financiamento (disponíveis após agosto/2026 via TSE). Tabela de votações com `overflow-x-auto` + `min-w-[480px]` para scroll horizontal em mobile.
+- Página do candidato (`/candidatos/[slug]`): header stack vertical em mobile (`flex-col sm:flex-row`), seção "Declarações Recentes" após Consistência.
+
 ---
 
 ## Schema do banco (Prisma — resumo)

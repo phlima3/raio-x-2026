@@ -33,6 +33,7 @@ export interface CandidateSummary {
   isIncumbent: boolean
   electionYear: number
   slug: string
+  firstProposalTitle?: string | null
 }
 
 export interface Proposal {
@@ -87,6 +88,7 @@ export interface CandidateDetail extends CandidateSummary {
   email: string | null
   coalitionName: string | null
   approvalRate: number | null
+  partyHistory: string[]
   proposals: Proposal[]
   votingRecords: VotingRecord[]
   assetDeclarations: AssetDeclaration[]

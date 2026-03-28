@@ -3,13 +3,14 @@ import Image from 'next/image'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { fetchCandidate, fetchCandidates } from '@/lib/api'
-import { ProposalBlock } from '@/components/ProposalBlock'
+import { ProposalsSection } from '@/components/ProposalsSection'
 import { TransparencyPanel } from '@/components/TransparencyPanel'
 import { ConsistencyPanel } from '@/components/ConsistencyPanel'
 import { NewsPanel } from '@/components/NewsPanel'
 
 interface Props {
   params: { slug: string }
+  searchParams: { tema?: string }
 }
 
 const POSITION_LABELS: Record<string, string> = {
@@ -56,7 +57,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function CandidatePage({ params }: Props) {
+export default async function CandidatePage({ params, searchParams }: Props) {
   let candidate
   try {
     const res = await fetchCandidate(params.slug)
@@ -73,15 +74,6 @@ export default async function CandidatePage({ params }: Props) {
     .join('')
     .toUpperCase()
 
-  // Group proposals by category (from the included proposals array)
-  const proposalsByCategory: Record<string, typeof candidate.proposals> = {}
-  for (const p of candidate.proposals ?? []) {
-    const key = p.category ?? 'Outros'
-    if (!proposalsByCategory[key]) proposalsByCategory[key] = []
-    proposalsByCategory[key].push(p)
-  }
-
-  const hasProposals = Object.keys(proposalsByCategory).length > 0
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -139,6 +131,18 @@ export default async function CandidatePage({ params }: Props) {
               <p className="text-sm text-gray-500 mb-2">
                 Coligação: <span className="font-medium">{candidate.coalitionName}</span>
               </p>
+            )}
+
+            {(candidate.partyHistory?.length ?? 0) > 1 && (
+              <details className="mb-2 group">
+                <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600 list-none">
+                  <span className="group-open:hidden">▸ Histórico partidário</span>
+                  <span className="hidden group-open:inline">▾ Histórico partidário</span>
+                </summary>
+                <p className="text-xs text-gray-400 mt-1">
+                  {candidate.partyHistory.join(' → ')}
+                </p>
+              </details>
             )}
 
             {candidate.approvalRate != null && (
@@ -211,35 +215,16 @@ export default async function CandidatePage({ params }: Props) {
       <section className="mb-10">
         <h2 className="text-xl font-bold text-gray-900 mb-5">
           Propostas
-          {hasProposals && (
+          {(candidate.proposals?.length ?? 0) > 0 && (
             <span className="text-sm font-normal text-gray-400 ml-2">
               ({candidate.proposals.length})
             </span>
           )}
         </h2>
-
-        {!hasProposals ? (
-          <div className="bg-white rounded-xl border border-dashed border-gray-200 p-8 text-center text-gray-400 text-sm">
-            Propostas serão adicionadas após as convenções partidárias (julho de 2026).
-            <br />
-            <span className="text-xs mt-1 block">Os dados são coletados dos sites e programas de governo dos candidatos.</span>
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {Object.entries(proposalsByCategory).map(([category, proposals]) => (
-              <div key={category}>
-                <h3 className="text-base font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                  <span className="inline-block w-1 h-4 bg-brand-500 rounded-full" />
-                  {category}
-                  <span className="text-xs text-gray-400 font-normal">({proposals.length})</span>
-                </h3>
-                {proposals.map((p) => (
-                  <ProposalBlock key={p.id} {...p} />
-                ))}
-              </div>
-            ))}
-          </div>
-        )}
+        <ProposalsSection
+          proposals={candidate.proposals ?? []}
+          initialTema={searchParams.tema}
+        />
       </section>
 
       {/* Consistency scores */}

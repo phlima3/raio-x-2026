@@ -55,7 +55,7 @@ export default async function HomePage() {
             {['PRESIDENTE', 'GOVERNADOR', 'SENADOR'].map((pos) => (
               <Link
                 key={pos}
-                href={`/?position=${pos}`}
+                href={`/busca?position=${pos}`}
                 className="text-sm px-4 py-1.5 bg-white/10 hover:bg-white/20 rounded-full text-brand-100 transition-colors"
               >
                 {pos === 'PRESIDENTE' ? 'Presidentes' : pos === 'GOVERNADOR' ? 'Governadores' : 'Senadores'}
@@ -107,7 +107,7 @@ export default async function HomePage() {
           <div className="flex items-baseline justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900">Candidatos à Presidência</h2>
             <Link
-              href="/?position=PRESIDENTE"
+              href="/busca?position=PRESIDENTE"
               className="text-sm text-brand-600 hover:text-brand-800 font-medium"
             >
               Ver todos →

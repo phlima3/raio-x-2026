@@ -32,7 +32,7 @@ export default async function BuscaPage({ searchParams }: Props) {
   const { q = '', position = '', state = '' } = searchParams
 
   const params: Record<string, string> = { limit: '50' }
-  if (q) params.q = q
+  if (q) params.search = q
   if (position) params.position = position
   if (state) params.state = state
 
