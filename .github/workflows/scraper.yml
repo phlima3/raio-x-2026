@@ -278,6 +278,10 @@ jobs:
         with:
           node-version: 20
 
+      - name: Install scraper deps
+        working-directory: packages/scraper
+        run: pnpm install --frozen-lockfile
+
       - name: Install API deps (for Prisma)
         working-directory: packages/api
         run: pnpm install --no-frozen-lockfile
@@ -285,10 +289,6 @@ jobs:
       - name: Generate Prisma client
         working-directory: packages/api
         run: pnpm prisma generate
-
-      - name: Install scraper deps
-        working-directory: packages/scraper
-        run: pnpm install --no-frozen-lockfile
 
       - name: Import TSE financiamento (receitas+despesas 2018/2022)
         working-directory: packages/scraper
