@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { fetchCandidate, fetchCandidates } from '@/lib/api'
+import { fetchCandidate } from '@/lib/api'
 import { ProposalsSection } from '@/components/ProposalsSection'
 import { TransparencyPanel } from '@/components/TransparencyPanel'
 import { ConsistencyPanel } from '@/components/ConsistencyPanel'
@@ -20,21 +20,9 @@ const POSITION_LABELS: Record<string, string> = {
   GOVERNADOR: 'Governador(a)',
 }
 
-// ISR: pre-render popular candidates (presidents + governors) at build time.
-// Falls back to empty array if API is unavailable — pages are then rendered on-demand.
-export async function generateStaticParams() {
-  try {
-    const [presidentsRes, governorsRes] = await Promise.allSettled([
-      fetchCandidates({ position: 'PRESIDENTE', limit: '20' }),
-      fetchCandidates({ position: 'GOVERNADOR', limit: '50' }),
-    ])
-    const presidents = presidentsRes.status === 'fulfilled' ? presidentsRes.value.data : []
-    const governors = governorsRes.status === 'fulfilled' ? governorsRes.value.data : []
-    return [...presidents, ...governors].map((c) => ({ slug: c.slug }))
-  } catch {
-    return []
-  }
-}
+// Force SSR — API may not be reachable during build (Veloz/nixpacks).
+// Pages are rendered on-demand and cached via ISR (revalidate in apiFetch).
+export const dynamic = 'force-dynamic'
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
