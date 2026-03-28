@@ -278,21 +278,12 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install API deps (for Prisma)
-        working-directory: packages/api
+      - name: Install all workspace deps
         run: pnpm install --frozen-lockfile
 
       - name: Generate Prisma client
         working-directory: packages/api
         run: pnpm prisma generate
-
-      - name: Install dependencies
-        working-directory: packages/scraper
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate Prisma client (scraper)
-        working-directory: packages/scraper
-        run: npx prisma generate --schema=../api/prisma/schema.prisma
 
       - name: Import TSE financiamento (receitas+despesas 2018/2022)
         working-directory: packages/scraper
