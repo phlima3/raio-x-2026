@@ -292,17 +292,16 @@ jobs:
 
       - name: Copy Prisma client into scraper
         run: |
-          API_CLIENT=$(find packages/api/node_modules -path '*/.prisma/client/index.js' | head -1)
-          SCRAPER_PKG=$(find packages/scraper/node_modules -path '*/@prisma/client/default.js' | head -1)
-          if [ -n "$API_CLIENT" ] && [ -n "$SCRAPER_PKG" ]; then
-            TARGET_DIR="$(dirname "$SCRAPER_PKG")/../.prisma/client"
-            mkdir -p "$TARGET_DIR"
-            cp -r "$(dirname "$API_CLIENT")/"* "$TARGET_DIR/"
-            echo "Copied Prisma client to $TARGET_DIR"
+          API_CLIENT=$(find packages/api/node_modules -path '*/.prisma/client/index.js' -type f | head -1)
+          if [ -n "$API_CLIENT" ]; then
+            SRC_DIR="$(dirname "$API_CLIENT")"
+            mkdir -p packages/scraper/node_modules/.prisma/client
+            cp -r "$SRC_DIR/"* packages/scraper/node_modules/.prisma/client/
+            echo "Copied Prisma client to packages/scraper/node_modules/.prisma/client"
+            ls packages/scraper/node_modules/.prisma/client/ | head -5
           else
-            echo "WARNING: Could not find Prisma client paths"
-            echo "API_CLIENT=$API_CLIENT"
-            echo "SCRAPER_PKG=$SCRAPER_PKG"
+            echo "ERROR: Could not find Prisma client in API"
+            exit 1
           fi
 
       - name: Import TSE financiamento (receitas+despesas 2018/2022)
