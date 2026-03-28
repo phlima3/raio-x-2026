@@ -144,26 +144,41 @@ pnpm run sync:all           # todos os jobs
 
 ## Infraestrutura de produção (deploy atual)
 
-| Serviço    | Plataforma | URL / domínio                              |
-| ---------- | ---------- | ------------------------------------------ |
-| Frontend   | Vercel     | raio-x-2026.com.br (projeto: "web")        |
-| API        | Railway    | api-production-bf20.up.railway.app → :3001 |
-| PostgreSQL | Railway    | postgres.railway.internal:5432             |
-| Redis      | Railway    | (configurado via REDIS_URL)                |
+| Serviço    | Plataforma | URL / domínio                                  |
+| ---------- | ---------- | ---------------------------------------------- |
+| Frontend   | Veloz      | raio-x-2026.com.br / raio-x-2026-web.runveloz.com |
+| API        | Veloz      | api.raio-x-2026.com.br / raio-x-2026.runveloz.com |
+| PostgreSQL | Veloz      | (interno, configurado via DATABASE_URL)        |
+| Redis      | Veloz      | (interno, configurado via REDIS_URL)           |
 
 ### DNS (Hostinger)
-- `@` → ALIAS + A `76.76.21.21` (Vercel)
-- `www` → CNAME `cname.vercel-dns.com`
-- `api` → CNAME `api-production-bf20.up.railway.app`
+- `@` → CNAME `cname.onveloz.com`
+- `www` → CNAME `cname.onveloz.com`
+- `api` → CNAME `cname.onveloz.com`
 
-### Variáveis de ambiente — Vercel (projeto "web")
-- `NEXT_PUBLIC_API_URL` = `https://api-production-bf20.up.railway.app` (usar o domínio direto do Railway enquanto o CNAME api. não propaga)
+### Variáveis de ambiente — Veloz (serviço web)
+- `NEXT_PUBLIC_API_URL` = `https://api.raio-x-2026.com.br`
 
-### Variáveis de ambiente — Railway (serviço API)
-- `DATABASE_URL` = URL interna do PostgreSQL Railway
-- `REDIS_URL` = URL interna do Redis Railway
+### Variáveis de ambiente — Veloz (serviço API)
+- `DATABASE_URL` = URL interna do PostgreSQL Veloz (auto-injetada)
+- `REDIS_URL` = URL interna do Redis Veloz (auto-injetada)
 - `FRONTEND_URL` = `https://raio-x-2026.com.br`
 - `GROQ_API_KEY` = chave do Groq
+
+### Deploy (Veloz CLI)
+```bash
+# Deploy da API
+veloz deploy --service api
+
+# Deploy do frontend
+veloz deploy --service web
+
+# Ver logs
+veloz logs --service api
+veloz logs --service web
+
+# Configuração em veloz.json (raiz do projeto)
+```
 
 ---
 
@@ -207,25 +222,25 @@ O modelo `Candidate` tem `slug String? @unique`. O seed popula o slug em cada st
 
 `null` serializado vira a string `"null"` no Redis. `if (cached)` para `"null"` é truthy, então `null` seria retornado eternamente. Correção: só chamar `setex` se `result != null`. Também: flushar `candidates:*` no startup via `invalidate('candidates:*')` para limpar nulls estagnados de antes do seed rodar.
 
-### `trust proxy` no Express (Railway)
+### `trust proxy` no Express (Veloz/Railway)
 
-Railway fica atrás de um proxy reverso. Sem `app.set('trust proxy', 1)`, o `express-rate-limit` lança `ValidationError` em toda requisição (ERR_ERL_UNEXPECTED_X_FORWARDED_FOR).
+Veloz (e Railway) ficam atrás de um proxy reverso. Sem `app.set('trust proxy', 1)`, o `express-rate-limit` lança `ValidationError` em toda requisição (ERR_ERL_UNEXPECTED_X_FORWARDED_FOR).
 
 ### TransparencyPanel usa `candidateSlug` (não `candidate.id`)
 
 O endpoint de transparência é `/api/candidates/:slug/transparency`. O componente deve receber `candidateSlug={params.slug}` (o slug da URL), não `candidate.id` (o UUID do banco).
 
-### Vercel SSG: rebuild necessário após corrigir a API
+### SSG: rebuild necessário após corrigir a API
 
-Quando `generateStaticParams` inclui um slug e o Railway retorna 404 para aquele slug na hora do build, o Vercel gera uma página 404 estática. Mesmo após corrigir a API, essa página 404 fica em cache. Solução: rodar `vercel --prod --yes` após confirmar que a API responde 200 para todos os slugs.
+Quando `generateStaticParams` inclui um slug e a API retorna 404 na hora do build, uma página 404 estática é gerada. Solução: `veloz deploy --service web` após confirmar que a API responde 200 para todos os slugs.
 
-### Migrations manuais (não `prisma migrate dev` no Railway)
+### Migrations manuais (não `prisma migrate dev` em produção)
 
-Railway usa `prisma migrate deploy` (não `dev`). Criar migrations manualmente em `prisma/migrations/YYYYMMDDHHMMSS_nome/migration.sql`. Sempre incluir `IF NOT EXISTS` no SQL para idempotência.
+Produção usa `prisma migrate deploy` (não `dev`), executado automaticamente pelo `preStartCommand` no `veloz.json`. Criar migrations manualmente em `prisma/migrations/YYYYMMDDHHMMSS_nome/migration.sql`. Sempre incluir `IF NOT EXISTS` no SQL para idempotência.
 
-### Dois projetos duplicados no Vercel
+### Migração Vercel/Railway → Veloz (concluída em 2026-03-28)
 
-O correto é o projeto **"web"** com domínio `raio-x-2026.com.br`. O outro ("raio-x-2026" com `raio-x-2026.vercel.app`) deve ser deletado em Settings → Delete Project.
+Toda a infraestrutura (frontend, API, PostgreSQL, Redis) foi migrada para Veloz. Dados migrados via pg_dump/psql (163 candidatos, 7701 propostas, 43339 votos). Vercel e Railway podem ser desligados após confirmar que DNS propagou corretamente.
 
 ### Pipeline de população de dados reais (`populateRealData.ts`)
 
@@ -258,7 +273,7 @@ URLs verificadas que funcionam:
 
 ### Redis: flushar cache após popular dados
 
-Após rodar `populateRealData`, o Redis pode ter nulls ou dados vazios em cache (TTL 1h). Solução mais rápida: `railway redeploy --service API --yes` → o startup da API faz `invalidate('candidates:*')`. Alternativa: aguardar TTL expirar (~1h).
+Após rodar `populateRealData`, o Redis pode ter nulls ou dados vazios em cache (TTL 1h). Solução mais rápida: `veloz deploy --service api` → o startup da API faz `invalidate('candidates:*')`. Alternativa: aguardar TTL expirar (~1h).
 
 ### NEXT_SESSION.md deve ficar no .gitignore
 
@@ -280,9 +295,9 @@ Prompts otimizados por candidato em `packages/scraper/src/data/gemini-research/_
 
 O seed roda em cada startup do Railway. Lógica correta: `existing.bio ?? c.bio ?? null` (DB ganha). A lógica errada `c.bio ?? existing.bio` sobrescreve dados Gemini em cada restart. Nunca inverter essa ordem.
 
-### `railway up` vs `railway redeploy`
+### Deploy Veloz: `veloz deploy`
 
-`railway redeploy` reusa o último build ativo — NÃO puxa o código mais recente do git. Para forçar um build com código local atualizado, usar `railway up --detach` dentro de `packages/api`. Nunca fazer `railway redeploy` depois de `railway up` sem verificar qual build está sendo redeployado.
+`veloz deploy --service <nome>` faz upload do código local, build via nixpacks e deploy. O `veloz.json` na raiz define build scripts (`packages/api/build.sh`, `packages/web/build.sh`), runtime commands e variáveis de ambiente. Ambos os serviços usam `root: "."` (monorepo root) para que os build scripts tenham acesso ao workspace completo.
 
 ### Unaccent extension no PostgreSQL
 

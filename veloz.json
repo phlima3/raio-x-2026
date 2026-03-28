@@ -1,0 +1,96 @@
+{
+  "version": "1.0",
+  "project": {
+    "id": "prj_rZISk51AmKMn",
+    "name": "raio-x-2026",
+    "slug": "raio-x-2026"
+  },
+  "defaults": {
+    "build": {
+      "nodeVersion": "20",
+      "packageManager": "yarn"
+    }
+  },
+  "services": {
+    "packages/api": {
+      "id": "svc_QKCqsDMdMYJg",
+      "name": "api",
+      "type": "web",
+      "root": ".",
+      "branch": "main",
+      "build": {
+        "method": "nixpacks",
+        "command": "bash packages/api/build.sh"
+      },
+      "runtime": {
+        "command": "cd packages/api && npx tsx src/index.ts",
+        "preStartCommand": "cd packages/api && npx prisma migrate deploy && npx tsx prisma/seed.ts",
+        "port": 3001
+      },
+      "env": {
+        "FRONTEND_URL": {
+          "description": "URL do frontend para CORS",
+          "required": true,
+          "example": "https://raio-x-2026.com.br"
+        },
+        "GROQ_API_KEY": {
+          "description": "API key do Groq para LLM",
+          "required": true
+        },
+        "API_PORT": {
+          "description": "Porta da API Express",
+          "required": false,
+          "example": "3001"
+        }
+      },
+      "databases": {
+        "postgres": {
+          "engine": "postgresql",
+          "version": "16"
+        },
+        "redis": {
+          "engine": "redis",
+          "version": "7"
+        }
+      }
+    },
+    "packages/web": {
+      "id": "svc_zw0dyHQNeFb_",
+      "name": "web",
+      "type": "web",
+      "root": ".",
+      "branch": "main",
+      "build": {
+        "method": "nixpacks",
+        "command": "bash packages/web/build.sh"
+      },
+      "runtime": {
+        "command": "cd packages/web && npx next start",
+        "port": 3000
+      },
+      "env": {
+        "NEXT_PUBLIC_API_URL": {
+          "description": "URL pública da API para o frontend",
+          "required": true,
+          "example": "https://api-raiox2026.onveloz.com"
+        }
+      }
+    }
+  },
+  "databases": {
+    "raiox-postgres": {
+      "id": "svc_w8Jj8vmSL8JN",
+      "engine": "postgresql",
+      "version": "16",
+      "storage": "10Gi",
+      "size": "basico"
+    },
+    "raiox-redis": {
+      "id": "svc_Wca4LL11Ftvb",
+      "engine": "redis",
+      "version": "7",
+      "storage": "10Gi",
+      "size": "basico"
+    }
+  }
+}

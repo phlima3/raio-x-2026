@@ -13,9 +13,9 @@ import transparencyRouter from './routes/transparency'
 import healthRouter from './routes/health'
 
 const app: Express = express()
-const PORT = process.env.API_PORT ?? 3001
+const PORT = process.env.PORT ?? process.env.API_PORT ?? 3001
 
-// Trust Railway/Vercel reverse proxy so rate-limiter reads real client IP
+// Trust reverse proxy (Veloz/Railway) so rate-limiter reads real client IP
 app.set('trust proxy', 1)
 
 // ── Global middleware ─────────────────────────────────────────────────────────
