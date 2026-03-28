@@ -54,7 +54,7 @@ Plataforma de transparência eleitoral brasileira para as Eleições Gerais de o
 - [ ] Importar dados de financiamento de campanha 2026 *(disponível após agosto/2026)*
 - [ ] Parser e inserção no banco
 
-#### 1.3.1 — Histórico de bens TSE (atacável agora)
+#### 1.3.1 — Histórico de bens TSE (atacável agora) ✅
 
 O TSE disponibiliza declarações de bens de eleições anteriores via CSV público.
 Candidatos que concorreram em 2018 e/ou 2022 já têm histórico importável agora.
@@ -69,6 +69,21 @@ Candidatos que concorreram em 2018 e/ou 2022 já têm histórico importável ago
 
 **Fonte:** `https://dadosabertos.tse.jus.br/dados/bem_candidato`
 *(arquivos: `bem_candidato_2018.csv`, `bem_candidato_2022.csv` — ~400MB cada, filtrar por CPF/nome)*
+
+#### 1.3.2 — Histórico de financiamento de campanha TSE ✅
+
+Prestação de contas de campanhas anteriores (receitas + despesas) via CSV público.
+
+- [x] Baixar ZIPs de prestação de contas 2018 e 2022 de `cdn.tse.jus.br/estatistica/sead/odsele/prestacao_contas/`
+- [x] Criar script `importTseFinanciamento.ts` em `packages/scraper/src/jobs/`
+  - Stream `receitas_candidatos_YYYY_BRASIL.csv` → soma VR_RECEITA + top 10 doadores
+  - Stream `despesas_contratadas_candidatos_YYYY_BRASIL.csv` → soma VR_DESPESA_CONTRATADA
+  - Match por nome normalizado contra candidatos do seed (mesma lógica do bens)
+  - Upsert em `CampaignFinancing` (year, totalReceived, totalSpent, donors JSON, sourceUrl)
+- [x] Adicionar job `import-tse-financiamento` no `scraper.yml` (workflow_dispatch manual)
+- [x] Validar: 9 registros 2018 + 14 registros 2022 importados com sucesso
+
+**Fonte:** `https://cdn.tse.jus.br/estatistica/sead/odsele/prestacao_contas/prestacao_de_contas_eleitorais_candidatos_YYYY.zip`
 
 ### 1.4 — Seed manual de candidatos (MVP) ✅
 

@@ -17,6 +17,7 @@ on:
           - fix-migration
           - import-gemini
           - import-tse-historico
+          - import-tse-financiamento
           - populate
           - daily
           - weekly
@@ -257,6 +258,41 @@ jobs:
       - name: Import TSE histórico (bens 2018/2022)
         working-directory: packages/scraper
         run: npx tsx src/jobs/importTseHistorico.ts
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+        timeout-minutes: 30
+
+  import-tse-financiamento:
+    name: Import TSE financiamento (receitas+despesas 2018/2022)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'import-tse-financiamento'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: packages/scraper
+        run: pnpm install --frozen-lockfile
+
+      - name: Install API deps (for Prisma)
+        working-directory: packages/api
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        working-directory: packages/api
+        run: pnpm prisma generate
+
+      - name: Import TSE financiamento (receitas+despesas 2018/2022)
+        working-directory: packages/scraper
+        run: npx tsx src/jobs/importTseFinanciamento.ts
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
         timeout-minutes: 30
