@@ -2,7 +2,9 @@ import Link from 'next/link'
 import { CandidateCard } from '@/components/CandidateCard'
 import { fetchCandidates, fetchCandidateStats } from '@/lib/api'
 
-export const revalidate = 3600 // ISR: revalidate every 1h
+// Force SSR — API unreachable during build on Veloz/nixpacks generates empty pages.
+// TODO: switch back to ISR (revalidate = 3600) when build-time API access is solved.
+export const dynamic = 'force-dynamic'
 
 export default async function HomePage() {
   // Fetch presidents and stats in parallel
