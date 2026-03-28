@@ -65,7 +65,7 @@ Candidatos que concorreram em 2018 e/ou 2022 já têm histórico importável ago
   - Upsert em `AssetDeclaration` (year, totalValue, sourceUrl)
   - Idempotente: ignorar candidatos sem match
 - [x] Adicionar job `import-tse-historico` no `scraper.yml` (workflow_dispatch manual)
-- [ ] Validar no Prisma Studio que bens 2018/2022 aparecem nos candidatos corretos
+- [x] Validar no Prisma Studio que bens 2018/2022 aparecem nos candidatos corretos
 
 **Fonte:** `https://dadosabertos.tse.jus.br/dados/bem_candidato`
 *(arquivos: `bem_candidato_2018.csv`, `bem_candidato_2022.csv` — ~400MB cada, filtrar por CPF/nome)*

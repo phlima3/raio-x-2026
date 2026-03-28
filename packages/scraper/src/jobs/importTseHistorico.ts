@@ -74,18 +74,37 @@ function nameMatches(csvName: string, seedName: string): boolean {
 // ── CSV value parsing ─────────────────────────────────────────────────────────
 
 /**
- * Parses a raw TSE CSV line (latin1, semicolon-separated, double-quoted)
- * into an array of string values.
- *
- * Example line: `"VAL1";"VAL2";"12.345,67"`
+ * Parses a raw TSE CSV line (latin1, semicolon-separated).
+ * Handles both quoted strings and bare integers — TSE files mix both:
+ *   `"TEXT";"TEXT";2022;2;"TEXT";1;546;...`
  */
 function parseCsvLine(line: string): string[] {
-  // Values are always wrapped in double-quotes and separated by ";"
-  // Split on "; then remove surrounding quotes.
-  return line
-    .replace(/\r$/, '')
-    .split('";"')
-    .map((v) => v.replace(/^"/, '').replace(/"$/, ''))
+  const values: string[] = []
+  let current = ''
+  let inQuotes = false
+
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i]
+
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        // escaped double-quote inside quoted value
+        current += '"'
+        i++
+      } else {
+        inQuotes = !inQuotes
+      }
+    } else if (ch === ';' && !inQuotes) {
+      values.push(current)
+      current = ''
+    } else if (ch === '\r') {
+      // skip CR from CRLF line endings
+    } else {
+      current += ch
+    }
+  }
+  values.push(current)
+  return values
 }
 
 /**
