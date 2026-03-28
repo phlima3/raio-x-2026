@@ -8,7 +8,12 @@ import type {
   NewsItem,
 } from './types'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
+// Server-side: use internal URL if available (faster, no DNS/TLS overhead in K8s)
+// Client-side: always use the public URL
+const API_BASE =
+  typeof window === 'undefined'
+    ? (process.env.API_URL_INTERNAL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001')
+    : (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001')
 
 async function apiFetch<T>(
   path: string,
