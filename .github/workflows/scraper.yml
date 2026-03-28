@@ -290,6 +290,10 @@ jobs:
         working-directory: packages/scraper
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Prisma client (scraper)
+        working-directory: packages/scraper
+        run: npx prisma generate --schema=../api/prisma/schema.prisma
+
       - name: Import TSE financiamento (receitas+despesas 2018/2022)
         working-directory: packages/scraper
         run: npx tsx src/jobs/importTseFinanciamento.ts
