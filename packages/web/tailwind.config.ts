@@ -8,7 +8,6 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      // TODO: Define brand colors aligned with transparency/civic identity
       colors: {
         brand: {
           50: '#eff6ff',
@@ -23,10 +22,26 @@ const config: Config = {
           yellow: '#ca8a04',
           red: '#dc2626',
         },
+        paper: {
+          DEFAULT: '#f1ebdc',
+          light: '#f6f1e3',
+          dark: '#e6dec9',
+        },
+        ink: {
+          DEFAULT: '#1a1614',
+          muted: '#554c45',
+          soft: '#8a8079',
+        },
+        ember: {
+          DEFAULT: '#b8321f',
+          dark: '#8c2716',
+          light: '#d9573d',
+        },
       },
-      // TODO: Add custom font (e.g., Inter or a Brazilian civic font)
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
+        serif: ['var(--font-serif)', 'Georgia', 'serif'],
+        mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
       },
     },
   },

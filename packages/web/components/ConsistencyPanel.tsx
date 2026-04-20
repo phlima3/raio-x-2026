@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 interface Contradiction {
   proposal: string
@@ -23,11 +23,38 @@ interface ConsistencyPanelProps {
   candidateSlug: string
 }
 
-const LABEL_CONFIG: Record<string, { className: string; bar: string }> = {
-  Alto:      { className: 'text-green-700 bg-green-50',  bar: 'bg-green-500' },
-  Médio:     { className: 'text-yellow-700 bg-yellow-50', bar: 'bg-yellow-400' },
-  Baixo:     { className: 'text-red-700 bg-red-50',      bar: 'bg-red-500' },
-  'Sem dados': { className: 'text-gray-500 bg-gray-100', bar: 'bg-gray-300' },
+function labelTone(label: string): string {
+  switch (label) {
+    case 'Alto':
+      return 'text-emerald-800 border-emerald-800/40'
+    case 'Médio':
+      return 'text-amber-800 border-amber-800/40'
+    case 'Baixo':
+      return 'text-ember border-ember/50'
+    default:
+      return 'text-ink-muted border-ink/30'
+  }
+}
+
+function barTone(label: string): string {
+  switch (label) {
+    case 'Alto':
+      return 'bg-emerald-700'
+    case 'Médio':
+      return 'bg-amber-600'
+    case 'Baixo':
+      return 'bg-ember'
+    default:
+      return 'bg-ink/30'
+  }
+}
+
+function pluralProposals(n: number): string {
+  return `${n} proposta${n === 1 ? '' : 's'}`
+}
+
+function pluralVotes(n: number): string {
+  return `${n} votação${n === 1 ? '' : 'es'}`
 }
 
 export function ConsistencyPanel({ candidateSlug }: ConsistencyPanelProps) {
@@ -36,13 +63,15 @@ export function ConsistencyPanel({ candidateSlug }: ConsistencyPanelProps) {
   const [error, setError] = useState<string | null>(null)
   const [expanded, setExpanded] = useState<string | null>(null)
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 
     try {
-      const res = await fetch(`${API_BASE}/api/candidates/${candidateSlug}/consistency`)
+      const res = await fetch(
+        `${API_BASE}/api/candidates/${candidateSlug}/consistency`
+      )
       const json = await res.json()
       if (json.success) setScores(json.data)
       else setError(json.error ?? 'Erro ao carregar scores')
@@ -51,138 +80,181 @@ export function ConsistencyPanel({ candidateSlug }: ConsistencyPanelProps) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [candidateSlug])
 
   useEffect(() => {
     load()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [candidateSlug])
+  }, [load])
 
   if (!loading && !error && scores !== null && scores.length === 0) {
     return (
-      <div className="bg-white rounded-xl border border-dashed border-gray-200 p-8 text-center text-gray-400 text-sm">
-        <p>Nenhum dado de consistência disponível.</p>
-        <p className="text-xs mt-1">Disponível quando o candidato tiver propostas e histórico de votações registrados.</p>
+      <div className="border border-dashed border-ink/30 py-14 px-6 text-center">
+        <p className="font-serif italic text-xl text-ink-muted text-pretty max-w-md mx-auto">
+          Ainda não há dados de consistência para este candidato.
+        </p>
+        <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-soft">
+          Necessário: propostas catalogadas + histórico de votações
+        </p>
       </div>
     )
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          <h3 className="text-base font-semibold text-gray-900">Score de consistência</h3>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Cruzamento entre propostas declaradas e histórico de votações. Gerado por IA.
-          </p>
-        </div>
+    <div>
+      <div className="flex items-end justify-between gap-4 mb-8">
+        <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-muted max-w-md">
+          Score 0–100. Maior valor indica maior consistência entre propostas declaradas e votos no Congresso.
+        </p>
         {!loading && scores !== null && (
           <button
+            type="button"
             onClick={load}
-            className="text-xs text-brand-600 hover:text-brand-800 underline"
+            className="focus-editorial font-mono text-[11px] uppercase tracking-[0.22em] text-ember hover:underline underline-offset-4 whitespace-nowrap"
           >
-            Recalcular
+            § Recalcular
           </button>
         )}
       </div>
 
       {loading && (
-        <div className="space-y-3 animate-pulse">
+        <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-14 bg-gray-100 rounded-lg" />
+            <div
+              key={i}
+              className="border border-ink/15 p-5 animate-pulse"
+              aria-hidden
+            >
+              <div className="h-4 w-40 bg-ink/10 mb-4" />
+              <div className="h-[3px] w-full bg-ink/10" />
+            </div>
           ))}
-          <p className="text-xs text-gray-400 text-center pt-2">Analisando com IA… pode levar alguns segundos.</p>
+          <p className="pt-3 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-soft text-center">
+            Analisando com IA — pode levar alguns segundos
+          </p>
         </div>
       )}
 
       {error && (
-        <div className="text-center py-6">
-          <p className="text-red-600 text-sm">{error}</p>
+        <div className="border border-ember/40 py-6 px-4 text-center">
+          <p className="font-serif italic text-ember">{error}</p>
           <button
+            type="button"
             onClick={load}
-            className="mt-2 text-xs text-red-500 underline hover:no-underline"
+            className="focus-editorial mt-2 font-mono text-[11px] uppercase tracking-[0.22em] text-ember hover:underline underline-offset-4"
           >
-            Tentar novamente
+            § Tentar novamente
           </button>
         </div>
       )}
 
       {!loading && !error && scores && scores.length > 0 && (
-        <div className="space-y-3">
-          {scores.map((s) => {
-            const cfg = LABEL_CONFIG[s.label] ?? LABEL_CONFIG['Sem dados']
+        <ol className="border-t border-ink/25">
+          {scores.map((s, i) => {
+            const toneLabel = labelTone(s.label)
+            const toneBar = barTone(s.label)
             const isExpanded = expanded === s.theme
 
             return (
-              <div key={s.theme} className="border border-gray-100 rounded-xl overflow-hidden">
+              <li key={s.theme} className="border-b border-ink/20">
                 <button
+                  type="button"
                   onClick={() => setExpanded(isExpanded ? null : s.theme)}
-                  className="w-full text-left p-4 hover:bg-gray-50 transition-colors"
+                  aria-expanded={isExpanded}
+                  aria-controls={`cs-${s.theme}`}
+                  className="focus-editorial group w-full text-left py-6 md:py-7 transition-colors hover:bg-paper-light/60"
                 >
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="font-medium text-gray-900 text-sm flex-1">{s.theme}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${cfg.className}`}>
+                  <div className="flex items-baseline gap-5">
+                    <span className="font-mono text-[11px] tabular-nums text-ink-soft tracking-[0.1em] w-8 shrink-0">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    <span className="font-serif text-xl md:text-2xl leading-tight flex-1 min-w-0 tracking-[-0.01em]">
+                      {s.theme}
+                    </span>
+                    <span
+                      className={
+                        'font-mono text-[10px] uppercase tracking-[0.22em] px-2 py-1 border whitespace-nowrap ' +
+                        toneLabel
+                      }
+                    >
                       {s.label}
                     </span>
-                    <span className="text-xs font-bold text-gray-600 w-8 text-right">{s.score}</span>
-                    <span className="text-gray-400 text-xs">{isExpanded ? '▲' : '▼'}</span>
+                    <span className="font-serif text-3xl md:text-4xl tabular-nums leading-none tracking-[-0.02em] w-14 text-right">
+                      {s.score}
+                    </span>
+                    <span
+                      aria-hidden
+                      className={
+                        'font-mono text-xs transition-transform text-ink-soft ' +
+                        (isExpanded ? 'rotate-180' : '')
+                      }
+                    >
+                      ▾
+                    </span>
                   </div>
 
-                  {/* Score bar */}
-                  <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="mt-4 ml-[52px] h-[3px] bg-ink/10 overflow-hidden">
                     <div
-                      className={`h-full rounded-full transition-all ${cfg.bar}`}
+                      className={'h-full transition-all duration-700 ' + toneBar}
                       style={{ width: `${s.score}%` }}
                     />
                   </div>
 
-                  <p className="text-xs text-gray-400 mt-1.5">
-                    {s.proposalCount} proposta{s.proposalCount !== 1 ? 's' : ''} ·{' '}
-                    {s.voteCount} votação{s.voteCount !== 1 ? 'ões' : ''} analisada{s.voteCount !== 1 ? 's' : ''}
+                  <p className="mt-2 ml-[52px] font-mono text-[10px] uppercase tracking-[0.22em] text-ink-soft">
+                    {pluralProposals(s.proposalCount)} ·{' '}
+                    {pluralVotes(s.voteCount)} analisada
+                    {s.voteCount === 1 ? '' : 's'}
                   </p>
                 </button>
 
                 {isExpanded && (
-                  <div className="px-4 pb-4 border-t border-gray-50 bg-gray-50">
-                    <p className="text-sm text-gray-700 leading-relaxed mt-3 mb-3">
+                  <div
+                    id={`cs-${s.theme}`}
+                    className="ml-[52px] pb-7 pr-4 pt-1"
+                  >
+                    <p className="font-serif text-[17px] leading-[1.7] text-ink-muted max-w-3xl text-pretty">
                       {s.explanation}
                     </p>
 
                     {s.contradictions.length > 0 && (
-                      <div>
-                        <p className="text-xs font-semibold text-red-600 mb-2 uppercase tracking-wide">
-                          Possíveis contradições detectadas
+                      <div className="mt-6 max-w-3xl border-t border-b border-ember/40 py-5 bg-ember/[0.03]">
+                        <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-ember mb-4">
+                          <span className="inline-block w-6 h-px bg-ember align-middle mr-2" />
+                          Possíveis contradições
                         </p>
-                        <div className="space-y-2">
-                          {s.contradictions.map((c, i) => (
-                            <div key={i} className="bg-red-50 border border-red-100 rounded-lg p-3">
-                              <p className="text-xs text-gray-700">
-                                <span className="font-medium text-red-700">Proposta:</span> {c.proposal}
+                        <ul className="space-y-5">
+                          {s.contradictions.map((c, idx) => (
+                            <li key={idx}>
+                              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-muted mb-1">
+                                Proposta
                               </p>
-                              <p className="text-xs text-gray-700 mt-1">
-                                <span className="font-medium text-red-700">Votação:</span> {c.vote}
+                              <p className="font-serif text-base text-ink-muted italic">
+                                {c.proposal}
                               </p>
-                              <p className="text-xs text-gray-500 mt-1 italic">{c.description}</p>
-                            </div>
+                              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-muted mt-3 mb-1">
+                                Votação
+                              </p>
+                              <p className="font-serif text-base text-ink-muted italic">
+                                {c.vote}
+                              </p>
+                              <p className="mt-2 text-[14px] text-ink-muted leading-relaxed">
+                                {c.description}
+                              </p>
+                            </li>
                           ))}
-                        </div>
+                        </ul>
                       </div>
                     )}
 
-                    <p className="text-xs text-gray-400 mt-3">
-                      Atualizado em {new Date(s.computedAt).toLocaleDateString('pt-BR')}
+                    <p className="mt-5 font-mono text-[9px] uppercase tracking-[0.22em] text-ink-soft tabular-nums">
+                      Atualizado em{' '}
+                      {new Date(s.computedAt).toLocaleDateString('pt-BR')}
                     </p>
                   </div>
                 )}
-              </div>
+              </li>
             )
           })}
-
-          <p className="text-xs text-gray-400 text-center pt-2">
-            Score 0–100: maior valor indica maior consistência entre propostas e votos.
-            Gerado automaticamente por IA — pode conter imprecisões.
-          </p>
-        </div>
+        </ol>
       )}
     </div>
   )

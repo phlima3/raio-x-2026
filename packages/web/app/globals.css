@@ -2,14 +2,232 @@
 @tailwind components;
 @tailwind utilities;
 
-/* TODO: Add custom global styles, CSS variables for design tokens */
-
 :root {
   --brand-primary: #2563eb;
   --brand-secondary: #1e3a8a;
 }
 
-/* Smooth scrolling for anchor links */
 html {
   scroll-behavior: smooth;
+}
+
+/* ————————————————————————————————
+   Focus rings — editorial, ember
+   ———————————————————————————————— */
+
+.focus-editorial {
+  outline: none;
+}
+.focus-editorial:focus-visible {
+  outline: 2px solid #b8321f;
+  outline-offset: 3px;
+  border-radius: 1px;
+}
+
+/* ————————————————————————————————
+   Editorial typography tweaks
+   ———————————————————————————————— */
+
+.font-serif {
+  hanging-punctuation: first allow-end last;
+  font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.text-pretty {
+  text-wrap: pretty;
+}
+
+/* ————————————————————————————————
+   Scroll-driven header micro-motion
+   Progressive enhancement — Chrome,
+   Safari TP; Firefox falls back silent.
+   ———————————————————————————————— */
+
+@supports (animation-timeline: scroll()) {
+  .scroll-progress-bar {
+    transform-origin: left center;
+    animation: scroll-grow linear both;
+    animation-timeline: scroll(root);
+  }
+
+  .scroll-compress-wordmark {
+    animation: wordmark-shrink linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 240px;
+    transform-origin: left center;
+  }
+}
+
+@keyframes scroll-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes wordmark-shrink {
+  to {
+    transform: scale(0.92);
+    letter-spacing: -0.025em;
+  }
+}
+
+/* ————————————————————————————————
+   Entrance motion
+   ———————————————————————————————— */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rise-in {
+  animation: rise 720ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ————————————————————————————————
+   Paper texture
+   ———————————————————————————————— */
+
+.paper-grain {
+  background-color: #f1ebdc;
+  background-image:
+    radial-gradient(rgba(26, 22, 20, 0.035) 1px, transparent 1px),
+    radial-gradient(rgba(26, 22, 20, 0.025) 1px, transparent 1px);
+  background-size: 3px 3px, 7px 7px;
+  background-position: 0 0, 1px 2px;
+}
+
+.editorial-rule {
+  background-image: linear-gradient(
+    to right,
+    currentColor 0,
+    currentColor 50%,
+    transparent 50%,
+    transparent 100%
+  );
+  background-size: 8px 1px;
+  background-repeat: repeat-x;
+  background-position: left center;
+}
+
+/* ————————————————————————————————
+   Performance utility
+   ———————————————————————————————— */
+
+.cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 800px;
+}
+
+/* ————————————————————————————————
+   View Transitions API
+   — same-document morph between
+     candidate index and detail page
+   ———————————————————————————————— */
+
+@supports (view-transition-name: none) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 480ms;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  ::view-transition-group(*) {
+    animation-duration: 620ms;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  ::view-transition-old(root) {
+    animation-name: vt-fade-out;
+  }
+  ::view-transition-new(root) {
+    animation-name: vt-fade-in;
+  }
+}
+
+@keyframes vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ————————————————————————————————
+   Command palette entry
+   (uses @starting-style)
+   ———————————————————————————————— */
+
+.cmdk-scrim {
+  transition: opacity 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  opacity: 1;
+}
+@starting-style {
+  .cmdk-scrim {
+    opacity: 0;
+  }
+}
+
+.cmdk-panel {
+  transition:
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+@starting-style {
+  .cmdk-panel {
+    transform: translateY(-12px) scale(0.98);
+    opacity: 0;
+  }
+}
+
+/* ————————————————————————————————
+   Reduced motion — overrides
+   ———————————————————————————————— */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .rise-in {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+
+  .scroll-progress-bar,
+  .scroll-compress-wordmark {
+    animation: none !important;
+    transform: none !important;
+  }
 }

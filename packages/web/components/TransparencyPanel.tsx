@@ -1,20 +1,36 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import type { VotingRecord, AssetDeclaration, CampaignFinancing } from '@/lib/types'
+import { useEffect, useState } from 'react'
+import type {
+  VotingRecord,
+  AssetDeclaration,
+  CampaignFinancing,
+} from '@/lib/types'
 
 type ActiveTab = 'voting' | 'assets' | 'financing'
 
-const VOTE_CONFIG: Record<string, { label: string; className: string }> = {
-  YES:         { label: 'Sim',       className: 'text-green-700 bg-green-50' },
-  NO:          { label: 'Não',       className: 'text-red-700 bg-red-50' },
-  ABSTENTION:  { label: 'Abstenção', className: 'text-yellow-700 bg-yellow-50' },
-  ABSENT:      { label: 'Ausente',   className: 'text-gray-500 bg-gray-100' },
-  OBSTRUCTION: { label: 'Obstrução', className: 'text-orange-700 bg-orange-50' },
+const VOTE_TONE: Record<string, string> = {
+  YES: 'text-emerald-800 border-emerald-800/40',
+  NO: 'text-ember border-ember/50',
+  ABSTENTION: 'text-amber-800 border-amber-800/40',
+  ABSENT: 'text-ink-soft border-ink/30',
+  OBSTRUCTION: 'text-amber-800 border-amber-800/40',
 }
 
-function fmt(value: string | number): string {
-  return Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
+const VOTE_LABEL: Record<string, string> = {
+  YES: 'Sim',
+  NO: 'Não',
+  ABSTENTION: 'Abstenção',
+  ABSENT: 'Ausente',
+  OBSTRUCTION: 'Obstrução',
+}
+
+function fmtBRL(value: string | number): string {
+  return Number(value).toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    maximumFractionDigits: 0,
+  })
 }
 
 interface TransparencyData {
@@ -49,177 +65,250 @@ export function TransparencyPanel({ candidateSlug }: TransparencyPanelProps) {
   }, [candidateSlug])
 
   const tabs: { key: ActiveTab; label: string }[] = [
-    { key: 'voting',    label: 'Votações' },
-    { key: 'assets',    label: 'Patrimônio' },
+    { key: 'voting', label: 'Votações' },
+    { key: 'assets', label: 'Patrimônio' },
     { key: 'financing', label: 'Financiamento' },
   ]
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-      {/* Tab bar */}
-      <div className="flex border-b border-gray-200">
-        {tabs.map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => setActiveTab(key)}
-            className={`px-5 py-3 text-sm font-medium transition-colors ${
-              activeTab === key
-                ? 'text-brand-700 border-b-2 border-brand-600 -mb-px'
-                : 'text-gray-500 hover:text-gray-900'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+    <div>
+      {/* Tab bar — editorial */}
+      <div
+        role="tablist"
+        aria-label="Seções de transparência"
+        className="flex items-center flex-wrap gap-x-6 gap-y-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-muted border-y border-ink/20 py-2 mb-10"
+      >
+        <span className="text-ink-muted">Dados</span>
+        {tabs.map(({ key, label }) => {
+          const active = activeTab === key
+          return (
+            <button
+              key={key}
+              role="tab"
+              aria-selected={active}
+              type="button"
+              onClick={() => setActiveTab(key)}
+              className={
+                'focus-editorial transition-colors border-b py-1.5 ' +
+                (active
+                  ? 'text-ember border-ember'
+                  : 'border-transparent hover:text-ember hover:border-ember')
+              }
+            >
+              {label}
+            </button>
+          )
+        })}
       </div>
 
-      <div className="p-6">
-        {loading && (
-          <div className="flex items-center justify-center py-8 text-gray-400 text-sm">
-            Carregando…
-          </div>
-        )}
-        {error && <p className="text-red-600 text-sm">{error}</p>}
+      {loading && (
+        <div className="py-10 text-center font-mono text-[11px] uppercase tracking-[0.22em] text-ink-soft">
+          Carregando…
+        </div>
+      )}
+      {error && (
+        <div className="border border-ember/40 py-6 px-4 text-center">
+          <p className="font-serif italic text-ember">{error}</p>
+        </div>
+      )}
 
-        {!loading && !error && data && (
-          <>
-            {/* Votações */}
-            {activeTab === 'voting' && (
-              <div>
-                {data.voting.length === 0 ? (
-                  <div className="py-6 text-center text-gray-400 text-sm">
-                    <p>Histórico de votações não disponível para este candidato.</p>
-                    <p className="text-xs mt-1 text-gray-300">Os dados são sincronizados diariamente com a Câmara dos Deputados e o Senado Federal.</p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto -mx-2 px-2">
-                    <table className="w-full text-sm min-w-[480px]">
-                      <thead>
-                        <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
-                          <th className="pb-2 font-medium w-20">Voto</th>
-                          <th className="pb-2 font-medium">Proposição</th>
-                          <th className="pb-2 font-medium w-24 text-right">Data</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-50">
-                        {data.voting.slice(0, 100).map((v) => {
-                          const cfg = VOTE_CONFIG[v.voteType] ?? VOTE_CONFIG.ABSENT
-                          return (
-                            <tr key={v.id} className="hover:bg-gray-50">
-                              <td className="py-2 pr-3">
-                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${cfg.className}`}>
-                                  {cfg.label}
+      {!loading && !error && data && (
+        <div role="tabpanel" aria-label={`Dados: ${activeTab}`}>
+          {/* Votações */}
+          {activeTab === 'voting' && (
+            <>
+              {data.voting.length === 0 ? (
+                <EmptyState
+                  primary="Histórico de votações não disponível para este candidato."
+                  secondary="Sincronização diária com a Câmara dos Deputados e o Senado Federal."
+                />
+              ) : (
+                <div className="overflow-x-auto -mx-4 md:mx-0 px-4 md:px-0">
+                  <table className="w-full min-w-[520px] border-t border-ink/25">
+                    <thead>
+                      <tr className="border-b border-ink/25">
+                        <th className="py-3 pr-4 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-muted text-left w-24">
+                          Voto
+                        </th>
+                        <th className="py-3 pr-4 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-muted text-left">
+                          Proposição
+                        </th>
+                        <th className="py-3 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-muted text-right w-24">
+                          Data
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.voting.slice(0, 100).map((v, i) => {
+                        const tone = VOTE_TONE[v.voteType] ?? VOTE_TONE.ABSENT
+                        const label =
+                          VOTE_LABEL[v.voteType] ?? VOTE_LABEL.ABSENT
+                        return (
+                          <tr
+                            key={v.id}
+                            className="border-b border-ink/15 hover:bg-paper-light/60 transition-colors"
+                          >
+                            <td className="py-3 pr-4 align-top">
+                              <span
+                                className={
+                                  'font-mono text-[10px] uppercase tracking-[0.22em] px-2 py-1 border whitespace-nowrap ' +
+                                  tone
+                                }
+                              >
+                                {label}
+                              </span>
+                            </td>
+                            <td className="py-3 pr-4 align-top">
+                              {v.proposalUrl ? (
+                                <a
+                                  href={v.proposalUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="focus-editorial font-serif text-[17px] leading-snug hover:text-ember transition-colors border-b border-transparent hover:border-ember"
+                                >
+                                  {v.proposalName}
+                                </a>
+                              ) : (
+                                <span className="font-serif text-[17px] leading-snug">
+                                  {v.proposalName}
                                 </span>
-                              </td>
-                              <td className="py-2 pr-3 text-gray-700">
-                                {v.proposalUrl ? (
-                                  <a
-                                    href={v.proposalUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="hover:text-brand-600 hover:underline"
-                                  >
-                                    {v.proposalName}
-                                  </a>
-                                ) : (
-                                  v.proposalName
-                                )}
-                              </td>
-                              <td className="py-2 text-right text-gray-400 whitespace-nowrap">
-                                {new Date(v.votedAt).toLocaleDateString('pt-BR')}
-                              </td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                    {data.voting.length > 100 && (
-                      <p className="text-xs text-gray-400 mt-3">
-                        Exibindo 100 de {data.voting.length} votações.
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
+                              )}
+                              {i === 99 && data.voting.length > 100 && null}
+                            </td>
+                            <td className="py-3 font-mono text-[10px] tabular-nums text-ink-soft text-right whitespace-nowrap align-top">
+                              {new Date(v.votedAt).toLocaleDateString('pt-BR')}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                  {data.voting.length > 100 && (
+                    <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-soft tabular-nums">
+                      Exibindo 100 de {data.voting.length.toLocaleString('pt-BR')} votações
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
+          )}
 
-            {/* Patrimônio */}
-            {activeTab === 'assets' && (
-              <div>
-                {data.assets.length === 0 ? (
-                  <div className="py-6 text-center text-gray-400 text-sm">
-                    <p>Declaração de bens disponível após agosto de 2026 (TSE).</p>
-                    <p className="text-xs mt-1 text-gray-300">Os dados do TSE ficam disponíveis após o prazo de registro de candidatos.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {data.assets.map((a) => (
-                      <div key={a.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div>
-                          <p className="font-semibold text-gray-900">{a.year}</p>
-                          {a.variation !== null && (
-                            <p className={`text-xs mt-0.5 ${a.variation >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {a.variation >= 0 ? '+' : ''}{fmt(a.variation)} vs. ano anterior
-                            </p>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-gray-900 text-lg">{fmt(a.totalValue)}</p>
-                          {a.sourceUrl && (
-                            <a
-                              href={a.sourceUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-brand-500 hover:underline"
-                            >
-                              TSE ↗
-                            </a>
-                          )}
-                        </div>
+          {/* Patrimônio */}
+          {activeTab === 'assets' && (
+            <>
+              {data.assets.length === 0 ? (
+                <EmptyState
+                  primary="Declaração de bens disponível após agosto de 2026."
+                  secondary="Dados do TSE ficam públicos após o prazo de registro de candidaturas."
+                />
+              ) : (
+                <ol className="border-t border-ink/25">
+                  {data.assets.map((a) => (
+                    <li
+                      key={a.id}
+                      className="border-b border-ink/20 py-6 flex items-baseline justify-between gap-6"
+                    >
+                      <div>
+                        <p className="font-serif text-3xl md:text-4xl tabular-nums leading-none tracking-[-0.02em]">
+                          {a.year}
+                        </p>
+                        {a.variation !== null && (
+                          <p
+                            className={
+                              'mt-2 font-mono text-[10px] uppercase tracking-[0.22em] ' +
+                              (a.variation >= 0
+                                ? 'text-emerald-800'
+                                : 'text-ember')
+                            }
+                          >
+                            {a.variation >= 0 ? '▲ ' : '▼ '}
+                            {fmtBRL(Math.abs(a.variation))} vs ano anterior
+                          </p>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+                      <div className="text-right">
+                        <p className="font-serif text-2xl md:text-3xl tabular-nums leading-none">
+                          {fmtBRL(a.totalValue)}
+                        </p>
+                        {a.sourceUrl && (
+                          <a
+                            href={a.sourceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="focus-editorial mt-2 inline-block font-mono text-[10px] uppercase tracking-[0.22em] text-ember hover:underline underline-offset-4"
+                          >
+                            TSE ↗
+                          </a>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </>
+          )}
 
-            {/* Financiamento */}
-            {activeTab === 'financing' && (
-              <div>
-                {!data.financing ? (
-                  <div className="py-6 text-center text-gray-400 text-sm">
-                    <p>Dados de financiamento disponíveis após agosto de 2026 (TSE).</p>
-                    <p className="text-xs mt-1 text-gray-300">Os dados do TSE ficam disponíveis após o prazo de registro de candidatos.</p>
+          {/* Financiamento */}
+          {activeTab === 'financing' && (
+            <>
+              {!data.financing ? (
+                <EmptyState
+                  primary="Dados de financiamento disponíveis após agosto de 2026."
+                  secondary="Dados do TSE ficam públicos após o prazo de registro de candidaturas."
+                />
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-ink/20 border-y-2 border-ink">
+                  <div className="p-6 md:p-8">
+                    <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-muted mb-3">
+                      Total arrecadado
+                    </p>
+                    <p className="font-serif text-4xl md:text-5xl tabular-nums leading-none tracking-[-0.02em]">
+                      {fmtBRL(data.financing.totalReceived)}
+                    </p>
                   </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 bg-green-50 rounded-lg">
-                        <p className="text-xs text-green-600 font-medium mb-1">Total Arrecadado</p>
-                        <p className="text-xl font-bold text-green-900">{fmt(data.financing.totalReceived)}</p>
-                      </div>
-                      <div className="p-4 bg-orange-50 rounded-lg">
-                        <p className="text-xs text-orange-600 font-medium mb-1">Total Gasto</p>
-                        <p className="text-xl font-bold text-orange-900">{fmt(data.financing.totalSpent)}</p>
-                      </div>
-                    </div>
-                    {data.financing.sourceUrl && (
-                      <a
-                        href={data.financing.sourceUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-brand-500 hover:underline block"
-                      >
-                        Ver dados completos no TSE ↗
-                      </a>
-                    )}
+                  <div className="p-6 md:p-8">
+                    <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ember mb-3">
+                      Total gasto
+                    </p>
+                    <p className="font-serif text-4xl md:text-5xl tabular-nums leading-none tracking-[-0.02em] text-ember">
+                      {fmtBRL(data.financing.totalSpent)}
+                    </p>
                   </div>
-                )}
-              </div>
-            )}
-          </>
-        )}
-      </div>
+                  {data.financing.sourceUrl && (
+                    <a
+                      href={data.financing.sourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="focus-editorial col-span-full px-6 md:px-8 py-3 font-mono text-[10px] uppercase tracking-[0.22em] text-ember hover:underline underline-offset-4 border-t border-ink/20"
+                    >
+                      Dados completos no TSE ↗
+                    </a>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function EmptyState({
+  primary,
+  secondary,
+}: {
+  primary: string
+  secondary: string
+}) {
+  return (
+    <div className="border border-dashed border-ink/30 py-14 px-6 text-center">
+      <p className="font-serif italic text-xl text-ink-muted text-pretty max-w-lg mx-auto">
+        {primary}
+      </p>
+      <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-soft">
+        {secondary}
+      </p>
     </div>
   )
 }

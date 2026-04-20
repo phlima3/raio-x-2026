@@ -17,12 +17,13 @@ export function ProposalsSection({ proposals, initialTema }: Props) {
 
   if (proposals.length === 0) {
     return (
-      <div className="bg-white rounded-xl border border-dashed border-gray-200 p-8 text-center text-gray-400 text-sm">
-        Propostas serão adicionadas após as convenções partidárias (julho de 2026).
-        <br />
-        <span className="text-xs mt-1 block">
-          Os dados são coletados dos sites e programas de governo dos candidatos.
-        </span>
+      <div className="border border-dashed border-ink/30 py-14 px-6 text-center">
+        <p className="font-serif italic text-xl text-ink-muted text-pretty max-w-md mx-auto">
+          Propostas serão adicionadas após as convenções partidárias (julho de 2026).
+        </p>
+        <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-soft">
+          Fonte: sites e programas de governo dos candidatos
+        </p>
       </div>
     )
   }
@@ -35,7 +36,6 @@ export function ProposalsSection({ proposals, initialTema }: Props) {
     ? proposals.filter((p) => (p.category ?? 'Outros') === activeTema)
     : proposals
 
-  // Group by category for "all" view
   const grouped: Record<string, Proposal[]> = {}
   for (const p of filtered) {
     const key = p.category ?? 'Outros'
@@ -54,49 +54,68 @@ export function ProposalsSection({ proposals, initialTema }: Props) {
   return (
     <div>
       {categories.length > 1 && (
-        <div className="flex flex-wrap gap-2 mb-5">
+        <div
+          role="toolbar"
+          aria-label="Filtrar por tema"
+          className="mb-10 flex flex-wrap items-center gap-x-5 gap-y-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-muted border-y border-ink/20 py-2"
+        >
+          <span className="text-ink-muted">Tema</span>
           <button
+            type="button"
             onClick={() => handleTema('')}
-            className={`text-xs px-4 py-1.5 rounded-full font-medium transition-colors ${
-              !activeTema
-                ? 'bg-brand-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
+            aria-pressed={!activeTema}
+            className={
+              'focus-editorial transition-colors border-b py-1.5 ' +
+              (!activeTema
+                ? 'text-ember border-ember'
+                : 'border-transparent hover:text-ember hover:border-ember')
+            }
           >
             Todas
           </button>
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => handleTema(cat)}
-              className={`text-xs px-4 py-1.5 rounded-full font-medium transition-colors ${
-                activeTema === cat
-                  ? 'bg-brand-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+          {categories.map((cat) => {
+            const active = activeTema === cat
+            return (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => handleTema(cat)}
+                aria-pressed={active}
+                className={
+                  'focus-editorial transition-colors border-b py-1.5 ' +
+                  (active
+                    ? 'text-ember border-ember'
+                    : 'border-transparent hover:text-ember hover:border-ember')
+                }
+              >
+                {cat}
+              </button>
+            )
+          })}
         </div>
       )}
 
-      <div className="space-y-8">
+      <div className="space-y-14">
         {Object.entries(grouped).map(([category, categoryProposals]) => (
-          <div key={category}>
+          <section key={category} aria-labelledby={`cat-${category}`}>
             {!activeTema && (
-              <h3 className="text-base font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                <span className="inline-block w-1 h-4 bg-brand-500 rounded-full" />
+              <h3
+                id={`cat-${category}`}
+                className="font-mono text-[11px] uppercase tracking-[0.28em] text-ember mb-5 flex items-baseline gap-3"
+              >
+                <span className="inline-block w-6 h-px bg-ember align-middle" />
                 {category}
-                <span className="text-xs text-gray-400 font-normal">
+                <span className="text-ink-soft tabular-nums">
                   ({categoryProposals.length})
                 </span>
               </h3>
             )}
-            {categoryProposals.map((p) => (
-              <ProposalBlock key={p.id} {...p} />
-            ))}
-          </div>
+            <div className="border-t border-ink/20">
+              {categoryProposals.map((p) => (
+                <ProposalBlock key={p.id} {...p} />
+              ))}
+            </div>
+          </section>
         ))}
       </div>
     </div>

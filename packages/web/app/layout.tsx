@@ -1,9 +1,26 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Bodoni_Moda, JetBrains_Mono } from 'next/font/google'
 import { Navbar } from '@/components/Navbar'
+import { Footer } from '@/components/Footer'
 import './globals.css'
 
-const inter = Inter({ subsets: ['latin'], display: 'swap' })
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+})
+const bodoni = Bodoni_Moda({
+  subsets: ['latin'],
+  variable: '--font-serif',
+  display: 'swap',
+  style: ['normal', 'italic'],
+  weight: ['400', '500', '600', '700', '800'],
+})
+const mono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: {
@@ -22,16 +39,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={inter.className}>
-      <body className="min-h-screen bg-gray-50 text-gray-900 antialiased flex flex-col">
+    <html lang="pt-BR" className={`${inter.variable} ${bodoni.variable} ${mono.variable}`}>
+      <body className="min-h-screen bg-paper-light text-ink antialiased flex flex-col font-sans">
         <Navbar />
         <main className="flex-1">{children}</main>
-        <footer className="border-t border-gray-200 bg-white mt-12">
-          <div className="container mx-auto px-4 py-6 text-center text-xs text-gray-400">
-            Dados públicos: TSE · Câmara dos Deputados · Senado Federal.
-            Projeto independente, sem fins eleitorais.
-          </div>
-        </footer>
+        <Footer />
       </body>
     </html>
   )
