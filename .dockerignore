@@ -1,0 +1,36 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Build artifacts
+**/dist
+**/build
+**/.next
+**/out
+**/.turbo
+
+# TypeScript incremental cache (confunde buildkit cache mounts)
+**/*.tsbuildinfo
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Logs & editor
+**/*.log
+.DS_Store
+.vscode
+.idea
+
+# Git
+.git
+.gitignore
+
+# Tests
+**/playwright-report
+**/test-results
+**/coverage
+
+# Session notes
+NEXT_SESSION.md
