@@ -49,13 +49,9 @@ jobs:
         working-directory: packages/scraper
         run: pnpm install --frozen-lockfile
 
-      - name: Install API deps (for Prisma)
-        working-directory: packages/api
-        run: pnpm install --frozen-lockfile
-
       - name: Generate Prisma client
-        working-directory: packages/api
-        run: pnpm prisma generate
+        working-directory: packages/scraper
+        run: pnpm prisma:generate
 
       - name: Populate real data (link senators + scrape sites)
         working-directory: packages/scraper
@@ -90,13 +86,9 @@ jobs:
         working-directory: packages/scraper
         run: pnpm install --frozen-lockfile
 
-      - name: Install API deps (for Prisma)
-        working-directory: packages/api
-        run: pnpm install --frozen-lockfile
-
       - name: Generate Prisma client
-        working-directory: packages/api
-        run: pnpm prisma generate
+        working-directory: packages/scraper
+        run: pnpm prisma:generate
 
       - name: Run daily sync
         working-directory: packages/scraper
@@ -135,13 +127,9 @@ jobs:
         working-directory: packages/scraper
         run: pnpm install --frozen-lockfile
 
-      - name: Install API deps (for Prisma)
-        working-directory: packages/api
-        run: pnpm install --frozen-lockfile
-
       - name: Generate Prisma client
-        working-directory: packages/api
-        run: pnpm prisma generate
+        working-directory: packages/scraper
+        run: pnpm prisma:generate
 
       - name: Scrape candidate sites + process proposals
         working-directory: packages/scraper
@@ -175,13 +163,9 @@ jobs:
         working-directory: packages/scraper
         run: pnpm install --frozen-lockfile
 
-      - name: Install API deps (for Prisma)
-        working-directory: packages/api
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Generate Prisma client (api)
-        working-directory: packages/api
-        run: pnpm prisma generate
+      - name: Generate Prisma client
+        working-directory: packages/scraper
+        run: pnpm prisma:generate
 
       - name: Import Gemini research data (includes Renan preflight fix)
         working-directory: packages/scraper
@@ -210,13 +194,9 @@ jobs:
         working-directory: packages/scraper
         run: pnpm install --frozen-lockfile
 
-      - name: Install API deps (for Prisma)
-        working-directory: packages/api
-        run: pnpm install --frozen-lockfile
-
       - name: Generate Prisma client
-        working-directory: packages/api
-        run: pnpm prisma generate
+        working-directory: packages/scraper
+        run: pnpm prisma:generate
 
       - name: Run weekly news sync
         working-directory: packages/scraper
@@ -247,13 +227,9 @@ jobs:
         working-directory: packages/scraper
         run: pnpm install --frozen-lockfile
 
-      - name: Install API deps (for Prisma)
-        working-directory: packages/api
-        run: pnpm install --frozen-lockfile
-
       - name: Generate Prisma client
-        working-directory: packages/api
-        run: pnpm prisma generate
+        working-directory: packages/scraper
+        run: pnpm prisma:generate
 
       - name: Import TSE histórico (bens 2018/2022)
         working-directory: packages/scraper
@@ -278,31 +254,13 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install scraper deps (skip postinstall to avoid prisma auto-install conflict)
+      - name: Install dependencies
         working-directory: packages/scraper
-        run: pnpm install --ignore-scripts
-
-      - name: Install API deps (for Prisma)
-        working-directory: packages/api
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Generate Prisma client
-        working-directory: packages/api
-        run: pnpm prisma generate
-
-      - name: Copy Prisma client into scraper
-        run: |
-          API_CLIENT=$(find packages/api/node_modules -path '*/.prisma/client/index.js' -type f | head -1)
-          if [ -n "$API_CLIENT" ]; then
-            SRC_DIR="$(dirname "$API_CLIENT")"
-            mkdir -p packages/scraper/node_modules/.prisma/client
-            cp -r "$SRC_DIR/"* packages/scraper/node_modules/.prisma/client/
-            echo "Copied Prisma client to packages/scraper/node_modules/.prisma/client"
-            ls packages/scraper/node_modules/.prisma/client/ | head -5
-          else
-            echo "ERROR: Could not find Prisma client in API"
-            exit 1
-          fi
+        working-directory: packages/scraper
+        run: pnpm prisma:generate
 
       - name: Import TSE financiamento (receitas+despesas 2018/2022)
         working-directory: packages/scraper

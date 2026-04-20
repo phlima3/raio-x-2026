@@ -20,7 +20,7 @@
     "news:weekly": "tsx src/jobs/weeklyNews.ts",
     "import:tse": "tsx src/jobs/importTseHistorico.ts",
     "import:financiamento": "tsx src/jobs/importTseFinanciamento.ts",
-    "postinstall": "prisma generate --schema=../api/prisma/schema.prisma"
+    "prisma:generate": "prisma generate --schema=../api/prisma/schema.prisma"
   },
   "dependencies": {
     "@google/generative-ai": "^0.14.1",
