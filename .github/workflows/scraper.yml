@@ -59,15 +59,21 @@ jobs:
 
       - name: Copy Prisma client into scraper
         run: |
-          API_CLIENT=$(find packages/api/node_modules -path '*/.prisma/client/index.js' -type f | head -1)
-          if [ -z "$API_CLIENT" ]; then
+          SRC=$(find packages/api/node_modules -path '*/.prisma/client/index.js' -type f | head -1)
+          if [ -z "$SRC" ]; then
             echo "ERROR: Prisma client not generated in API"
             exit 1
           fi
-          SRC_DIR="$(dirname "$API_CLIENT")"
-          mkdir -p packages/scraper/node_modules/.prisma/client
-          cp -r "$SRC_DIR/"* packages/scraper/node_modules/.prisma/client/
-          echo "Copied Prisma client from $SRC_DIR"
+          SRC_DIR="$(dirname "$SRC")"
+          echo "Generated client: $SRC_DIR"
+          # Em pnpm, @prisma/client é symlink para .pnpm store; .prisma/client precisa ficar adjacente
+          find packages/scraper/node_modules -type d -name "client" -path "*/@prisma/client" | while read CLIENT_DIR; do
+            PARENT="$(dirname "$(dirname "$CLIENT_DIR")")"  # sobe 2 níveis: .../node_modules
+            TARGET="$PARENT/.prisma/client"
+            mkdir -p "$TARGET"
+            cp -r "$SRC_DIR/"* "$TARGET/"
+            echo "Copied to $TARGET"
+          done
 
       - name: Populate real data (link senators + scrape sites)
         working-directory: packages/scraper
@@ -112,15 +118,21 @@ jobs:
 
       - name: Copy Prisma client into scraper
         run: |
-          API_CLIENT=$(find packages/api/node_modules -path '*/.prisma/client/index.js' -type f | head -1)
-          if [ -z "$API_CLIENT" ]; then
+          SRC=$(find packages/api/node_modules -path '*/.prisma/client/index.js' -type f | head -1)
+          if [ -z "$SRC" ]; then
             echo "ERROR: Prisma client not generated in API"
             exit 1
           fi
-          SRC_DIR="$(dirname "$API_CLIENT")"
-          mkdir -p packages/scraper/node_modules/.prisma/client
-          cp -r "$SRC_DIR/"* packages/scraper/node_modules/.prisma/client/
-          echo "Copied Prisma client from $SRC_DIR"
+          SRC_DIR="$(dirname "$SRC")"
+          echo "Generated client: $SRC_DIR"
+          # Em pnpm, @prisma/client é symlink para .pnpm store; .prisma/client precisa ficar adjacente
+          find packages/scraper/node_modules -type d -name "client" -path "*/@prisma/client" | while read CLIENT_DIR; do
+            PARENT="$(dirname "$(dirname "$CLIENT_DIR")")"  # sobe 2 níveis: .../node_modules
+            TARGET="$PARENT/.prisma/client"
+            mkdir -p "$TARGET"
+            cp -r "$SRC_DIR/"* "$TARGET/"
+            echo "Copied to $TARGET"
+          done
 
       - name: Run daily sync
         working-directory: packages/scraper
@@ -169,15 +181,21 @@ jobs:
 
       - name: Copy Prisma client into scraper
         run: |
-          API_CLIENT=$(find packages/api/node_modules -path '*/.prisma/client/index.js' -type f | head -1)
-          if [ -z "$API_CLIENT" ]; then
+          SRC=$(find packages/api/node_modules -path '*/.prisma/client/index.js' -type f | head -1)
+          if [ -z "$SRC" ]; then
             echo "ERROR: Prisma client not generated in API"
             exit 1
           fi
-          SRC_DIR="$(dirname "$API_CLIENT")"
-          mkdir -p packages/scraper/node_modules/.prisma/client
-          cp -r "$SRC_DIR/"* packages/scraper/node_modules/.prisma/client/
-          echo "Copied Prisma client from $SRC_DIR"
+          SRC_DIR="$(dirname "$SRC")"
+          echo "Generated client: $SRC_DIR"
+          # Em pnpm, @prisma/client é symlink para .pnpm store; .prisma/client precisa ficar adjacente
+          find packages/scraper/node_modules -type d -name "client" -path "*/@prisma/client" | while read CLIENT_DIR; do
+            PARENT="$(dirname "$(dirname "$CLIENT_DIR")")"  # sobe 2 níveis: .../node_modules
+            TARGET="$PARENT/.prisma/client"
+            mkdir -p "$TARGET"
+            cp -r "$SRC_DIR/"* "$TARGET/"
+            echo "Copied to $TARGET"
+          done
 
       - name: Scrape candidate sites + process proposals
         working-directory: packages/scraper
@@ -221,15 +239,21 @@ jobs:
 
       - name: Copy Prisma client into scraper
         run: |
-          API_CLIENT=$(find packages/api/node_modules -path '*/.prisma/client/index.js' -type f | head -1)
-          if [ -z "$API_CLIENT" ]; then
+          SRC=$(find packages/api/node_modules -path '*/.prisma/client/index.js' -type f | head -1)
+          if [ -z "$SRC" ]; then
             echo "ERROR: Prisma client not generated in API"
             exit 1
           fi
-          SRC_DIR="$(dirname "$API_CLIENT")"
-          mkdir -p packages/scraper/node_modules/.prisma/client
-          cp -r "$SRC_DIR/"* packages/scraper/node_modules/.prisma/client/
-          echo "Copied Prisma client from $SRC_DIR"
+          SRC_DIR="$(dirname "$SRC")"
+          echo "Generated client: $SRC_DIR"
+          # Em pnpm, @prisma/client é symlink para .pnpm store; .prisma/client precisa ficar adjacente
+          find packages/scraper/node_modules -type d -name "client" -path "*/@prisma/client" | while read CLIENT_DIR; do
+            PARENT="$(dirname "$(dirname "$CLIENT_DIR")")"  # sobe 2 níveis: .../node_modules
+            TARGET="$PARENT/.prisma/client"
+            mkdir -p "$TARGET"
+            cp -r "$SRC_DIR/"* "$TARGET/"
+            echo "Copied to $TARGET"
+          done
 
       - name: Import Gemini research data (includes Renan preflight fix)
         working-directory: packages/scraper
@@ -268,15 +292,21 @@ jobs:
 
       - name: Copy Prisma client into scraper
         run: |
-          API_CLIENT=$(find packages/api/node_modules -path '*/.prisma/client/index.js' -type f | head -1)
-          if [ -z "$API_CLIENT" ]; then
+          SRC=$(find packages/api/node_modules -path '*/.prisma/client/index.js' -type f | head -1)
+          if [ -z "$SRC" ]; then
             echo "ERROR: Prisma client not generated in API"
             exit 1
           fi
-          SRC_DIR="$(dirname "$API_CLIENT")"
-          mkdir -p packages/scraper/node_modules/.prisma/client
-          cp -r "$SRC_DIR/"* packages/scraper/node_modules/.prisma/client/
-          echo "Copied Prisma client from $SRC_DIR"
+          SRC_DIR="$(dirname "$SRC")"
+          echo "Generated client: $SRC_DIR"
+          # Em pnpm, @prisma/client é symlink para .pnpm store; .prisma/client precisa ficar adjacente
+          find packages/scraper/node_modules -type d -name "client" -path "*/@prisma/client" | while read CLIENT_DIR; do
+            PARENT="$(dirname "$(dirname "$CLIENT_DIR")")"  # sobe 2 níveis: .../node_modules
+            TARGET="$PARENT/.prisma/client"
+            mkdir -p "$TARGET"
+            cp -r "$SRC_DIR/"* "$TARGET/"
+            echo "Copied to $TARGET"
+          done
 
       - name: Run weekly news sync
         working-directory: packages/scraper
@@ -317,15 +347,21 @@ jobs:
 
       - name: Copy Prisma client into scraper
         run: |
-          API_CLIENT=$(find packages/api/node_modules -path '*/.prisma/client/index.js' -type f | head -1)
-          if [ -z "$API_CLIENT" ]; then
+          SRC=$(find packages/api/node_modules -path '*/.prisma/client/index.js' -type f | head -1)
+          if [ -z "$SRC" ]; then
             echo "ERROR: Prisma client not generated in API"
             exit 1
           fi
-          SRC_DIR="$(dirname "$API_CLIENT")"
-          mkdir -p packages/scraper/node_modules/.prisma/client
-          cp -r "$SRC_DIR/"* packages/scraper/node_modules/.prisma/client/
-          echo "Copied Prisma client from $SRC_DIR"
+          SRC_DIR="$(dirname "$SRC")"
+          echo "Generated client: $SRC_DIR"
+          # Em pnpm, @prisma/client é symlink para .pnpm store; .prisma/client precisa ficar adjacente
+          find packages/scraper/node_modules -type d -name "client" -path "*/@prisma/client" | while read CLIENT_DIR; do
+            PARENT="$(dirname "$(dirname "$CLIENT_DIR")")"  # sobe 2 níveis: .../node_modules
+            TARGET="$PARENT/.prisma/client"
+            mkdir -p "$TARGET"
+            cp -r "$SRC_DIR/"* "$TARGET/"
+            echo "Copied to $TARGET"
+          done
 
       - name: Import TSE histórico (bens 2018/2022)
         working-directory: packages/scraper
@@ -364,15 +400,21 @@ jobs:
 
       - name: Copy Prisma client into scraper
         run: |
-          API_CLIENT=$(find packages/api/node_modules -path '*/.prisma/client/index.js' -type f | head -1)
-          if [ -z "$API_CLIENT" ]; then
+          SRC=$(find packages/api/node_modules -path '*/.prisma/client/index.js' -type f | head -1)
+          if [ -z "$SRC" ]; then
             echo "ERROR: Prisma client not generated in API"
             exit 1
           fi
-          SRC_DIR="$(dirname "$API_CLIENT")"
-          mkdir -p packages/scraper/node_modules/.prisma/client
-          cp -r "$SRC_DIR/"* packages/scraper/node_modules/.prisma/client/
-          echo "Copied Prisma client from $SRC_DIR"
+          SRC_DIR="$(dirname "$SRC")"
+          echo "Generated client: $SRC_DIR"
+          # Em pnpm, @prisma/client é symlink para .pnpm store; .prisma/client precisa ficar adjacente
+          find packages/scraper/node_modules -type d -name "client" -path "*/@prisma/client" | while read CLIENT_DIR; do
+            PARENT="$(dirname "$(dirname "$CLIENT_DIR")")"  # sobe 2 níveis: .../node_modules
+            TARGET="$PARENT/.prisma/client"
+            mkdir -p "$TARGET"
+            cp -r "$SRC_DIR/"* "$TARGET/"
+            echo "Copied to $TARGET"
+          done
 
       - name: Import TSE financiamento (receitas+despesas 2018/2022)
         working-directory: packages/scraper
