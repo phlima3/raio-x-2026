@@ -1,48 +1,32 @@
-name: Deploy Web (Vercel)
+name: Deploy Web (Veloz)
 
 on:
   push:
     branches: [main]
     paths:
       - 'packages/web/**'
+      - 'veloz.json'
       - '.github/workflows/deploy-web.yml'
 
 jobs:
   deploy:
-    name: Deploy to Vercel
+    name: Deploy to Veloz
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Install Vercel CLI
-        run: npm install -g vercel@latest
+      - name: Install Veloz CLI
+        run: npm install -g onveloz
 
-      - name: Pull Vercel environment
-        working-directory: packages/web
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Authenticate
+        run: veloz login --api-key "$VELOZ_API_KEY"
         env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_WEB }}
+          VELOZ_API_KEY: ${{ secrets.VELOZ_API_KEY }}
 
-      - name: Build project
-        working-directory: packages/web
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_WEB }}
-
-      - name: Deploy to production
-        working-directory: packages/web
-        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_WEB }}
+      - name: Deploy Web service
+        run: veloz deploy --service web --yes
