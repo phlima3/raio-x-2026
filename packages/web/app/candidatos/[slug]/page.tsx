@@ -9,6 +9,7 @@ import { ConsistencyPanel } from '@/components/ConsistencyPanel'
 import { NewsPanel } from '@/components/NewsPanel'
 import { ApprovalMeter } from '@/components/ApprovalMeter'
 import { SectionNav } from '@/components/SectionNav'
+import { TrackCandidateView } from '@/components/TrackCandidateView'
 
 interface Props {
   params: { slug: string }
@@ -72,6 +73,13 @@ export default async function CandidatePage({ params, searchParams }: Props) {
 
   return (
     <div className="paper-grain text-ink">
+      <TrackCandidateView
+        slug={candidate.slug}
+        name={candidate.name}
+        party={candidate.party}
+        state={candidate.state}
+        position={candidate.position}
+      />
       {/* ——— Top strip — breadcrumb + marker ——— */}
       <div className="border-y border-ink/25 bg-paper-light/60">
         <div className="container mx-auto px-4 md:px-6 py-2.5 flex items-center justify-between gap-4 font-mono text-[10px] md:text-[11px] uppercase tracking-[0.22em] text-ink-muted">

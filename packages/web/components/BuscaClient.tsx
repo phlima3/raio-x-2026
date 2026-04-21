@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'reac
 import { useRouter } from 'next/navigation'
 import { CandidateCard } from './CandidateCard'
 import { EditorialSelect, type SelectOption } from './EditorialSelect'
+import { track } from '@/lib/analytics'
 
 interface Candidate {
   id: string
@@ -89,6 +90,14 @@ export function BuscaClient({
         setCandidates(json.data ?? [])
         setTotal(json.meta?.total ?? json.data?.length ?? 0)
         setGeneration((g) => g + 1)
+        if (search || pos || st) {
+          track('search', {
+            query: search || null,
+            position: pos || null,
+            state: st || null,
+            results: json.meta?.total ?? json.data?.length ?? 0,
+          })
+        }
       }
     } catch {
       // keep current results on error

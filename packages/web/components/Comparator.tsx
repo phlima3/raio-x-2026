@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react
 import { useRouter, useSearchParams } from 'next/navigation'
 import type { CandidateSummary, ComparisonResult } from '@/lib/types'
 import { ProposalBlock } from './ProposalBlock'
+import { track } from '@/lib/analytics'
 
 interface ComparisonData {
   candidateA: CandidateSummary
@@ -56,8 +57,14 @@ export function Comparator({ candidateSlugA, candidateSlugB, topic }: Comparator
     try {
       const res = await fetch(`${API_BASE}/api/comparison?${params}`)
       const json = await res.json()
-      if (json.success) setData(json.data)
-      else setError(json.error ?? 'Erro ao carregar comparação')
+      if (json.success) {
+        setData(json.data)
+        track('compare', {
+          candidateA: candidateSlugA,
+          candidateB: candidateSlugB,
+          topic: activeTopic || null,
+        })
+      } else setError(json.error ?? 'Erro ao carregar comparação')
     } catch {
       setError('Falha de conexão com a API')
     } finally {
