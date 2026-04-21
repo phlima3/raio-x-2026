@@ -1,5 +1,5 @@
 import Image from 'next/image'
-import Link from 'next/link'
+import { ViewTransitionLink } from './ViewTransitionLink'
 
 const POSITION_LABELS: Record<string, string> = {
   PRESIDENTE: 'Presidente',
@@ -25,12 +25,23 @@ interface CandidateCardProps {
   approvalRate?: number | null
   firstProposalTitle?: string | null
   slug: string
+  index?: number
 }
 
-function approvalBadgeClass(rate: number): string {
-  if (rate >= 50) return 'bg-green-50 text-green-700'
-  if (rate >= 35) return 'bg-yellow-50 text-yellow-700'
-  return 'bg-red-50 text-red-700'
+function approvalTone(rate: number): string {
+  if (rate >= 50) return 'text-civic-green'
+  if (rate >= 35) return 'text-ink-muted'
+  return 'text-ember'
+}
+
+function initialsFor(name: string): string {
+  return name
+    .split(' ')
+    .filter((w) => w.length > 2)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
 }
 
 export function CandidateCard({
@@ -44,91 +55,104 @@ export function CandidateCard({
   approvalRate,
   firstProposalTitle,
   slug,
+  index,
 }: CandidateCardProps) {
-  const initials = name
-    .split(' ')
-    .filter((w) => w.length > 2)
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase()
+  const initials = initialsFor(name)
 
   return (
-    <Link href={`/candidatos/${slug}`} className="group block">
-      <article className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:border-brand-200 transition-all h-full flex flex-col">
-        {/* Photo / Avatar */}
-        <div className="flex items-start gap-4 mb-3">
-          <div className="relative w-14 h-14 rounded-full overflow-hidden bg-brand-100 flex-shrink-0 flex items-center justify-center">
+    <ViewTransitionLink
+      href={`/candidatos/${slug}`}
+      className="focus-editorial group block"
+    >
+      <article className="flex flex-col h-full border-b border-ink/15 pb-5 pt-4 hover:bg-paper-light/50 transition-colors px-2">
+        {index != null && (
+          <span className="font-mono text-[10px] tracking-[0.18em] text-ink-soft tabular-nums mb-2">
+            {String(index).padStart(2, '0')}
+          </span>
+        )}
+
+        <div className="flex items-start gap-3">
+          <div
+            className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden bg-ember/10 border border-ink/15 shrink-0"
+            style={{ viewTransitionName: `photo-${slug}` }}
+          >
             {photoUrl ? (
               <Image
                 src={photoUrl}
                 alt={name}
                 fill
                 sizes="56px"
-                className="object-cover"
+                className="object-cover grayscale contrast-110 group-hover:grayscale-0 transition-all duration-700"
                 unoptimized
               />
             ) : (
-              <span className="text-lg font-bold text-brand-600">{initials}</span>
+              <span className="flex items-center justify-center w-full h-full font-serif text-base text-ember">
+                {initials}
+              </span>
             )}
           </div>
 
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 leading-tight truncate group-hover:text-brand-700 transition-colors">
+            <h3
+              className="font-serif text-lg sm:text-xl leading-tight tracking-[-0.01em] group-hover:text-ember transition-colors line-clamp-2"
+              style={{ viewTransitionName: `name-${slug}` }}
+            >
               {name}
             </h3>
-            <p className="text-sm text-gray-500 mt-0.5">
-              <span className="font-medium text-gray-700">{party}</span>
-              {' · '}
-              {state}
+            <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-muted">
+              {party} · {state}
+              {ballotNumber ? (
+                <>
+                  <span className="mx-1.5 text-ink-soft">·</span>Nº{' '}
+                  <span className="tabular-nums">{ballotNumber}</span>
+                </>
+              ) : null}
             </p>
-            {firstProposalTitle && (
-              <p className="text-xs text-gray-400 mt-1 truncate">
-                {firstProposalTitle}
-              </p>
-            )}
           </div>
         </div>
 
-        {/* Position + badges */}
-        <div className="flex flex-wrap items-center gap-2 mt-auto pt-3 border-t border-gray-50">
-          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+        {firstProposalTitle && (
+          <p className="mt-2.5 font-serif italic text-[13px] text-ink-muted line-clamp-2 leading-snug pl-[60px] sm:pl-[68px]">
+            <span className="text-ember not-italic mr-0.5">&ldquo;</span>
+            {firstProposalTitle}
+            <span className="text-ember not-italic ml-0.5">&rdquo;</span>
+          </p>
+        )}
+
+        <div className="flex flex-wrap items-center gap-2 mt-auto pt-3 pl-[60px] sm:pl-[68px]">
+          <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-soft border border-ink/15 px-2 py-0.5">
             {POSITION_LABELS[position] ?? position}
           </span>
           {isIncumbent && (
-            <span className="text-xs bg-brand-50 text-brand-700 px-2 py-0.5 rounded-full font-medium">
+            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-ember border border-ember/30 px-2 py-0.5">
               Incumbente
             </span>
           )}
           {approvalRate != null && (
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${approvalBadgeClass(approvalRate)}`}>
-              {approvalRate}% aprovação
-            </span>
-          )}
-          {ballotNumber && (
-            <span className="text-xs text-gray-400 ml-auto">
-              Nº {ballotNumber}
+            <span className={`font-mono text-[10px] uppercase tracking-[0.14em] tabular-nums ml-auto ${approvalTone(approvalRate)}`}>
+              {approvalRate}% aprov.
             </span>
           )}
         </div>
       </article>
-    </Link>
+    </ViewTransitionLink>
   )
 }
 
 export function CandidateCardSkeleton() {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 animate-pulse">
-      <div className="flex items-start gap-4 mb-3">
-        <div className="w-14 h-14 rounded-full bg-gray-200 flex-shrink-0" />
+    <div className="border-b border-ink/10 pb-5 pt-4 px-2 animate-pulse">
+      <div className="h-3 w-6 bg-ink/10 mb-2" />
+      <div className="flex items-start gap-3">
+        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-ink/10 shrink-0" />
         <div className="flex-1 min-w-0 space-y-2 pt-1">
-          <div className="h-4 bg-gray-200 rounded w-3/4" />
-          <div className="h-3 bg-gray-100 rounded w-1/2" />
+          <div className="h-5 bg-ink/10 w-3/4" />
+          <div className="h-3 bg-ink/[0.06] w-1/2" />
         </div>
       </div>
-      <div className="pt-3 border-t border-gray-50 flex gap-2">
-        <div className="h-5 bg-gray-100 rounded-full w-20" />
-        <div className="h-5 bg-gray-100 rounded-full w-16" />
+      <div className="mt-3 pl-[60px] sm:pl-[68px] flex gap-2">
+        <div className="h-4 bg-ink/[0.06] w-20" />
+        <div className="h-4 bg-ink/[0.06] w-14" />
       </div>
     </div>
   )
