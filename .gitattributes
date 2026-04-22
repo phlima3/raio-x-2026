@@ -1,0 +1,9 @@
+# Força LF em arquivos de shell e texto, independente do OS do commiter
+*.sh         text eol=lf
+*.bash       text eol=lf
+Dockerfile   text eol=lf
+*.yml        text eol=lf
+*.yaml       text eol=lf
+
+# Auto detecção padrão para outros textos
+* text=auto
