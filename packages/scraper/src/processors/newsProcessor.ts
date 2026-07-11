@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { z } from 'zod'
+import { extractJson } from './llm'
 import { logger } from '../utils/logger'
 
 // ── Schema ────────────────────────────────────────────────────────────────────
@@ -16,26 +17,6 @@ const NewsItemSchema = z.object({
 export type RawNewsItem = z.infer<typeof NewsItemSchema>
 
 const NewsItemsSchema = z.array(NewsItemSchema)
-
-// ── JSON extraction ───────────────────────────────────────────────────────────
-
-function extractJson(raw: string): string {
-  const stripped = raw.replace(/```(?:json)?\s*([\s\S]*?)```/g, '$1').trim()
-  const start = stripped.search(/[{[]/)
-  if (start === -1) return stripped
-  let depth = 0
-  let end = -1
-  const open = stripped[start]
-  const close = open === '{' ? '}' : ']'
-  for (let i = start; i < stripped.length; i++) {
-    if (stripped[i] === open) depth++
-    else if (stripped[i] === close) {
-      depth--
-      if (depth === 0) { end = i; break }
-    }
-  }
-  return end !== -1 ? stripped.slice(start, end + 1) : stripped
-}
 
 // ── Gemini client (with Search Grounding) ─────────────────────────────────────
 

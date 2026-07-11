@@ -97,9 +97,11 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5433/raiox2026"
 REDIS_URL="redis://localhost:6379"
 
 # LLM — usar GROQ por padrão (Gemini free tier com problema de quota)
-LLM_PROVIDER=groq
+LLM_PROVIDER=groq     # groq | gemini | ollama
 GROQ_API_KEY=         # console.groq.com — free tier real, funciona na hora
 GEMINI_API_KEY=       # aistudio.google.com — free tier com bug no projeto atual
+# OLLAMA_BASE_URL=http://localhost:11434  # para LLM_PROVIDER=ollama (modelo local)
+# OLLAMA_MODEL=llama3.1:8b
 
 # APIs governamentais (públicas, sem autenticação)
 CAMARA_API_URL=https://dadosabertos.camara.leg.br/api/v2
@@ -134,10 +136,11 @@ cd packages/api && pnpm prisma studio
 
 # Rodar scrapers manualmente
 cd packages/scraper
-pnpm run sync:camara        # sincroniza votações e PLs da Câmara
-pnpm run sync:senado        # sincroniza votações e PLs do Senado
-pnpm run process:proposals  # processa propostas com LLM
-pnpm run sync:all           # todos os jobs
+pnpm run sync:camara             # sincroniza votações e PLs da Câmara
+pnpm run sync:senado             # sincroniza votações e PLs do Senado
+pnpm run process:proposals       # processa propostas com LLM
+pnpm run sync:presidenciaveis    # presidenciáveis + propostas via notícias
+pnpm run sync:all                # todos os jobs
 ```
 
 ---
@@ -266,6 +269,29 @@ URLs verificadas que funcionam:
 - `zema.com.br` → empresa de materiais de construção (não é o político)
 - `tarcisiodefreitas.com.br` → DNS não resolve
 - `eduardoleite.com.br` → timeout
+
+### Sync de presidenciáveis via notícias (2026-07-11)
+
+O cenário presidencial mudou desde o seed: Tarcísio, Eduardo Leite e Ratinho Jr.
+saíram da disputa; Ciro Gomes (PSDB), Joaquim Barbosa (DC) e outros entraram.
+O job `sync:presidenciaveis` (`packages/scraper/src/jobs/syncPresidenciaveis.ts`)
+mantém a lista atualizada a partir de fontes de imprensa curadas
+(`src/data/presidentialSources.ts` — JOTA, Wikipédia, Datafolha, G1):
+
+- Extrai candidatos (nome, partido, status) e propostas atribuídas via LLM
+- Nova coluna `Candidate.candidacyStatus` (`confirmado | pre_candidato | cotado | desistiu`)
+- Quem desistiu **não é deletado** — marcado como `desistiu` (o frontend decide exibir ou não)
+- Merge entre fontes: status mais forte vence; nomes casados por normalização + aliases
+- Propostas viram `Proposal` com `source: "news"` e dedupe por hash do texto
+- GitHub Actions: opção `presidenciaveis` no workflow_dispatch
+
+### Provider Ollama (LLM local)
+
+`LLM_PROVIDER=ollama` roda a extração com um modelo local via Ollama
+(`OLLAMA_BASE_URL`, `OLLAMA_MODEL` — default `llama3.1:8b`). Os prompts são
+compartilhados entre Groq/Gemini/Ollama via `llm/baseProvider.ts`; cada provider
+concreto só implementa `complete(prompt)`. Útil para rodadas longas de scraping
+sem estourar rate limit do Groq.
 
 ### Patrimônio e financiamento: TSE só disponível após agosto 2026
 
