@@ -11,6 +11,7 @@
     "sync:tse": "tsx src/sources/tse.ts",
     "sync:sites": "tsx src/sources/candidateSites.ts",
     "sync:all": "tsx src/jobs/dailySync.ts",
+    "sync:presidenciaveis": "tsx src/jobs/syncPresidenciaveis.ts",
     "process:proposals": "tsx src/jobs/weeklyProposals.ts",
     "populate": "tsx src/jobs/populateRealData.ts",
     "populate:senado": "tsx src/jobs/populateRealData.ts senado",

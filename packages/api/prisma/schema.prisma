@@ -65,6 +65,7 @@ model Candidate {
   isIncumbent     Boolean  @default(false)
   approvalRate    Int?     // Índice de aprovação 0–100
   partyHistory    String[] // Partidos anteriores em ordem cronológica
+  candidacyStatus String?  // confirmado | pre_candidato | cotado | desistiu (sync via notícias)
 
   proposals          Proposal[]
   votingRecords      VotingRecord[]

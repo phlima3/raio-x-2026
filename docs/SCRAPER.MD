@@ -37,6 +37,7 @@ packages/scraper/
 | `dailySync`       | Todo dia às 3h  | Votações + PLs da Câmara e Senado                       |
 | `weeklyProposals` | Domingo às 2h   | Scraping de sites + processamento LLM                   |
 | `tseImport`       | Manual / mensal | Importa CSVs do TSE (candidaturas, bens, financiamento) |
+| `syncPresidenciaveis` | Manual / semanal | Descobre presidenciáveis via notícias (JOTA, G1, Datafolha, Wikipédia) e extrai propostas atribuídas |
 
 ---
 
@@ -49,6 +50,11 @@ cd packages/scraper
 pnpm run sync:camara
 pnpm run sync:senado
 pnpm run process:proposals
+
+# Presidenciáveis via notícias (candidatos + propostas)
+pnpm run sync:presidenciaveis              # tudo
+pnpm run sync:presidenciaveis candidates   # só lista de candidatos
+pnpm run sync:presidenciaveis proposals    # só propostas
 
 # Todos os jobs
 pnpm run sync:all
@@ -73,12 +79,52 @@ pnpm run dev
 Configurado via `LLM_PROVIDER` no `.env`:
 
 ```env
-LLM_PROVIDER=groq   # ou gemini
+LLM_PROVIDER=groq   # ou gemini | ollama
 GROQ_API_KEY=...
 GEMINI_API_KEY=...
+
+# Para rodar com modelo local via Ollama (https://ollama.com):
+# LLM_PROVIDER=ollama
+# OLLAMA_BASE_URL=http://localhost:11434   # default
+# OLLAMA_MODEL=llama3.1:8b                 # default
 ```
 
 O `proposalExtractor.ts` instancia o provider correto automaticamente.
+Os três providers compartilham os mesmos prompts (`llm/baseProvider.ts`) —
+cada provider concreto só implementa `complete(prompt)`.
+
+Modelos Ollama recomendados para extração em PT-BR:
+
+| Modelo         | RAM     | Observação                                |
+| -------------- | ------- | ----------------------------------------- |
+| `llama3.1:8b`  | ~8 GB   | Bom equilíbrio qualidade/velocidade       |
+| `qwen2.5:14b`  | ~16 GB  | Melhor aderência a JSON estruturado       |
+| `llama3.3:70b` | GPU 48G | Qualidade próxima do Groq (lento em CPU)  |
+
+---
+
+## Sync de presidenciáveis via notícias
+
+O job `syncPresidenciaveis` (`src/jobs/syncPresidenciaveis.ts`) mantém a lista de
+candidatos à Presidência atualizada a partir da imprensa, em 3 passos:
+
+1. **Fetch** — baixa as fontes curadas de `src/data/presidentialSources.ts`
+   (JOTA, Wikipédia, Datafolha, G1). Fontes com `requiresBrowser: true` usam
+   Playwright com user agent de navegador real; as demais tentam HTTP simples primeiro.
+2. **Extração de candidatos** — LLM extrai `{name, party, status, homeState, poll}`
+   de cada artigo. Os resultados são mesclados entre fontes (status mais forte vence:
+   `desistiu > confirmado > pre_candidato > cotado`) e casados com o banco por
+   normalização de nomes + aliases (`CANDIDATE_ALIASES` — "Lula" → nome completo).
+   - Candidatos existentes: atualiza `candidacyStatus` e partido (se mudou)
+   - Candidatos novos (`confirmado`/`pre_candidato` com partido): cria com slug
+   - Quem desistiu **não é deletado** — apenas marcado com `candidacyStatus=desistiu`
+3. **Extração de propostas** — LLM extrai propostas explicitamente atribuídas a cada
+   candidato nos artigos (`source: "news"`, deduplicadas por hash SHA-1 do texto).
+
+Para atualizar as fontes (ex: nova pesquisa Datafolha, novo artigo mensal do JOTA),
+edite `src/data/presidentialSources.ts`.
+
+No GitHub Actions: Actions → Scraper (Scheduled Sync) → Run workflow → `presidenciaveis`.
 
 ---
 

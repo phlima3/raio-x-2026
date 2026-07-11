@@ -36,6 +36,12 @@ export type ConsistencyResult = z.infer<typeof ConsistencySchema>
  */
 export interface LLMProvider {
   /**
+   * Sends a raw prompt and returns the model's text response.
+   * Building block for custom extractions (see presidentialExtractor.ts).
+   */
+  complete(prompt: string): Promise<string>
+
+  /**
    * Extracts proposals from clean text and classifies them by theme.
    * Returns empty arrays for themes with no proposals; never throws on
    * empty/short input — returns an empty ProposalsByTheme object instead.
