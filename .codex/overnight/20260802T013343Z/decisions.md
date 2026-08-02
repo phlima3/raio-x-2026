@@ -47,3 +47,15 @@
 - Datas dos filtros modernos usam ISO `YYYY-MM-DD`; entradas legadas `YYYYMMDD` são normalizadas para preservar compatibilidade de chamadas existentes.
 - A resposta oficial atual é um array completo; o collector também segue `links[rel=next]` e cabeçalho HTTP `Link` para não truncar instalações paginadas.
 - Legislatura e datas vêm de `/senador/{codigo}/mandatos`; nenhum parlamentar atual é reconciliado a Candidate por nome.
+
+## 2026-08-02 — Datasets suplementares do TSE
+- Persistir linhas sanitizadas em `OfficialDatasetRecord` com hash determinístico, vínculo ao snapshot `SourceDocument` e candidato por `SQ_CANDIDATO` quando disponível.
+- O modelo genérico preserva colunas novas sem exigir migration por layout, enquanto materializadores mantêm os contratos atuais para status, bens, coligação e site/rede oficial.
+- CPF e título eleitoral são removidos antes tanto do payload quanto de qualquer texto persistido; os ZIPs binários não são armazenados no banco.
+- Snapshots suplementares nunca removem registros ausentes; cassação presente pode ocultar deterministicamente, mas snapshot vazio não altera candidaturas.
+
+## 2026-08-02 — Documentos e IA
+- Recurso PDF direto e ZIP com PDFs usam SHA-256 por documento; hash já processado atualiza apenas proveniência da execução e não repete extração.
+- PDF sem camada textual é `NEEDS_OCR`, não erro. Corrupção/erro de parser é `FAILED` e falha a execução da fonte.
+- Ausência de recurso de programa no catálogo é `DataSyncRun=NOOP` bem-sucedido.
+- Toda saída não revisada de IA (`candidate_site`, `news`, `gemini_research`) é `DRAFT`, `AI_EXTRACTION` e `isPublished=false`; editorial existente não é alterado.

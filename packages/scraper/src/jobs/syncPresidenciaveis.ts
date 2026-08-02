@@ -1,6 +1,12 @@
 import 'dotenv/config'
 import { createHash } from 'node:crypto'
-import { PrismaClient, Position, ProposalStatus, Candidate } from '@prisma/client'
+import {
+  Candidate,
+  Position,
+  PrismaClient,
+  ProposalOrigin,
+  ProposalStatus,
+} from '@prisma/client'
 import {
   PRESIDENTIAL_SOURCES,
   CANDIDATE_ALIASES,
@@ -222,7 +228,11 @@ async function saveProposalsFromArticles(articles: FetchedArticle[]): Promise<vo
       try {
         await prisma.proposal.upsert({
           where: { externalId },
-          update: {},
+          update: {
+            status: ProposalStatus.DRAFT,
+            isPublished: false,
+            origin: ProposalOrigin.AI_EXTRACTION,
+          },
           create: {
             externalId,
             source: 'news',
@@ -230,7 +240,9 @@ async function saveProposalsFromArticles(articles: FetchedArticle[]): Promise<vo
             description: p.proposal,
             category: THEME_LABELS[p.theme],
             tags: [p.theme, 'news', article.source.id],
-            status: ProposalStatus.SUBMITTED,
+            status: ProposalStatus.DRAFT,
+            isPublished: false,
+            origin: ProposalOrigin.AI_EXTRACTION,
             url: article.source.url,
             candidateId: candidate.id,
           },

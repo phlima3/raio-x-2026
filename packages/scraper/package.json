@@ -5,10 +5,13 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
+    "typecheck": "tsc --noEmit",
     "sync": "tsx src/index.ts",
     "sync:camara": "tsx src/sources/camara.ts",
     "sync:senado": "tsx src/sources/senado.ts",
     "sync:tse": "tsx src/sources/tse.ts",
+    "sync:tse:supplemental": "tsx src/sources/tseSupplemental.ts",
+    "sync:documents": "tsx src/sources/tseDocuments.ts",
     "sync:sites": "tsx src/sources/candidateSites.ts",
     "sync:all": "tsx src/jobs/dailySync.ts",
     "sync:presidenciaveis": "tsx src/jobs/syncPresidenciaveis.ts",
@@ -21,6 +24,7 @@
     "news:weekly": "tsx src/jobs/weeklyNews.ts",
     "import:tse": "tsx src/jobs/importTseHistorico.ts",
     "import:financiamento": "tsx src/jobs/importTseFinanciamento.ts",
+    "backfill:persons": "tsx src/jobs/backfillPersons.ts",
     "prisma:generate": "prisma generate --schema=../api/prisma/schema.prisma"
   },
   "dependencies": {
@@ -33,6 +37,7 @@
     "groq-sdk": "^1.1.2",
     "iconv-lite": "^0.7.3",
     "node-cron": "^3.0.3",
+    "pdfjs-dist": "^4.10.38",
     "playwright": "^1.44.1",
     "zod": "^3.23.8"
   },

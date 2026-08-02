@@ -1,4 +1,4 @@
-import { PrismaClient, ProposalStatus } from '@prisma/client'
+import { PrismaClient, ProposalOrigin, ProposalStatus } from '@prisma/client'
 import { createProvider, ProposalsByTheme } from './llm'
 import { logger } from '../utils/logger'
 
@@ -151,7 +151,7 @@ function flattenByTheme(
         description: description.trim(),
         category,
         tags: [themeKey],
-        status: ProposalStatus.SUBMITTED,
+        status: ProposalStatus.DRAFT,
         sourceUrl,
         candidateId,
       })
@@ -173,6 +173,9 @@ async function persistProposals(proposals: ProcessedProposal[]): Promise<number>
           description: p.description,
           category: p.category,
           tags: p.tags,
+          status: ProposalStatus.DRAFT,
+          isPublished: false,
+          origin: ProposalOrigin.AI_EXTRACTION,
         },
         create: {
           externalId: p.externalId,
@@ -182,6 +185,8 @@ async function persistProposals(proposals: ProcessedProposal[]): Promise<number>
           category: p.category,
           tags: p.tags,
           status: p.status,
+          isPublished: false,
+          origin: ProposalOrigin.AI_EXTRACTION,
           url: p.sourceUrl,
           candidateId: p.candidateId,
         },

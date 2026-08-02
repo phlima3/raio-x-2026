@@ -172,14 +172,15 @@ model Candidate {
   syncRunId         String?
   syncRun           DataSyncRun?             @relation(fields: [syncRunId], references: [id], onDelete: SetNull)
 
-  proposals          Proposal[]
-  votingRecords      VotingRecord[]
-  assetDeclarations  AssetDeclaration[]
-  campaignFinancings CampaignFinancing[]
-  consistencyScores  ConsistencyScore[]
-  newsItems          NewsItem[]
-  sourceDocuments    SourceDocument[]
-  reviewItems        ReviewItem[]
+  proposals              Proposal[]
+  votingRecords          VotingRecord[]
+  assetDeclarations      AssetDeclaration[]
+  campaignFinancings     CampaignFinancing[]
+  consistencyScores      ConsistencyScore[]
+  newsItems              NewsItem[]
+  sourceDocuments        SourceDocument[]
+  officialDatasetRecords OfficialDatasetRecord[]
+  reviewItems            ReviewItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -343,7 +344,8 @@ model SourceDocument {
   syncRunId String?
   syncRun   DataSyncRun? @relation(fields: [syncRunId], references: [id], onDelete: SetNull)
 
-  proposals Proposal[]
+  proposals      Proposal[]
+  datasetRecords OfficialDatasetRecord[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -366,9 +368,10 @@ model DataSyncRun {
   checksum   String?
   dryRun     Boolean       @default(false)
 
-  candidates      Candidate[]
-  sourceDocuments SourceDocument[]
-  reviewItems     ReviewItem[]
+  candidates             Candidate[]
+  sourceDocuments        SourceDocument[]
+  officialDatasetRecords OfficialDatasetRecord[]
+  reviewItems            ReviewItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -405,6 +408,33 @@ model ReviewItem {
   @@index([candidateId])
   @@index([personId])
   @@index([syncRunId])
+}
+
+model OfficialDatasetRecord {
+  id           String     @id @default(cuid())
+  source       DataSource
+  datasetKind  String
+  externalId   String
+  electionYear Int?
+  payload      Json
+
+  candidateId String?
+  candidate   Candidate? @relation(fields: [candidateId], references: [id], onDelete: SetNull)
+
+  sourceDocumentId String
+  sourceDocument   SourceDocument @relation(fields: [sourceDocumentId], references: [id], onDelete: Restrict)
+
+  syncRunId String?
+  syncRun   DataSyncRun? @relation(fields: [syncRunId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([source, datasetKind, externalId])
+  @@index([candidateId])
+  @@index([sourceDocumentId])
+  @@index([syncRunId])
+  @@index([datasetKind, electionYear])
 }
 
 model AssetDeclaration {

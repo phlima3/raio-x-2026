@@ -50,7 +50,7 @@
 - [x] Persistir snapshots em batches idempotentes e métricas/erros.
 - [x] Reconciliar editorial com match determinístico; ambiguidades viram `ReviewItem`.
 - [x] Garantir snapshot vazio/incompleto não destrutivo e política de publicação.
-- [ ] Preparar importadores complementares (bens, coligações, vagas, cassações, redes) conforme recursos disponíveis.
+- [x] Preparar importadores complementares (bens, coligações, vagas, cassações, redes) conforme recursos disponíveis.
 - Deliverable: ingestão TSE official-first testada por fixtures.
 - Validation: matriz de parser, reprocessamento, contagens, reconciliação e falhas.
 - Dependencies: Phases 3–4.
@@ -69,10 +69,10 @@
 - Rollback: campos legados permanecem; read model legado não é removido.
 
 ## Phase 7 — Official documents and campaign proposals
-- [ ] Implementar descoberta/download de documentos quando existentes.
-- [ ] Persistir `SourceDocument` por SHA-256; extrair PDF com `pdfjs-dist`.
-- [ ] Tratar no-op sem PDFs e `NEEDS_OCR` sem texto.
-- [ ] Distinguir proposta editorial publicada de extração IA `DRAFT` oculta.
+- [x] Implementar descoberta/download de documentos quando existentes.
+- [x] Persistir `SourceDocument` por SHA-256; extrair PDF com `pdfjs-dist`.
+- [x] Tratar no-op sem PDFs e `NEEDS_OCR` sem texto.
+- [x] Distinguir proposta editorial publicada de extração IA `DRAFT` oculta.
 - Deliverable: pipeline documental idempotente e seguro.
 - Validation: testes no-PDF/repetido/sem-texto/texto e visibilidade.
 - Dependencies: Phases 3–5.

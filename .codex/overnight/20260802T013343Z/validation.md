@@ -119,3 +119,39 @@
 - Result: PASS
 - Evidence: 6 arquivos/11 testes unitários e 8 arquivos/15 testes de integração passaram.
 - Follow-up: implementar documentos oficiais.
+
+### 2026-08-02T02:34Z TDD RED→GREEN — PDF text layer
+- Command: `pnpm exec vitest run packages/scraper/test/pdf-text.test.ts`
+- Result: RED (módulo ausente) → PASS
+- Evidence: PDF sintético digital extrai texto; PDF válido sem texto retorna string vazia; scraper typecheck passa com pdfjs-dist.
+- Follow-up: persistir estados de documento.
+
+### 2026-08-02T02:37Z TDD RED→GREEN — official documents
+- Command: integração focada `tse-documents.integration.test.ts` em PostgreSQL 16.
+- Result: RED (módulo ausente) → PASS
+- Evidence: 3 casos: nenhum PDF=NOOP, repetido mantém uma linha/extrai uma vez, vazio=NEEDS_OCR, digital=EXTRACTED com texto.
+- Follow-up: aplicar política de invisibilidade a extrações IA.
+
+### 2026-08-02T02:40Z AI proposal visibility and migration
+- Command: migrate deploy da migration `20260802024000_hide_unreviewed_ai_proposals`; Supertest da API pública.
+- Result: PASS
+- Evidence: proposta editorial aparece e extração IA oculta não aparece no detalhe nem agrupamento público; migrations totalizam 12 nesse ponto.
+- Follow-up: importar datasets auxiliares disponíveis.
+
+### 2026-08-02T02:44Z TDD RED→GREEN — supplemental TSE datasets
+- Command: integração focada `tse-supplemental.integration.test.ts`; migration `20260802025000_official_dataset_records`; generate/typecheck.
+- Result: RED (módulo ausente) → PASS
+- Evidence: 6 recursos sintéticos/6 linhas após reprocessar duas vezes mantêm 6 snapshots e 6 registros; payload não contém CPF; bens somam BRL 150000,75 e status/coligação/rede materializam.
+- Follow-up: validar contra catálogo oficial.
+
+### 2026-08-02T02:45Z official supplemental/document dry-runs
+- Command: `sync:tse:supplemental -- --dry-run`; `sync:documents -- --dry-run` contra catálogo oficial.
+- Result: PASS
+- Evidence: suplementar SUCCESS com 6 recursos e 25.493 registros; documentos NOOP com 0 recursos/PDFs, coerente com o catálogo observado.
+- Follow-up: manter job diário de documentos para detectar publicação futura.
+
+### 2026-08-02T02:53Z combined documents/supplemental suites
+- Command: `pnpm test:unit`; `pnpm test:integration` com PostgreSQL 16 em localhost:5433.
+- Result: PASS
+- Evidence: 7 arquivos/13 testes unitários e 10 arquivos/19 integrações passaram.
+- Follow-up: finalizar CI, operação e review.

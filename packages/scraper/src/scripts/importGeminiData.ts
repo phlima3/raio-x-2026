@@ -13,7 +13,7 @@
 import 'dotenv/config'
 import * as fs from 'fs'
 import * as path from 'path'
-import { PrismaClient, ProposalStatus } from '@prisma/client'
+import { PrismaClient, ProposalOrigin, ProposalStatus } from '@prisma/client'
 import { z } from 'zod'
 
 const prisma = new PrismaClient()
@@ -137,7 +137,15 @@ async function importCandidate(output: GeminiOutput): Promise<void> {
           if (existing) {
             await prisma.proposal.update({
               where: { externalId },
-              data: { title, description, category, tags: [category, 'programa'] },
+              data: {
+                title,
+                description,
+                category,
+                tags: [category, 'programa'],
+                status: ProposalStatus.DRAFT,
+                isPublished: false,
+                origin: ProposalOrigin.AI_EXTRACTION,
+              },
             })
           } else {
             await prisma.proposal.create({
@@ -149,6 +157,8 @@ async function importCandidate(output: GeminiOutput): Promise<void> {
                 category,
                 tags: [category, 'programa'],
                 status: ProposalStatus.DRAFT,
+                isPublished: false,
+                origin: ProposalOrigin.AI_EXTRACTION,
                 candidateId: candidate.id,
               },
             })

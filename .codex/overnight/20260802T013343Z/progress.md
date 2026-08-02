@@ -3,9 +3,9 @@
 ## Current status
 - Phase: Legislative ingestion, documents and CI completion
 - State: active
-- Last completed action: Câmara e Senado normalizados, paginados e observados; suite conjunta com 11 testes unitários e 15 de integração verde.
-- Next action: implementar SourceDocument/PDF, estado NEEDS_OCR, no-op sem documentos e política DRAFT para extrações IA.
-- Last known good commit: 959bd68c84f1ffec219735f2144c29c5c44bc38a
+- Last completed action: documentos/PDF, seis datasets suplementares TSE e política de revisão IA validados; suite em 13 unitários e 19 integrações.
+- Next action: finalizar CI/schedules, relatório CLI de ReviewItem, documentação operacional e validação/review final.
+- Last known good commit: a2602521fa4a7ef7b06e281d65160ab31247e78a
 - Working tree status: dirty com implementação do run; nenhuma mudança preexistente do usuário foi encontrada.
 
 ## Timeline
@@ -26,3 +26,8 @@
 - 2026-08-02T02:30Z — Senado migrou para `/processo` e `/votacao`, mandato oficial e persistência normalizada; `populate:senado` não faz mais fuzzy-link em Candidate.
 - 2026-08-02T02:32Z — Câmara recebeu runner injetável observado e lifecycle seguro de Prisma; falha remota persiste FAILED e propaga exit não zero.
 - 2026-08-02T02:33Z — Suite completa intermediária: 6 arquivos/11 unitários e 8 arquivos/15 integrações PostgreSQL passaram.
+- 2026-08-02T02:37Z — PDF digital e vazio validados com pdfjs-dist; SourceDocument deduplica por hash e classifica NEEDS_OCR sem falhar.
+- 2026-08-02T02:40Z — Extrações IA de sites/notícias/Gemini passam a DRAFT oculto; migration de dados preserva propostas editoriais.
+- 2026-08-02T02:44Z — Datasets complementares ganham arquivo imutável e OfficialDatasetRecord sanitizado; integração idempotente materializa status, bens, coligação e rede social.
+- 2026-08-02T02:45Z — Dry-run oficial suplementar contou 6 recursos/25.493 registros; documentos retornaram NOOP porque o catálogo atual não contém PDFs.
+- 2026-08-02T02:53Z — Suite intermediária completa: 7 arquivos/13 unitários e 10 arquivos/19 integrações PostgreSQL passaram.
