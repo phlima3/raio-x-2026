@@ -88,6 +88,31 @@ describe('runTseDocumentSync', () => {
     expect(extractText).toHaveBeenCalledTimes(1)
   })
 
+  it('opens a ZIP payload even when the TSE resource format is labeled PDF', async () => {
+    const mislabeledResource = {
+      ...resource,
+      format: 'PDF',
+      url: 'https://cdn.tse.jus.br/propostas_2026.zip',
+    }
+    const innerPdf = Buffer.from('%PDF-1.4 proposal inside official archive')
+    const archive = Buffer.from(zipSync({
+      'propostas/proposta_000000000456.pdf': innerPdf,
+    }))
+    const extractText = vi.fn().mockResolvedValue('Programa oficial')
+
+    await runTseDocumentSync({
+      prisma,
+      client: clientWith([mislabeledResource], archive),
+      extractText,
+    })
+
+    expect(extractText).toHaveBeenCalledOnce()
+    expect(extractText).toHaveBeenCalledWith(innerPdf)
+    const document = await prisma.sourceDocument.findFirstOrThrow()
+    expect(document.sourceUrl).toContain('#entry=')
+    expect(document.extractionStatus).toBe(DocumentExtractionStatus.EXTRACTED)
+  })
+
   it('stores searchable text for a digital PDF', async () => {
     const client = clientWith(
       [{ ...resource, format: 'PDF', url: 'https://divulgacand.tse.jus.br/programa.pdf' }],

@@ -60,7 +60,7 @@ function pdfEntries(
   fetchedAt: Date,
 ): PdfEntry[] {
   const format = resource.format.trim().toUpperCase()
-  if (format === 'PDF' || looksLikePdf(bytes)) {
+  if (looksLikePdf(bytes)) {
     return [{
       filename: resource.name || resource.url.split('/').pop() || 'document.pdf',
       bytes,
@@ -69,7 +69,16 @@ function pdfEntries(
       fetchedAt,
     }]
   }
-  if (format !== 'ZIP' && !looksLikeZip(bytes)) return []
+  if (format !== 'ZIP' && !looksLikeZip(bytes)) {
+    if (format !== 'PDF') return []
+    return [{
+      filename: resource.name || resource.url.split('/').pop() || 'document.pdf',
+      bytes,
+      sourceUrl: resource.url,
+      resource,
+      fetchedAt,
+    }]
+  }
 
   const archive = unzipSync(new Uint8Array(bytes))
   return Object.entries(archive).flatMap(([filename, content]) => {
