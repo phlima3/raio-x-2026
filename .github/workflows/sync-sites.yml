@@ -24,6 +24,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-pipeline
+      - uses: ./.github/actions/setup-veloz-db-tunnel
+        with:
+          api-key: ${{ secrets.VELOZ_API_KEY }}
       - name: Install Chromium
         run: pnpm --filter @raiox/scraper exec playwright install chromium --with-deps
       - name: Scrape candidate sites

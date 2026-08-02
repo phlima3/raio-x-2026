@@ -1,0 +1,65 @@
+name: Setup Veloz database tunnel
+description: Open an authenticated tunnel from GitHub Actions to the private Veloz PostgreSQL service
+inputs:
+  api-key:
+    description: Veloz API key used only to authenticate the tunnel
+    required: true
+  organization:
+    description: Veloz workspace slug
+    required: false
+    default: 88408945-ev4f
+  project-id:
+    description: Veloz project ID
+    required: false
+    default: prj_rZISk51AmKMn
+  database:
+    description: Veloz database service name
+    required: false
+    default: raiox-postgres
+  port:
+    description: Local PostgreSQL tunnel port
+    required: false
+    default: '15432'
+runs:
+  using: composite
+  steps:
+    - name: Start authenticated PostgreSQL tunnel
+      shell: bash
+      env:
+        CI: 'true'
+        VELOZ_API_KEY: ${{ inputs.api-key }}
+        VELOZ_ORG: ${{ inputs.organization }}
+        VELOZ_PROJECT_ID: ${{ inputs.project-id }}
+        VELOZ_DATABASE: ${{ inputs.database }}
+        VELOZ_TUNNEL_PORT: ${{ inputs.port }}
+      run: |
+        set -euo pipefail
+
+        if [[ -z "$VELOZ_API_KEY" ]]; then
+          echo "::error::VELOZ_API_KEY is not configured"
+          exit 1
+        fi
+
+        tunnel_log="$RUNNER_TEMP/veloz-db-tunnel.log"
+        nohup pnpm dlx onveloz@0.0.0-beta.42 db tunnel "$VELOZ_DATABASE" \
+          --project "$VELOZ_PROJECT_ID" \
+          --port "$VELOZ_TUNNEL_PORT" \
+          >"$tunnel_log" 2>&1 &
+        tunnel_pid=$!
+        echo "VELOZ_DB_TUNNEL_PID=$tunnel_pid" >> "$GITHUB_ENV"
+
+        for _attempt in $(seq 1 90); do
+          if ! kill -0 "$tunnel_pid" 2>/dev/null; then
+            echo "::error::Veloz database tunnel exited before becoming ready"
+            exit 1
+          fi
+          if (echo >"/dev/tcp/127.0.0.1/$VELOZ_TUNNEL_PORT") 2>/dev/null; then
+            echo "Veloz database tunnel is ready on localhost:$VELOZ_TUNNEL_PORT"
+            exit 0
+          fi
+          sleep 1
+        done
+
+        echo "::error::Timed out waiting for the Veloz database tunnel"
+        kill "$tunnel_pid" 2>/dev/null || true
+        exit 1

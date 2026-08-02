@@ -26,5 +26,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-pipeline
+      - uses: ./.github/actions/setup-veloz-db-tunnel
+        with:
+          api-key: ${{ secrets.VELOZ_API_KEY }}
       - name: Sync campaign documents
         run: pnpm --filter @raiox/scraper run sync:documents ${{ inputs.dry_run && '-- --dry-run' || '' }}

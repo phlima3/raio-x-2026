@@ -21,5 +21,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-pipeline
+      - uses: ./.github/actions/setup-veloz-db-tunnel
+        with:
+          api-key: ${{ secrets.VELOZ_API_KEY }}
       - name: Sync news context
         run: pnpm --filter @raiox/scraper run news:weekly

@@ -26,6 +26,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-pipeline
+      - uses: ./.github/actions/setup-veloz-db-tunnel
+        with:
+          api-key: ${{ secrets.VELOZ_API_KEY }}
       - name: Sync canonical candidacies
         run: pnpm --filter @raiox/scraper run sync:tse ${{ inputs.dry_run && '-- --dry-run' || '' }}
       - name: Sync complementary official datasets

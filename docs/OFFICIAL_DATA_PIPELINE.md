@@ -110,6 +110,23 @@ Cada fonte tem job independente. Erro persiste `DataSyncRun=FAILED` antes de o
 comando terminar com código diferente de zero. A instalação do workspace e o
 `prisma generate` são únicos, sem cópia manual de `.prisma/client`.
 
+### Acesso do GitHub Actions ao PostgreSQL da Veloz
+
+O PostgreSQL da Veloz usa endereço privado. Antes de executar qualquer job de
+dados, os workflows abrem um túnel autenticado para `127.0.0.1:15432` por meio
+da action local `setup-veloz-db-tunnel`.
+
+Configure estes secrets no repositório:
+
+- `VELOZ_API_KEY`: chave não interativa autorizada a abrir o túnel no projeto;
+- `PROD_DATABASE_URL`: URL do banco com host `127.0.0.1` e porta `15432`, usando
+  as credenciais atuais do serviço PostgreSQL.
+
+Ao rotacionar usuário ou senha do banco, atualize `PROD_DATABASE_URL`. Ao
+revogar a chave de automação, substitua `VELOZ_API_KEY`. O job interrompe com
+código não zero se a chave estiver ausente, se o processo do túnel terminar ou
+se a porta local não ficar disponível em 90 segundos.
+
 ## Revisão
 
 O relatório CLI lista apenas itens `OPEN`, agrupados por tipo, sem despejar
