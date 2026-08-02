@@ -1,0 +1,32 @@
+name: Sync TSE Official Data
+
+on:
+  schedule:
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Parse and validate without changing domain records
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+concurrency:
+  group: sync-tse-official
+  cancel-in-progress: false
+
+jobs:
+  tse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+      TSE_API_URL: https://dadosabertos.tse.jus.br
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-pipeline
+      - name: Sync canonical candidacies
+        run: pnpm --filter @raiox/scraper run sync:tse ${{ inputs.dry_run && '-- --dry-run' || '' }}
+      - name: Sync complementary official datasets
+        run: pnpm --filter @raiox/scraper run sync:tse:supplemental ${{ inputs.dry_run && '-- --dry-run' || '' }}

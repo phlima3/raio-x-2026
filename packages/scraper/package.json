@@ -25,6 +25,7 @@
     "import:tse": "tsx src/jobs/importTseHistorico.ts",
     "import:financiamento": "tsx src/jobs/importTseFinanciamento.ts",
     "backfill:persons": "tsx src/jobs/backfillPersons.ts",
+    "review:report": "tsx src/jobs/reviewItemsReport.ts",
     "prisma:generate": "prisma generate --schema=../api/prisma/schema.prisma"
   },
   "dependencies": {

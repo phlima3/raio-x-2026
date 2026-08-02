@@ -1,0 +1,30 @@
+name: Enrich Candidate Sites
+
+on:
+  schedule:
+    - cron: '0 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+concurrency:
+  group: sync-candidate-sites
+  cancel-in-progress: false
+
+jobs:
+  sites:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+      LLM_PROVIDER: ${{ vars.LLM_PROVIDER || 'groq' }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      SCRAPER_CONCURRENCY: '2'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-pipeline
+      - name: Install Chromium
+        run: pnpm --filter @raiox/scraper exec playwright install chromium --with-deps
+      - name: Scrape candidate sites
+        run: pnpm --filter @raiox/scraper run process:proposals

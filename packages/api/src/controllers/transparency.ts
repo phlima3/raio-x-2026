@@ -1,8 +1,19 @@
 import { Request, Response, NextFunction } from 'express'
-import { PrismaClient, VoteType } from '@prisma/client'
+import { Prisma, PrismaClient, VoteType } from '@prisma/client'
 import { z } from 'zod'
+import {
+  getCandidateReadModel,
+  publicCandidateWhere,
+} from '../services/candidateService'
 
 const prisma = new PrismaClient()
+
+async function publicCandidate(candidateId: string) {
+  return prisma.candidate.findFirst({
+    where: { id: candidateId, ...publicCandidateWhere() },
+    select: { id: true, personId: true },
+  })
+}
 
 const VotingFiltersSchema = z.object({
   source: z.enum(['camara', 'senado']).optional(),
@@ -23,8 +34,23 @@ export async function getVotingRecordsHandler(
     const { source, voteType, from, to, page, limit } = VotingFiltersSchema.parse(req.query)
     const skip = (page - 1) * limit
 
-    const where = {
-      candidateId,
+    const candidate = await publicCandidate(candidateId)
+    if (!candidate) {
+      res.status(404).json({ success: false, error: 'Candidato não encontrado' })
+      return
+    }
+    const identityWhere: Prisma.VotingRecordWhereInput =
+      getCandidateReadModel() === 'normalized' && candidate.personId
+        ? {
+            OR: [
+              { candidateId },
+              { personId: candidate.personId },
+              { mandate: { personId: candidate.personId } },
+            ],
+          }
+        : { candidateId }
+    const where: Prisma.VotingRecordWhereInput = {
+      ...identityWhere,
       ...(source && { source }),
       ...(voteType && { voteType }),
       ...(from || to
@@ -64,6 +90,10 @@ export async function getAssetDeclarationsHandler(
 ): Promise<void> {
   try {
     const { candidateId } = req.params
+    if (!(await publicCandidate(candidateId))) {
+      res.status(404).json({ success: false, error: 'Candidato não encontrado' })
+      return
+    }
 
     const declarations = await prisma.assetDeclaration.findMany({
       where: { candidateId },
@@ -96,6 +126,10 @@ export async function getCampaignFinancingHandler(
 ): Promise<void> {
   try {
     const { candidateId } = req.params
+    if (!(await publicCandidate(candidateId))) {
+      res.status(404).json({ success: false, error: 'Candidato não encontrado' })
+      return
+    }
 
     const financings = await prisma.campaignFinancing.findMany({
       where: { candidateId },

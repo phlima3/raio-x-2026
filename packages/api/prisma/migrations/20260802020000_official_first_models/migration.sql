@@ -111,8 +111,10 @@ SET
     ELSE 'MIGRATION'::"DataSource"
   END,
   "isPublished" = CASE
-    WHEN "position" IN ('PRESIDENTE', 'GOVERNADOR') THEN true
-    WHEN "position" = 'SENADOR' AND "tseId" IS NOT NULL THEN true
+    -- Preserve every pre-existing candidacy in a public office. A later TSE
+    -- reconciliation may change official rows deterministically, but applying
+    -- this migration alone must not hide editorial pre-candidates.
+    WHEN "position" IN ('PRESIDENTE', 'GOVERNADOR', 'SENADOR') THEN true
     ELSE false
   END;
 

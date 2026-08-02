@@ -1,0 +1,30 @@
+name: Sync TSE Official Documents
+
+on:
+  schedule:
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Download and extract without persisting documents
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+concurrency:
+  group: sync-tse-documents
+  cancel-in-progress: false
+
+jobs:
+  documents:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+      TSE_API_URL: https://dadosabertos.tse.jus.br
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-pipeline
+      - name: Sync campaign documents
+        run: pnpm --filter @raiox/scraper run sync:documents ${{ inputs.dry_run && '-- --dry-run' || '' }}

@@ -40,16 +40,6 @@ function canonicalName(name: string): string {
   return CANDIDATE_ALIASES[normalizeName(name)] ?? name
 }
 
-function slugify(text: string): string {
-  return text
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .trim()
-    .replace(/\s+/g, '-')
-}
-
 export function namesMatch(a: string, b: string): boolean {
   const na = normalizeName(canonicalName(a))
   const nb = normalizeName(canonicalName(b))
@@ -65,7 +55,8 @@ export function namesMatch(a: string, b: string): boolean {
 }
 
 function findCandidate(name: string, candidates: Candidate[]): Candidate | undefined {
-  return candidates.find((c) => namesMatch(c.name, name))
+  const matches = candidates.filter((candidate) => namesMatch(candidate.name, name))
+  return matches.length === 1 ? matches[0] : undefined
 }
 
 // ── Merge candidates across sources ───────────────────────────────────────────
@@ -118,69 +109,32 @@ export function mergeExtractedCandidates(
   return merged
 }
 
-// ── Persist candidates ────────────────────────────────────────────────────────
+// ── Enrich existing candidacies ──────────────────────────────────────────────
 
-async function upsertPresidenciaveis(merged: MergedCandidate[]): Promise<void> {
+async function enrichExistingPresidenciaveis(merged: MergedCandidate[]): Promise<void> {
   const dbCandidates = await prisma.candidate.findMany({
-    where: { position: Position.PRESIDENTE, electionYear: 2026 },
+    where: { position: Position.PRESIDENTE, electionYear: 2026, isPublished: true },
   })
 
-  let created = 0
   let updated = 0
 
   for (const m of merged) {
     const existing = findCandidate(m.name, dbCandidates)
 
     if (existing) {
-      const data: Record<string, unknown> = { candidacyStatus: m.status }
-
-      if (m.party && m.party !== existing.party) {
-        logger.info(
-          `[presidenciaveis] ${existing.name}: partido ${existing.party} → ${m.party} (fontes: ${m.sources.join(', ')})`,
-        )
-        data.party = m.party
-        data.partyHistory = existing.partyHistory.includes(m.party)
-          ? existing.partyHistory
-          : [...existing.partyHistory, m.party]
-      }
-
-      await prisma.candidate.update({ where: { id: existing.id }, data })
+      await prisma.candidate.update({
+        where: { id: existing.id },
+        data: { candidacyStatus: m.status },
+      })
       updated++
       continue
     }
-
-    // Só cria candidatos novos com pré-candidatura anunciada ou confirmada —
-    // "cotado" é especulação e "desistiu" sem registro prévio não interessa
-    if (m.status !== 'confirmado' && m.status !== 'pre_candidato') {
-      logger.info(`[presidenciaveis] Ignorando ${m.name} (${m.status}) — não está no banco`)
-      continue
-    }
-
-    if (!m.party) {
-      logger.warn(`[presidenciaveis] ${m.name} sem partido identificado — pulando criação`)
-      continue
-    }
-
-    const state = m.homeState ?? 'BR'
-    const candidate = await prisma.candidate.create({
-      data: {
-        name: m.name,
-        party: m.party,
-        state,
-        position: Position.PRESIDENTE,
-        electionYear: 2026,
-        slug: `${slugify(m.name)}-${slugify(m.party)}-${slugify(state)}`,
-        bio: m.currentRole ?? null,
-        candidacyStatus: m.status,
-        partyHistory: [m.party],
-      },
-    })
-    dbCandidates.push(candidate)
-    created++
-    logger.info(`[presidenciaveis] ✚ Criado: ${m.name} (${m.party}) — ${m.status}`)
+    logger.info(
+      `[presidenciaveis] Contexto ignorado para ${m.name}: candidatura não existe no TSE/editorial`,
+    )
   }
 
-  logger.info(`[presidenciaveis] Candidatos: ${created} criados, ${updated} atualizados`)
+  logger.info(`[presidenciaveis] Contexto atualizado em ${updated} candidaturas existentes; 0 criadas`)
 }
 
 // ── Persist proposals ─────────────────────────────────────────────────────────
@@ -198,11 +152,12 @@ const THEME_LABELS: Record<string, string> = {
 
 async function saveProposalsFromArticles(articles: FetchedArticle[]): Promise<void> {
   const dbCandidates = await prisma.candidate.findMany({
-    where: { position: Position.PRESIDENTE, electionYear: 2026 },
+    where: { position: Position.PRESIDENTE, electionYear: 2026, isPublished: true },
   })
 
   let saved = 0
   let unmatched = 0
+  let failed = 0
 
   for (const article of articles) {
     const proposals = await extractProposalsFromNews(article.text)
@@ -249,6 +204,7 @@ async function saveProposalsFromArticles(articles: FetchedArticle[]): Promise<vo
         })
         saved++
       } catch (err) {
+        failed++
         logger.error(
           `[presidenciaveis] Falha ao salvar proposta ${externalId}`,
           err instanceof Error ? err.message : err,
@@ -260,6 +216,7 @@ async function saveProposalsFromArticles(articles: FetchedArticle[]): Promise<vo
   logger.info(
     `[presidenciaveis] Propostas: ${saved} salvas, ${unmatched} sem candidato correspondente`,
   )
+  if (failed > 0) throw new Error(`[presidenciaveis] ${failed} proposal write(s) failed`)
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -271,8 +228,7 @@ export async function runSyncPresidenciaveis(
 
   const articles = await fetchAllSources(PRESIDENTIAL_SOURCES)
   if (articles.length === 0) {
-    logger.error('[presidenciaveis] Nenhuma fonte pôde ser baixada — abortando')
-    return
+    throw new Error('[presidenciaveis] Nenhuma fonte pôde ser baixada')
   }
 
   if (mode !== 'proposals') {
@@ -290,7 +246,7 @@ export async function runSyncPresidenciaveis(
 
     const merged = mergeExtractedCandidates(perSource)
     logger.info(`[presidenciaveis] ${merged.length} presidenciáveis únicos após merge`)
-    await upsertPresidenciaveis(merged)
+    await enrichExistingPresidenciaveis(merged)
   }
 
   if (mode !== 'candidates') {

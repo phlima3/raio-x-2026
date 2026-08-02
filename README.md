@@ -2,7 +2,13 @@
 
 Plataforma de transparência eleitoral brasileira para as eleições de 2026.
 
-Consolida dados de candidatos, propostas, histórico de votações, declarações de bens e financiamento de campanha em uma interface unificada, com sumarização automática via Gemini Pro.
+Consolida candidaturas oficiais, propostas de campanha, mandatos, projetos,
+votações, bens e contexto jornalístico em uma interface unificada.
+
+O pipeline é official-first: TSE para candidaturas, Câmara/Senado para atividade
+legislativa e documentos oficiais para programas. Consulte o
+[runbook do pipeline](docs/OFFICIAL_DATA_PIPELINE.md) para arquitetura, comandos,
+agenda, rollout e rollback.
 
 ## Stack
 
@@ -45,37 +51,37 @@ cd raio-x-2026
 cp .env.example .env
 
 # Instale as dependências
-npm install
+pnpm install --frozen-lockfile
 
 # Suba o banco de dados
 docker-compose up -d postgres
 
 # Gere o cliente Prisma e rode as migrations
-npm run db:generate
-npm run db:migrate
+pnpm db:generate
+pnpm db:migrate
 ```
 
 ### 3. Desenvolvimento
 
 ```bash
 # API + Web em paralelo
-npm run dev
+pnpm dev
 
 # Apenas API
-npm run dev:api
+pnpm dev:api
 
 # Apenas Web
-npm run dev:web
+pnpm dev:web
 
 # Scraper manual
-npm run scraper:sync
+pnpm scraper:sync
 ```
 
 ### 4. Banco de dados
 
 ```bash
 # Abrir Prisma Studio
-npm run db:studio
+pnpm db:studio
 ```
 
 ## Fontes de Dados
@@ -83,7 +89,8 @@ npm run db:studio
 - **TSE** — `dadosabertos.tse.jus.br` — candidatos, financiamento, bens
 - **Câmara dos Deputados** — `dadosabertos.camara.leg.br` — propostas, votações
 - **Senado Federal** — `legis.senado.leg.br` — projetos de lei, votações
-- **Sites dos candidatos** — Playwright scraping para coleta de propostas programáticas
+- **Documentos oficiais** — programas de governo, com deduplicação e extração de PDF
+- **Sites e imprensa** — somente enriquecimento/contexto; extrações IA ficam ocultas até revisão
 
 ## Licença
 

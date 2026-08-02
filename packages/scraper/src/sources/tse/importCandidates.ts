@@ -91,7 +91,62 @@ async function availableSlug(
   return existing ? `${base}-${record.tseId.slice(-6)}` : base
 }
 
-async function createPerson(prisma: PrismaClient, record: TseCandidateRecord): Promise<string> {
+interface PersonResolution {
+  personId: string
+  ambiguousMandates: boolean
+}
+
+function legislativeRole(position: Position): string | null {
+  if (position === Position.SENADOR) return 'SENADOR'
+  if (position === Position.DEPUTADO_FEDERAL) return 'DEPUTADO_FEDERAL'
+  return null
+}
+
+async function resolveOrCreatePerson(
+  prisma: PrismaClient,
+  record: TseCandidateRecord,
+  position: Position,
+): Promise<PersonResolution> {
+  const role = legislativeRole(position)
+  if (role) {
+    const mandates = await prisma.mandate.findMany({
+      where: {
+        role,
+        party: record.party,
+        state: record.state,
+        person: { normalizedName: normalizePersonName(record.name) },
+      },
+      select: { personId: true },
+    })
+    const personIds = [...new Set(mandates.map((mandate) => mandate.personId))]
+    if (personIds.length === 1) {
+      const person = await prisma.person.update({
+        where: { id: personIds[0] },
+        data: {
+          name: record.name,
+          socialName: record.ballotName,
+          normalizedName: normalizePersonName(record.name),
+          dataSource: DataSource.TSE,
+        },
+        select: { id: true },
+      })
+      return { personId: person.id, ambiguousMandates: false }
+    }
+
+    if (personIds.length > 1) {
+      const person = await prisma.person.create({
+        data: {
+          name: record.name,
+          socialName: record.ballotName,
+          normalizedName: normalizePersonName(record.name),
+          dataSource: DataSource.TSE,
+        },
+        select: { id: true },
+      })
+      return { personId: person.id, ambiguousMandates: true }
+    }
+  }
+
   const person = await prisma.person.create({
     data: {
       name: record.name,
@@ -101,18 +156,24 @@ async function createPerson(prisma: PrismaClient, record: TseCandidateRecord): P
     },
     select: { id: true },
   })
-  return person.id
+  return { personId: person.id, ambiguousMandates: false }
 }
 
 async function ensureCandidatePerson(
   prisma: PrismaClient,
   candidate: { id: string; personId: string | null },
   record: TseCandidateRecord,
-): Promise<string> {
-  if (candidate.personId) return candidate.personId
-  const personId = await createPerson(prisma, record)
-  await prisma.candidate.update({ where: { id: candidate.id }, data: { personId } })
-  return personId
+  position: Position,
+): Promise<PersonResolution> {
+  if (candidate.personId) {
+    return { personId: candidate.personId, ambiguousMandates: false }
+  }
+  const resolution = await resolveOrCreatePerson(prisma, record, position)
+  await prisma.candidate.update({
+    where: { id: candidate.id },
+    data: { personId: resolution.personId },
+  })
+  return resolution
 }
 
 async function upsertReviewItem(
@@ -195,12 +256,17 @@ export async function importTseCandidates(
           where: { candidateId: existingOfficial.id, status: ReviewItemStatus.OPEN },
           select: { id: true },
         })
-        const personId = await ensureCandidatePerson(prisma, existingOfficial, record)
-        const isPublished = policyPublished && !openReview
+        const personResolution = await ensureCandidatePerson(
+          prisma,
+          existingOfficial,
+          record,
+          position,
+        )
+        const isPublished = policyPublished && !openReview && !personResolution.ambiguousMandates
         await prisma.candidate.update({
           where: { id: existingOfficial.id },
           data: {
-            personId,
+            personId: personResolution.personId,
             name: record.name,
             socialName: record.ballotName,
             party: record.party,
@@ -219,6 +285,18 @@ export async function importTseCandidates(
             syncRunId: input.syncRunId,
           },
         })
+        if (personResolution.ambiguousMandates) {
+          if (await upsertReviewItem(prisma, {
+            record,
+            candidateId: existingOfficial.id,
+            personId: personResolution.personId,
+            syncRunId: input.syncRunId,
+            kind: ReviewItemKind.IDENTITY_AMBIGUITY,
+            reason: `Mais de um mandato corresponde ao registro TSE ${record.tseId}`,
+            checksum: input.checksum,
+          })) metrics.reviewItems++
+          metrics.ambiguous++
+        }
         metrics.updated++
         isPublished ? metrics.published++ : metrics.hidden++
         continue
@@ -249,11 +327,12 @@ export async function importTseCandidates(
 
       if (exactMatches.length === 1) {
         const match = exactMatches[0]
-        const personId = await ensureCandidatePerson(prisma, match, record)
+        const personResolution = await ensureCandidatePerson(prisma, match, record, position)
+        const isPublished = policyPublished && !personResolution.ambiguousMandates
         await prisma.candidate.update({
           where: { id: match.id },
           data: {
-            personId,
+            personId: personResolution.personId,
             tseId: record.tseId,
             name: record.name,
             socialName: record.ballotName,
@@ -264,24 +343,37 @@ export async function importTseCandidates(
             isOfficial: true,
             officialStatus: status,
             officialStatusRaw: record.rawStatus,
-            isPublished: policyPublished,
+            isPublished,
             dataSource: DataSource.TSE,
             sourceUrl: input.sourceUrl,
             lastSyncedAt: syncedAt,
             syncRunId: input.syncRunId,
           },
         })
+        if (personResolution.ambiguousMandates) {
+          if (await upsertReviewItem(prisma, {
+            record,
+            candidateId: match.id,
+            personId: personResolution.personId,
+            syncRunId: input.syncRunId,
+            kind: ReviewItemKind.IDENTITY_AMBIGUITY,
+            reason: `Mais de um mandato corresponde ao registro TSE ${record.tseId}`,
+            checksum: input.checksum,
+          })) metrics.reviewItems++
+          metrics.ambiguous++
+        }
         metrics.matched++
-        policyPublished ? metrics.published++ : metrics.hidden++
+        isPublished ? metrics.published++ : metrics.hidden++
         continue
       }
 
-      const needsReview = exactMatches.length > 1 || sameName.length > 0
-      const personId = await createPerson(prisma, record)
+      const personResolution = await resolveOrCreatePerson(prisma, record, position)
+      const needsEditorialReview = exactMatches.length > 1 || sameName.length > 0
+      const needsReview = needsEditorialReview || personResolution.ambiguousMandates
       const slug = await availableSlug(prisma, record)
       const created = await prisma.candidate.create({
         data: {
-          personId,
+          personId: personResolution.personId,
           tseId: record.tseId,
           slug,
           name: record.name,
@@ -307,22 +399,26 @@ export async function importTseCandidates(
       metrics.created++
 
       if (needsReview) {
-        const kind = exactMatches.length > 1
+        const kind = exactMatches.length > 1 || personResolution.ambiguousMandates
           ? ReviewItemKind.IDENTITY_AMBIGUITY
           : ReviewItemKind.CANDIDACY_CONFLICT
         const reason = exactMatches.length > 1
           ? `Mais de uma candidatura editorial corresponde ao registro TSE ${record.tseId}`
-          : `Registro TSE ${record.tseId} conflita com partido ou UF editorial`
+          : personResolution.ambiguousMandates
+            ? `Mais de um mandato corresponde ao registro TSE ${record.tseId}`
+            : `Registro TSE ${record.tseId} conflita com partido ou UF editorial`
         if (await upsertReviewItem(prisma, {
           record,
           candidateId: created.id,
-          personId,
+          personId: personResolution.personId,
           syncRunId: input.syncRunId,
           kind,
           reason,
           checksum: input.checksum,
         })) metrics.reviewItems++
-        exactMatches.length > 1 ? metrics.ambiguous++ : metrics.conflicts++
+        exactMatches.length > 1 || personResolution.ambiguousMandates
+          ? metrics.ambiguous++
+          : metrics.conflicts++
       }
 
       created.isPublished ? metrics.published++ : metrics.hidden++

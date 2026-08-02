@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "prisma migrate deploy && tsx prisma/seed.ts && tsx src/index.ts",
+    "start": "prisma migrate deploy && tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",

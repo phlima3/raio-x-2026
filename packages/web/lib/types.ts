@@ -4,8 +4,11 @@ export type Position =
   | 'PRESIDENTE'
   | 'VICE_PRESIDENTE'
   | 'SENADOR'
+  | 'PRIMEIRO_SUPLENTE'
+  | 'SEGUNDO_SUPLENTE'
   | 'DEPUTADO_FEDERAL'
   | 'DEPUTADO_ESTADUAL'
+  | 'DEPUTADO_DISTRITAL'
   | 'GOVERNADOR'
   | 'VICE_GOVERNADOR'
   | 'PREFEITO'
@@ -34,6 +37,10 @@ export interface CandidateSummary {
   electionYear: number
   slug: string
   firstProposalTitle?: string | null
+  isOfficial?: boolean
+  officialStatus?: 'ELIGIBLE' | 'INELIGIBLE' | 'PENDING' | 'CANCELLED' | 'UNKNOWN' | null
+  dataSource?: string
+  lastSyncedAt?: string | null
 }
 
 export interface Proposal {

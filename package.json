@@ -17,6 +17,7 @@
     "test": "vitest run",
     "test:unit": "vitest run --exclude **/*.integration.test.ts",
     "test:integration": "vitest run --config vitest.integration.config.mts",
+    "typecheck": "pnpm -r typecheck",
     "clean:processes": "pkill -9 -f 'tsx.*raio-x' 2>/dev/null; pkill -9 -f 'next.*dev' 2>/dev/null; echo 'Done'"
   },
   "devDependencies": {

@@ -1,0 +1,25 @@
+name: Enrich Candidate News
+
+on:
+  schedule:
+    - cron: '0 4 * * 3'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+concurrency:
+  group: sync-candidate-news
+  cancel-in-progress: false
+
+jobs:
+  news:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-pipeline
+      - name: Sync news context
+        run: pnpm --filter @raiox/scraper run news:weekly

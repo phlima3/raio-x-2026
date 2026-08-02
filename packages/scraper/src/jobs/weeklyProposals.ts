@@ -1,47 +1,43 @@
 import cron from 'node-cron'
+import { DataSource, PrismaClient } from '@prisma/client'
+
 import { syncCandidateSites, loadCandidateSiteConfigs } from '../sources/candidateSites'
+import {
+  createPrismaSyncRunStore,
+  runDataSourceSync,
+  type CompletedSyncRun,
+} from '../sync/runDataSourceSync'
 import { logger } from '../utils/logger'
 
-// Weekly cron job: scrape candidate websites for programmatic proposals
-// Schedule: every Sunday at 02:00 BRT (05:00 UTC)
-// Playwright scraping is heavier — weekly frequency avoids overloading candidate sites
+const prisma = new PrismaClient()
+const CRON_SCHEDULE = '0 4 * * 1'
 
-const CRON_SCHEDULE = '0 5 * * 0' // 05:00 UTC Sunday = 02:00 BRT Sunday
-
-async function runWeeklyProposalsSync(): Promise<void> {
-  logger.info('[weekly-proposals] Starting weekly candidate sites scrape…')
-
-  const configs = await loadCandidateSiteConfigs()
-
-  if (configs.length === 0) {
-    logger.warn('[weekly-proposals] No candidates with siteUrl found in DB — skipping')
-    return
-  }
-
-  logger.info(`[weekly-proposals] ${configs.length} candidate sites to scrape`)
-
-  try {
-    await syncCandidateSites(configs)
-    logger.info('[weekly-proposals] Candidate sites scrape completed')
-  } catch (err) {
-    logger.error('[weekly-proposals] Candidate sites scrape failed', err)
-    throw err
-  }
+export async function runWeeklyProposalsSync(): Promise<CompletedSyncRun> {
+  return runDataSourceSync({
+    source: DataSource.CANDIDATE_SITE,
+    kind: 'campaign-proposals',
+    store: createPrismaSyncRunStore(prisma),
+    execute: async () => {
+      const configs = await loadCandidateSiteConfigs()
+      if (configs.length === 0) {
+        return { noop: true, metrics: { sites: 0, succeeded: 0, failed: 0, proposals: 0 } }
+      }
+      const metrics = await syncCandidateSites(configs)
+      return { metrics: { ...metrics } }
+    },
+  })
 }
 
 export const weeklyProposalsJob = cron.schedule(CRON_SCHEDULE, runWeeklyProposalsSync, {
   scheduled: false,
-  timezone: 'America/Sao_Paulo',
+  timezone: 'UTC',
 })
 
-export { runWeeklyProposalsSync }
-
-// ── Direct execution ──────────────────────────────────────────────────────────
-// Used by: pnpm run process:proposals
 if (require.main === module) {
   runWeeklyProposalsSync()
-    .catch((err) => {
-      console.error('[weekly-proposals] Fatal error', err)
+    .catch((error) => {
+      logger.error('[weekly-proposals] Fatal error', error)
       process.exit(1)
     })
+    .finally(() => prisma.$disconnect())
 }

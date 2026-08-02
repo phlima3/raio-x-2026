@@ -1,4 +1,4 @@
-import { DataSource, MandateHouse, PrismaClient } from '@prisma/client'
+import { DataSource, MandateHouse, Position, PrismaClient } from '@prisma/client'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { upsertLegislatorMandate } from '../src/legislative/persistence'
@@ -52,5 +52,79 @@ describe('legislative persistence', () => {
     await expect(prisma.person.count()).resolves.toBe(1)
     await expect(prisma.mandate.count()).resolves.toBe(1)
     await expect(prisma.candidate.count()).resolves.toBe(0)
+  })
+
+  it('links an unequivocal TSE person by name, office, party and UF', async () => {
+    const person = await prisma.person.create({
+      data: { name: 'Senadora Integrada', normalizedName: 'SENADORA INTEGRADA', dataSource: DataSource.TSE },
+    })
+    await prisma.candidate.create({
+      data: {
+        tseId: 'tse-integrated',
+        name: 'Senadora Integrada',
+        party: 'PX',
+        state: 'SP',
+        position: Position.SENADOR,
+        partyHistory: [],
+        personId: person.id,
+      },
+    })
+
+    const ids = await upsertLegislatorMandate(prisma, {
+      source: DataSource.SENADO,
+      house: MandateHouse.SENADO,
+      externalId: 'senado-integrated',
+      legislatureId: '57',
+      name: 'Senadora Integrada',
+      socialName: 'Senadora Integrada',
+      party: 'PX',
+      state: 'SP',
+      role: 'SENADOR',
+      sourceUrl: 'https://senado.example/integrated',
+      syncedAt: new Date('2026-08-02T00:00:00Z'),
+    })
+
+    expect(ids.personId).toBe(person.id)
+    expect((await prisma.person.findUniqueOrThrow({ where: { id: person.id } })).senadoId)
+      .toBe('senado-integrated')
+    expect(await prisma.person.count()).toBe(1)
+  })
+
+  it('never auto-links ambiguous identities and creates a ReviewItem', async () => {
+    for (const suffix of ['a', 'b']) {
+      const person = await prisma.person.create({
+        data: { name: 'Nome Homônimo', normalizedName: 'NOME HOMONIMO', dataSource: DataSource.TSE },
+      })
+      await prisma.candidate.create({
+        data: {
+          tseId: `tse-${suffix}`,
+          slug: `nome-homonimo-${suffix}`,
+          name: 'Nome Homônimo',
+          party: 'PX',
+          state: 'SP',
+          position: Position.SENADOR,
+          partyHistory: [],
+          personId: person.id,
+        },
+      })
+    }
+
+    const ids = await upsertLegislatorMandate(prisma, {
+      source: DataSource.SENADO,
+      house: MandateHouse.SENADO,
+      externalId: 'senado-ambiguous',
+      legislatureId: '57',
+      name: 'Nome Homônimo',
+      socialName: 'Nome Homônimo',
+      party: 'PX',
+      state: 'SP',
+      role: 'SENADOR',
+      sourceUrl: 'https://senado.example/ambiguous',
+      syncedAt: new Date('2026-08-02T00:00:00Z'),
+    })
+
+    expect(await prisma.person.count()).toBe(3)
+    expect(await prisma.candidate.count()).toBe(2)
+    expect(await prisma.reviewItem.count({ where: { personId: ids.personId } })).toBe(1)
   })
 })

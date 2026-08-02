@@ -64,7 +64,7 @@ Candidatos que concorreram em 2018 e/ou 2022 já têm histórico importável ago
   - Match por nome normalizado (unaccent + lowercase) contra candidatos do seed
   - Upsert em `AssetDeclaration` (year, totalValue, sourceUrl)
   - Idempotente: ignorar candidatos sem match
-- [x] Adicionar job `import-tse-historico` no `scraper.yml` (workflow_dispatch manual)
+- [x] Adicionar job `import-tse-historico` no `manual-data-jobs.yml` (workflow_dispatch manual)
 - [x] Validar no Prisma Studio que bens 2018/2022 aparecem nos candidatos corretos
 
 **Fonte:** `https://dadosabertos.tse.jus.br/dados/bem_candidato`
@@ -80,7 +80,7 @@ Prestação de contas de campanhas anteriores (receitas + despesas) via CSV púb
   - Stream `despesas_contratadas_candidatos_YYYY_BRASIL.csv` → soma VR_DESPESA_CONTRATADA
   - Match por nome normalizado contra candidatos do seed (mesma lógica do bens)
   - Upsert em `CampaignFinancing` (year, totalReceived, totalSpent, donors JSON, sourceUrl)
-- [x] Adicionar job `import-tse-financiamento` no `scraper.yml` (workflow_dispatch manual)
+- [x] Adicionar job `import-tse-financiamento` no `manual-data-jobs.yml` (workflow_dispatch manual)
 - [x] Validar: 9 registros 2018 + 14 registros 2022 importados com sucesso
 
 **Fonte:** `https://cdn.tse.jus.br/estatistica/sead/odsele/prestacao_contas/prestacao_de_contas_eleitorais_candidatos_YYYY.zip`
@@ -99,7 +99,7 @@ Prestação de contas de campanhas anteriores (receitas + despesas) via CSV púb
 - [x] Outputs JSON por candidato em `packages/scraper/src/data/gemini-research/outputs/` (12 arquivos)
 - [x] `importGeminiData.ts` — lê JSONs, valida com Zod, upserta bio/foto/siteUrl/bioSummary + 5 proposals/tema
 - [x] Preflight idempotente: Renan Santos MBL → Missão (party + slug corrigidos)
-- [x] GitHub Actions job `import-gemini` em `scraper.yml` com `PROD_DATABASE_URL`
+- [x] GitHub Actions job `import-gemini` em `manual-data-jobs.yml` com `PROD_DATABASE_URL`
 - [x] Busca accent-insensitive via PostgreSQL `unaccent` extension (migration aplicada)
 - [x] Todos os 12 candidatos com bios ricas, fotos e propostas por tema em produção
 
@@ -237,7 +237,7 @@ Prestação de contas de campanhas anteriores (receitas + despesas) via CSV púb
 - [x] `NewsItem` model no banco com migration (`20260327000000_add_news_items`)
 - [x] Job semanal `weeklyNews.ts` — itera candidatos × 5 temas, salva no banco
 - [x] Endpoint `GET /api/candidates/:slug/news` — retorna itens ordenados por data
-- [x] GitHub Actions job `weekly-news` em `scraper.yml`
+- [x] GitHub Actions job semanal em `sync-news.yml`
 - [x] Alertas de contradição — `contradictionDetector.ts` + campos `hasContradiction`/`contradictionNote` no `NewsItem`; `weeklyNews.ts` detecta ao salvar; `?contradictionsOnly=true` no endpoint
 - [x] **UI: `NewsPanel.tsx`** — exibir declarações recentes na página do candidato *(Fase 6)*
 
@@ -247,7 +247,7 @@ Prestação de contas de campanhas anteriores (receitas + despesas) via CSV púb
   - `ci.yml` — type check + build em PRs e push para develop
   - `deploy-web.yml` — deploy Next.js para Vercel em push para main
   - `deploy-api.yml` — deploy API para Railway (via git integration) + migrate independente no Actions
-  - `scraper.yml` — sync diário (Câmara/Senado), semanal (sites + LLM), `import-gemini`, `populate`, `fix-migration`
+  - workflows `sync-*.yml` por fonte e `manual-data-jobs.yml` para manutenção
 - [x] Job `migrate` desacoplado do job `deploy` — migrations rodam independentemente via `PROD_DATABASE_URL`
 - [x] Domínio `raio-x-2026.com.br` apontando para Vercel (Hostinger DNS)
 - [x] Secrets configurados: `PROD_DATABASE_URL`, `PROD_REDIS_URL`, `GROQ_API_KEY`, `GEMINI_API_KEY`

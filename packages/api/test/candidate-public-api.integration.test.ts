@@ -1,4 +1,4 @@
-import { DataSource, Position, PrismaClient } from '@prisma/client'
+import { DataSource, Position, PrismaClient, ProposalOrigin } from '@prisma/client'
 import request from 'supertest'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
@@ -62,10 +62,39 @@ describe('public candidate API', () => {
         },
       ],
     })
+    await prisma.proposal.createMany({
+      data: [
+        {
+          externalId: 'editorial-visible',
+          source: 'editorial',
+          title: 'Proposta editorial publicada',
+          tags: [],
+          candidateId: 'published-president',
+          isPublished: true,
+          origin: ProposalOrigin.EDITORIAL,
+        },
+        {
+          externalId: 'ai-hidden',
+          source: 'candidate_site',
+          title: 'Extração IA aguardando revisão',
+          tags: [],
+          candidateId: 'published-president',
+          isPublished: false,
+          origin: ProposalOrigin.AI_EXTRACTION,
+        },
+      ],
+    })
 
     const list = await request(app).get('/api/candidates').expect(200)
     const stats = await request(app).get('/api/candidates/stats').expect(200)
+    const detail = await request(app).get('/api/candidates/presidente-publicado-abc-br').expect(200)
+    const proposals = await request(app)
+      .get('/api/candidates/presidente-publicado-abc-br/proposals')
+      .expect(200)
     await request(app).get('/api/candidates/deputado-nao-publicavel-abc-sp').expect(404)
+    await request(app).get('/api/transparency/hidden-governor/assets').expect(404)
+    await request(app).get('/api/transparency/published-deputy/voting').expect(404)
+    await request(app).get('/api/transparency/published-president/assets').expect(200)
 
     expect(list.body.data.map((candidate: { id: string }) => candidate.id)).toEqual([
       'published-president',
@@ -75,6 +104,9 @@ describe('public candidate API', () => {
       total: 1,
       byPosition: { PRESIDENTE: 1 },
     }))
+    expect(detail.body.data.proposals.map((proposal: { externalId: string }) => proposal.externalId))
+      .toEqual(['editorial-visible'])
+    expect(JSON.stringify(proposals.body.data)).not.toContain('ai-hidden')
   })
 
   it('keeps the legacy ID and slug while normalized reads use Person identity', async () => {

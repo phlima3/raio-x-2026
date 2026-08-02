@@ -103,7 +103,7 @@ export const cacheKey = {
   candidateProposals: (slug: string) => `candidates:proposals:${slug}`,
   proposalList: (query: string) => `proposals:list:${query}`,
   categories: () => 'proposals:categories',
-  comparison: (a: string, b: string, topic: string) =>
-    `comparison:${[a, b].sort().join(':')}:${topic}`,
+  comparison: (readModel: string, a: string, b: string, topic: string) =>
+    `comparison:${readModel}:${[a, b].sort().join(':')}:${topic}`,
   stats: (readModel = 'legacy') => `candidates:stats:${readModel}`,
 }

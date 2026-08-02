@@ -7,6 +7,7 @@
 import { PrismaClient } from '@prisma/client'
 import { analyzeConsistency } from './geminiService'
 import { withCache, invalidate, TTL } from './cacheService'
+import { getCandidateReadModel, publicCandidateWhere } from './candidateService'
 
 const prisma = new PrismaClient()
 
@@ -57,10 +58,13 @@ export async function getConsistencyScores(candidateId: string): Promise<Consist
 }
 
 export async function computeConsistencyScores(candidateId: string): Promise<ConsistencyScoreResult[]> {
-  const candidate = await prisma.candidate.findUnique({
-    where: { id: candidateId },
+  const candidate = await prisma.candidate.findFirst({
+    where: { id: candidateId, ...publicCandidateWhere() },
     include: {
-      proposals: { select: { title: true, description: true, category: true } },
+      proposals: {
+        where: { isPublished: true },
+        select: { title: true, description: true, category: true },
+      },
       votingRecords: {
         select: { proposalName: true, voteType: true, votedAt: true },
         orderBy: { votedAt: 'desc' },
@@ -70,6 +74,21 @@ export async function computeConsistencyScores(candidateId: string): Promise<Con
   })
 
   if (!candidate) throw new Error(`Candidato não encontrado: ${candidateId}`)
+
+  const votingRecords = getCandidateReadModel() === 'normalized' && candidate.personId
+    ? await prisma.votingRecord.findMany({
+        where: {
+          OR: [
+            { candidateId },
+            { personId: candidate.personId },
+            { mandate: { personId: candidate.personId } },
+          ],
+        },
+        select: { proposalName: true, voteType: true, votedAt: true },
+        orderBy: { votedAt: 'desc' },
+        take: 500,
+      })
+    : candidate.votingRecords
 
   // Group proposals by theme (using category field)
   const byTheme: Record<string, string[]> = {}
@@ -92,7 +111,7 @@ export async function computeConsistencyScores(candidateId: string): Promise<Con
     const chunkResults = await Promise.all(
       chunk.map(async (theme) => {
         const themeProposals = byTheme[theme] ?? []
-        const relevantVotes = filterVotesByTheme(candidate.votingRecords, theme)
+        const relevantVotes = filterVotesByTheme(votingRecords, theme)
         const votesForLLM = relevantVotes.map((v) => ({
           proposalName: v.proposalName,
           voteType: v.voteType,

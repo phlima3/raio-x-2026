@@ -1,5 +1,6 @@
 import {
   DataSource,
+  MandateHouse,
   OfficialCandidacyStatus,
   Position,
   PrismaClient,
@@ -198,5 +199,94 @@ describe('importTseCandidates', () => {
     expect(metrics).toEqual(expect.objectContaining({ created: 10, published: 3, hidden: 7 }))
     await expect(prisma.candidate.count()).resolves.toBe(10)
     await expect(prisma.candidate.count({ where: { isPublished: true } })).resolves.toBe(3)
+  })
+
+  it('reuses an unequivocal legislative Person when TSE runs after Senado', async () => {
+    const person = await prisma.person.create({
+      data: {
+        name: 'Senadora Integrada',
+        normalizedName: 'SENADORA INTEGRADA',
+        senadoId: 'senado-integrated',
+        dataSource: DataSource.SENADO,
+      },
+    })
+    await prisma.mandate.create({
+      data: {
+        personId: person.id,
+        source: DataSource.SENADO,
+        externalId: 'senado-integrated',
+        legislatureId: '57',
+        house: MandateHouse.SENADO,
+        role: 'SENADOR',
+        state: 'SP',
+        party: 'PX',
+      },
+    })
+
+    await importTseCandidates(prisma, {
+      records: [officialCandidate({
+        tseId: 'tse-integrated',
+        name: 'Senadora Integrada',
+        ballotName: 'Senadora Integrada',
+        party: 'PX',
+        state: 'SP',
+        position: 'SENADOR',
+        rawPosition: 'SENADOR',
+      })],
+      sourceUrl: 'https://cdn.tse.jus.br/consulta_cand_2026.zip',
+      checksum: 'snapshot-sha',
+    })
+
+    const candidate = await prisma.candidate.findUniqueOrThrow({ where: { tseId: 'tse-integrated' } })
+    expect(candidate.personId).toBe(person.id)
+    await expect(prisma.person.count()).resolves.toBe(1)
+    await expect(prisma.reviewItem.count()).resolves.toBe(0)
+  })
+
+  it('keeps ambiguous legislative identities separate when TSE runs after Senado', async () => {
+    for (const suffix of ['a', 'b']) {
+      const person = await prisma.person.create({
+        data: {
+          name: 'Senador Homônimo',
+          normalizedName: 'SENADOR HOMONIMO',
+          senadoId: `senado-${suffix}`,
+          dataSource: DataSource.SENADO,
+        },
+      })
+      await prisma.mandate.create({
+        data: {
+          personId: person.id,
+          source: DataSource.SENADO,
+          externalId: `senado-${suffix}`,
+          legislatureId: '57',
+          house: MandateHouse.SENADO,
+          role: 'SENADOR',
+          state: 'SP',
+          party: 'PX',
+        },
+      })
+    }
+
+    const metrics = await importTseCandidates(prisma, {
+      records: [officialCandidate({
+        tseId: 'tse-ambiguous-legislative',
+        name: 'Senador Homônimo',
+        ballotName: 'Senador Homônimo',
+        party: 'PX',
+        state: 'SP',
+        position: 'SENADOR',
+        rawPosition: 'SENADOR',
+      })],
+      sourceUrl: 'https://cdn.tse.jus.br/consulta_cand_2026.zip',
+      checksum: 'snapshot-sha',
+    })
+
+    const candidate = await prisma.candidate.findUniqueOrThrow({
+      where: { tseId: 'tse-ambiguous-legislative' },
+    })
+    expect(candidate.isPublished).toBe(false)
+    expect(metrics).toEqual(expect.objectContaining({ ambiguous: 1, reviewItems: 1 }))
+    await expect(prisma.person.count()).resolves.toBe(3)
+    await expect(prisma.reviewItem.count({ where: { candidateId: candidate.id } })).resolves.toBe(1)
   })
 })

@@ -1,9 +1,14 @@
 import 'dotenv/config'
 import cron from 'node-cron'
-import { PrismaClient } from '@prisma/client'
+import { DataSource, Position, PrismaClient } from '@prisma/client'
 import { fetchCandidateNews, TOPICS } from '../processors/newsProcessor'
 import { detectContradiction, TOPIC_TO_CATEGORY, type ProposalRef } from '../processors/contradictionDetector'
 import { logger } from '../utils/logger'
+import {
+  createPrismaSyncRunStore,
+  runDataSourceSync,
+  type CompletedSyncRun,
+} from '../sync/runDataSourceSync'
 
 // Weekly cron job: fetch recent news/statements for each candidate via Gemini Search Grounding
 // Schedule: every Wednesday at 04:00 UTC (01:00 BRT)
@@ -16,17 +21,25 @@ const prisma = new PrismaClient()
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 
-async function runWeeklyNewsSync(): Promise<void> {
+async function executeWeeklyNewsSync(): Promise<{
+  saved: number
+  contradictions: number
+  errors: number
+}> {
   logger.info('[weekly-news] Starting weekly news sync via Gemini Search Grounding…')
 
   const candidates = await prisma.candidate.findMany({
+    where: {
+      isPublished: true,
+      position: { in: [Position.PRESIDENTE, Position.GOVERNADOR, Position.SENADOR] },
+    },
     select: { id: true, name: true },
     orderBy: { name: 'asc' },
   })
 
   if (candidates.length === 0) {
     logger.warn('[weekly-news] No candidates found in DB — skipping')
-    return
+    return { saved: 0, contradictions: 0, errors: 0 }
   }
 
   logger.info(`[weekly-news] Processing ${candidates.length} candidates × ${TOPICS.length} topics`)
@@ -51,7 +64,7 @@ async function runWeeklyNewsSync(): Promise<void> {
         const category = TOPIC_TO_CATEGORY[topic]
         const proposals: ProposalRef[] = category
           ? await prisma.proposal.findMany({
-              where: { candidateId: candidate.id, category },
+              where: { candidateId: candidate.id, category, isPublished: true },
               select: { id: true, title: true, description: true, summary: true },
             })
           : []
@@ -105,15 +118,28 @@ async function runWeeklyNewsSync(): Promise<void> {
   logger.info(
     `[weekly-news] Done — ${totalSaved} items saved, ${totalContradictions} contradictions detected, ${totalErrors} errors`,
   )
-  await prisma.$disconnect()
+  if (totalErrors > 0) {
+    throw new Error(`[weekly-news] ${totalErrors} candidate/topic request(s) failed`)
+  }
+  return { saved: totalSaved, contradictions: totalContradictions, errors: totalErrors }
+}
+
+export async function runWeeklyNewsSync(): Promise<CompletedSyncRun> {
+  return runDataSourceSync({
+    source: DataSource.NEWS,
+    kind: 'news-context',
+    store: createPrismaSyncRunStore(prisma),
+    execute: async () => {
+      const metrics = await executeWeeklyNewsSync()
+      return { noop: metrics.saved === 0, metrics: { ...metrics } }
+    },
+  })
 }
 
 export const weeklyNewsJob = cron.schedule(CRON_SCHEDULE, runWeeklyNewsSync, {
   scheduled: false,
-  timezone: 'America/Sao_Paulo',
+  timezone: 'UTC',
 })
-
-export { runWeeklyNewsSync }
 
 // ── Direct execution ──────────────────────────────────────────────────────────
 // Used by: pnpm run news:weekly
@@ -123,4 +149,5 @@ if (require.main === module) {
       logger.error('[weekly-news] Fatal error', err)
       process.exit(1)
     })
+    .finally(() => prisma.$disconnect())
 }

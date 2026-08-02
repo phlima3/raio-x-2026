@@ -11,17 +11,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]
 
   try {
-    const [presidentsRes, governorsRes] = await Promise.allSettled([
+    const [presidentsRes, governorsRes, senatorsRes] = await Promise.allSettled([
       fetchCandidates({ position: 'PRESIDENTE', limit: '20' }),
       fetchCandidates({ position: 'GOVERNADOR', limit: '50' }),
+      fetchCandidates({ position: 'SENADOR', limit: '100' }),
     ])
 
     const presidents =
       presidentsRes.status === 'fulfilled' ? presidentsRes.value.data : []
     const governors =
       governorsRes.status === 'fulfilled' ? governorsRes.value.data : []
+    const senators =
+      senatorsRes.status === 'fulfilled' ? senatorsRes.value.data : []
 
-    const candidateRoutes: MetadataRoute.Sitemap = [...presidents, ...governors].map((c) => ({
+    const candidateRoutes: MetadataRoute.Sitemap = [...presidents, ...governors, ...senators].map((c) => ({
       url: `${BASE}/candidatos/${c.slug}`,
       changeFrequency: 'weekly' as const,
       priority: 0.8,
