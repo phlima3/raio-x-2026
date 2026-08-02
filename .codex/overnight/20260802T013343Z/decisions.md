@@ -75,3 +75,8 @@
 - A fachada de detalhe remove chaves normalizadas internas e mantém apenas campos legados mais os quatro opcionais públicos.
 - O enum cobre também `VICE_PREFEITO`; ingestão armazena 13 cargos, enquanto a allowlist pública continua com três.
 - Documentos seguem o catálogo CKAN oficial, cuja fonte declarada é CAND/Candex/DivulgaCand; não inventar endpoint/ID enquanto 2026 não publicar PDFs.
+
+## 2026-08-02 — Detecção de envelopes documentais
+- Assinaturas binárias têm precedência sobre o campo `format` do CKAN: `%PDF-` é PDF direto e `PK` é ZIP.
+- Motivo: recurso oficial histórico pode declarar `Formato PDF` e entregar `application/zip`; usar somente o rótulo enviaria o arquivo compactado ao pdfjs.
+- O rótulo continua sendo fallback para respostas sem assinatura reconhecível, preservando compatibilidade com fixtures e endpoints intermediários.

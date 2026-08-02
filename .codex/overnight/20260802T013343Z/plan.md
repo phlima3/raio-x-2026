@@ -84,7 +84,7 @@
 - [x] Aplicar skill `review` e corrigir achados relevantes.
 - [x] Revisar diff, migrations, contratos, caches, schedules e histórico de commits.
 - [x] Documentar dry-run, ativação, monitoramento, sete syncs, rollout e rollback sem executar.
-- [ ] Fechar critérios em `final-report.md` com evidências honestas.
+- [x] Fechar critérios em `final-report.md` com evidências honestas.
 - Deliverable: relatório final e checkpoints locais.
 - Validation: ladder completa + inspeção final.
 - Dependencies: todas as fases.

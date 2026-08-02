@@ -222,3 +222,27 @@
 - Result: PASS.
 - Evidence: 14 migrations atualizadas; 7 arquivos/13 unitários; 11 arquivos/25 integrações PostgreSQL 16; 3 typechecks e 3 builds; 7 páginas Next; YAML/diff/CLI válidos.
 - Follow-up: commit e final-report.
+
+### 2026-08-02T03:44Z final report and persistent-state audit
+- Command: inspeção de `final-report.md`, `plan.md`, `progress.md`, `decisions.md`, `blockers.md`, `validation.md` e `state.json`; `git log --oneline -8`; `git status --short --branch`.
+- Result: PASS.
+- Evidence: cada fase do plano está marcada como concluída; relatório contém os seis checkpoints de implementação, todos os resultados reproduzíveis, limitação externa dos PDFs 2026, riscos e rollout/rollback sem execução externa.
+- Follow-up: checkpoint documental e confirmação de worktree limpo.
+
+### 2026-08-02T03:45Z TDD RED→GREEN — TSE ZIP labeled as PDF
+- Command: `vitest run --config vitest.integration.config.mts packages/scraper/test/tse-documents.integration.test.ts` contra PostgreSQL 16.
+- Result: RED (ZIP inteiro enviado ao extrator) → PASS (4/4 testes).
+- Evidence: fixture usa `format: PDF` com assinatura `PK`; após a correção, o extrator recebe apenas o PDF interno e a URL persistida identifica a entrada do ZIP.
+- Follow-up: repetir unitários, integrações, typecheck e build completos.
+
+### 2026-08-02T03:47Z post-document-fix full ladder
+- Command: `pnpm test:unit`; `pnpm test:integration`; `pnpm typecheck`; `pnpm build` no banco PostgreSQL 16 limpo.
+- Result: PASS.
+- Evidence: 7 arquivos/13 unitários; 11 arquivos/26 integrações; API, scraper e web passaram typecheck e build; Next gerou 7 páginas.
+- Follow-up: reauditoria focada, checkpoint documental e confirmação de worktree limpo.
+
+### 2026-08-02T03:48Z focused Spec re-audit
+- Command: revisão read-only independente do commit `ca5180b`.
+- Result: PASS (`RESOLVIDO`).
+- Evidence: a revisão confirmou precedência de `%PDF-`/`PK` e teste que entrega somente o PDF interno ao extrator quando `format=PDF` mascara um ZIP.
+- Follow-up: checkpoint documental e confirmação de worktree limpo.

@@ -1,12 +1,12 @@
 # Progress
 
 ## Current status
-- Phase: Final review and handoff
-- State: active
-- Last completed action: review em dois eixos concluído; achados materiais corrigidos e ladder final passou com 14 migrations, 13 unitários e 25 integrações.
-- Next action: criar checkpoint de review, finalizar relatório/estado persistente e verificar worktree limpo.
-- Last known good commit: ee483ef
-- Working tree status: dirty com implementação do run; nenhuma mudança preexistente do usuário foi encontrada.
+- Phase: Complete
+- State: complete
+- Last completed action: caso real de ZIP TSE rotulado como PDF corrigido em RED→GREEN; relatório e ladder final consolidados.
+- Next action: handoff ao usuário; nenhuma ação técnica pendente no worktree.
+- Last known good commit: ca5180b
+- Working tree status: limpo após o checkpoint documental que contém este registro; nenhuma mudança preexistente do usuário foi encontrada.
 
 ## Timeline
 - 2026-08-02T01:33:43Z — Criado run `20260802T013343Z` via `bootstrap_run.py`.
@@ -40,3 +40,7 @@
 - 2026-08-02T03:35Z — Votos/projetos legados agora migram ao mandato sem perder relações legadas; falha de persistência de site propaga; proposta revisada não é sobrescrita; `VICE_PREFEITO` completa cargos TSE; resposta pública omite campos internos.
 - 2026-08-02T03:38Z — Catálogo oficial 2026 segue sem recurso PDF; catálogo TSE 2024 confirma PDFs por UF no mesmo CKAN e fonte CAND/Candex/DivulgaCand, compatível com o adapter implementado.
 - 2026-08-02T03:40Z — Ladder pós-review passou: 7 arquivos/13 unitários, 11 arquivos/25 integrações, typecheck e builds dos três pacotes; YAML/diff/review CLI verdes.
+- 2026-08-02T03:44Z — `final-report.md` fechado com commits, evidências, limites externos, riscos e passos manuais de rollout/rollback; plano persistente integralmente concluído.
+- 2026-08-02T03:45Z — Reauditoria reproduziu um ZIP oficial rotulado `Formato PDF`; teste falhou ao enviar o arquivo inteiro ao extrator e passou após priorizar assinatura binária.
+- 2026-08-02T03:47Z — Ladder pós-fix passou com 13 unitários, 26 integrações PostgreSQL 16, três typechecks e três builds; fix isolado em `ca5180b`.
+- 2026-08-02T03:48Z — Reauditoria independente focada confirmou `RESOLVIDO`: ZIP rotulado PDF é aberto e somente o PDF interno chega ao extrator.
