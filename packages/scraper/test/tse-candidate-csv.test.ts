@@ -52,16 +52,21 @@ describe('parseTseCandidateCsv', () => {
 
   it('rejects an invalid UF while tolerating columns added by the TSE', () => {
     const csv = [
-      'ANO_ELEICAO;CD_ELEICAO;SG_UF;DS_CARGO;SQ_CANDIDATO;NM_CANDIDATO;SG_PARTIDO;DS_SITUACAO_CANDIDATURA;CAMPO_FUTURO',
-      '2026;999;XX;SENADOR;260000000003;NOME TESTE;XYZ;APTO;valor',
+      'ANO_ELEICAO;CD_ELEICAO;SG_UF;DS_CARGO;SQ_CANDIDATO;NM_CANDIDATO;SG_PARTIDO;DS_SITUACAO_CANDIDATURA;CAMPO_FUTURO;CPF_CANDIDATO_V2',
+      '2026;999;XX;SENADOR;260000000003;NOME TESTE;XYZ;APTO;valor;12345678900',
     ].join('\n')
 
     const result = parseTseCandidateCsv(Buffer.from(csv, 'utf8'))
 
     expect(result.records).toEqual([])
     expect(result.columns).toContain('CAMPO_FUTURO')
+    expect(result.columns).not.toContain('CPF_CANDIDATO_V2')
     expect(result.rejected).toEqual([
-      expect.objectContaining({ row: 2, reason: 'SG_UF inválida' }),
+      expect.objectContaining({
+        row: 2,
+        reason: 'SG_UF inválida',
+        raw: expect.not.objectContaining({ CPF_CANDIDATO_V2: expect.anything() }),
+      }),
     ])
   })
 })

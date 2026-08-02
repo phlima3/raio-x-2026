@@ -3,6 +3,11 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { runCamaraSync, type CamaraHttpPort } from '../src/sources/camara'
 
+const databaseUrl = process.env.DATABASE_URL ?? ''
+if (!databaseUrl.includes('_test')) {
+  throw new Error('Integration tests require a DATABASE_URL whose database name contains _test')
+}
+
 const prisma = new PrismaClient()
 
 async function clearData() {

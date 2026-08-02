@@ -13,9 +13,9 @@
 ## Phase 2 — Test infrastructure and CI/Prisma
 - [x] Adicionar Vitest/Supertest e helpers PostgreSQL 16.
 - [x] Criar fixtures TSE sintéticas e primeiro tracer bullet RED→GREEN.
-- [ ] Centralizar instalação/geração Prisma no workspace; remover cópias manuais.
-- [ ] Separar workflows/schedules por fonte e garantir exit code não zero.
-- [ ] Remover seed automático do pre-start, mantendo comando explícito.
+- [x] Centralizar instalação/geração Prisma no workspace; remover cópias manuais.
+- [x] Separar workflows/schedules por fonte e garantir exit code não zero.
+- [x] Remover seed automático do pre-start, mantendo comando explícito.
 - Deliverable: CI reproduzível e jobs independentes.
 - Validation: testes focados, `pnpm db:generate`, typecheck, validação YAML/build.
 - Dependencies: Phase 1.
@@ -36,8 +36,8 @@
 ## Phase 4 — Compatible read facade and public visibility
 - [x] Criar módulo profundo de leitura com adapters `legacy` e `normalized` selecionados por env.
 - [x] Preservar shape/IDs/slugs; gerar novos slugs `nome-partido-UF-cargo-ano` sem alterar existentes.
-- [ ] Aplicar published+office policy a lista, detalhe, stats, busca, comparação, propostas, sitemap e cache.
-- [ ] Acrescentar campos oficiais opcionais aos tipos web.
+- [x] Aplicar published+office policy a lista, detalhe, stats, busca, comparação, propostas, sitemap e cache.
+- [x] Acrescentar campos oficiais opcionais aos tipos web.
 - Deliverable: contratos públicos compatíveis e rollback por variável.
 - Validation: Supertest em ambos os read models, typecheck API/web e testes de URLs/filtros.
 - Dependencies: Phase 3.
@@ -80,10 +80,10 @@
 - Rollback: documentos/propostas novas ficam ocultos; legado preservado.
 
 ## Phase 8 — Full validation, review and handoff
-- [ ] Rodar unitários, integração PostgreSQL 16, typecheck, lint e builds.
-- [ ] Aplicar skill `review` e corrigir achados relevantes.
-- [ ] Revisar diff, migrations, contratos, caches, schedules e histórico de commits.
-- [ ] Documentar dry-run, ativação, monitoramento, sete syncs, rollout e rollback sem executar.
+- [x] Rodar unitários, integração PostgreSQL 16, typecheck, lint e builds (lint sem configuração preexistente, registrado em validation.md).
+- [x] Aplicar skill `review` e corrigir achados relevantes.
+- [x] Revisar diff, migrations, contratos, caches, schedules e histórico de commits.
+- [x] Documentar dry-run, ativação, monitoramento, sete syncs, rollout e rollback sem executar.
 - [ ] Fechar critérios em `final-report.md` com evidências honestas.
 - Deliverable: relatório final e checkpoints locais.
 - Validation: ladder completa + inspeção final.

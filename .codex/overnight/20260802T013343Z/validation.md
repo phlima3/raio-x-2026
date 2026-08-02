@@ -155,3 +155,70 @@
 - Result: PASS
 - Evidence: 7 arquivos/13 testes unitários e 10 arquivos/19 integrações passaram.
 - Follow-up: finalizar CI, operação e review.
+
+### 2026-08-02T03:10Z TDD RED→GREEN — bidirectional identity reconciliation
+- Command: integrações focadas `tse-candidate-import.integration.test.ts` e `legislative-persistence.integration.test.ts` em PostgreSQL 16.
+- Result: RED (TSE criava uma segunda Person e publicava caso ambíguo) → PASS.
+- Evidence: 2 arquivos/10 testes; match exato por nome/cargo/partido/UF reutiliza Person em qualquer ordem de sync, enquanto dois matches mantêm três pessoas separadas, ocultam a candidatura e criam ReviewItem.
+- Follow-up: validar migrations do zero e a ladder completa.
+
+### 2026-08-02T03:16Z clean PostgreSQL 16 migration
+- Command: criar `raiox2026_fresh_20260802_test`; `prisma validate`; `prisma migrate deploy`; `prisma migrate status`.
+- Result: PASS.
+- Evidence: schema válido; 13/13 migrations aplicadas do zero; database schema up to date. A migration preserva candidaturas editoriais preexistentes de presidente/governador/senador.
+- Follow-up: usar exclusivamente esse banco na suite final.
+
+### 2026-08-02T03:17Z full validation ladder
+- Command: `pnpm install --frozen-lockfile`; `pnpm db:generate`; `pnpm test:unit`; `pnpm test:integration`; `pnpm typecheck`; `pnpm build`.
+- Result: PASS.
+- Evidence: lockfile aceito; Prisma gerado no `.pnpm` raiz; 7 arquivos/13 testes unitários e 10 arquivos/23 integrações; typecheck dos 3 pacotes; builds API/scraper e Next com 7 páginas concluídos.
+- Note: Next mantém aviso não bloqueante preexistente de override de `Bodoni Moda` e depreciação `punycode`.
+- Follow-up: review final.
+
+### 2026-08-02T03:18Z workflow and review CLI validation
+- Command: `yaml-lint` em action + 7 workflows; `review:report`; `git diff --check`.
+- Result: PASS.
+- Evidence: YAML válido; relatório CLI retornou JSON válido sem payloads; diff sem whitespace errors.
+- Follow-up: review final.
+
+### 2026-08-02T03:17Z lint baseline
+- Command: `pnpm lint`; `pnpm --filter @raiox/web lint`.
+- Result: NOT CONFIGURED (non-blocking).
+- Evidence: a API declara `eslint` sem dependência/config e o Next solicita configuração interativa; esse defeito já existia no baseline. Typecheck e o lint/check interno do build Next passaram.
+- Follow-up: registrar como dívida separada, sem ampliar o escopo do pipeline.
+
+### 2026-08-02T03:23Z two-axis review skill
+- Command: `git diff 4383a0c...HEAD`; subreviews paralelos Standards e Spec conforme `review/SKILL.md`.
+- Result: Standards PASS (0 achados); Spec 2 altos, 4 médios e 1 baixo antes das correções.
+- Evidence: migração de votos/projetos e falha engolida em proposalExtractor foram altas; lifecycle de revisão IA, documentos, cargo vice-prefeito, campos internos da fachada e relatório foram demais achados.
+- Follow-up: corrigir todos os locais; tratar documentos pela evidência oficial de disponibilidade.
+
+### 2026-08-02T03:24Z TDD RED→GREEN — sensitive future columns
+- Command: `tse-candidate-csv.test.ts`.
+- Result: RED (coluna futura `CPF_CANDIDATO_V2` aparecia em columns/raw) → PASS.
+- Evidence: sanitizer agora rejeita qualquer nome de coluna contendo CPF ou título eleitoral, inclusive em linhas rejeitadas e metadados de colunas.
+- Follow-up: review de segurança dos testes de integração.
+
+### 2026-08-02T03:34Z TDD RED→GREEN — migration and facade findings
+- Command: testes focados API pública, importador TSE e persistência legislativa.
+- Result: RED nos três achados → PASS (3 arquivos/13 testes).
+- Evidence: voto legado recebe personId/mandateId mantendo candidateId; projeto legado vira LegislativeBill+autoria e Proposal oculta; 13 cargos TSE são armazenados; detalhe não expõe personId/syncRunId/raw/source internos.
+- Follow-up: validar lifecycle de revisão IA.
+
+### 2026-08-02T03:35Z TDD RED→GREEN — reviewed AI proposal
+- Command: `ai-proposal-review.integration.test.ts`.
+- Result: RED (`persistExtractedProposals` inexistente) → PASS.
+- Evidence: reprocessamento mantém título/conteúdo/status/publicação/reviewedAt aprovados; os três importadores pulam rows já revisadas.
+- Follow-up: ladder final.
+
+### 2026-08-02T03:38Z official document availability revalidation
+- Command: busca no catálogo oficial TSE 2026 e comparação com recursos oficiais 2024.
+- Result: PASS com limitação externa documentada.
+- Evidence: 2026 descreve proposta de governo mas ainda lista somente 7 recursos CSV; 2024 publica PDFs de proposta por UF no mesmo CKAN e declara CAND/Candex/DivulgaCand como fonte. O client atual aceita PDF direto e ZIP assim que surgirem.
+- Follow-up: manter schedule 08:00 UTC e NOOP até recurso real.
+
+### 2026-08-02T03:40Z post-review full ladder
+- Command: `prisma format/generate/validate/migrate status`; `pnpm test:unit`; `pnpm test:integration`; `pnpm typecheck`; `pnpm build`; YAML lint; `git diff --check`; `review:report`.
+- Result: PASS.
+- Evidence: 14 migrations atualizadas; 7 arquivos/13 unitários; 11 arquivos/25 integrações PostgreSQL 16; 3 typechecks e 3 builds; 7 páginas Next; YAML/diff/CLI válidos.
+- Follow-up: commit e final-report.

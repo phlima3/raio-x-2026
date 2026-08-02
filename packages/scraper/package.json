@@ -12,7 +12,7 @@
     "sync:tse": "tsx src/sources/tse.ts",
     "sync:tse:supplemental": "tsx src/sources/tseSupplemental.ts",
     "sync:documents": "tsx src/sources/tseDocuments.ts",
-    "sync:sites": "tsx src/sources/candidateSites.ts",
+    "sync:sites": "tsx src/jobs/weeklyProposals.ts",
     "sync:all": "tsx src/jobs/dailySync.ts",
     "sync:presidenciaveis": "tsx src/jobs/syncPresidenciaveis.ts",
     "process:proposals": "tsx src/jobs/weeklyProposals.ts",

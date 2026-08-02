@@ -59,3 +59,19 @@
 - PDF sem camada textual é `NEEDS_OCR`, não erro. Corrupção/erro de parser é `FAILED` e falha a execução da fonte.
 - Ausência de recurso de programa no catálogo é `DataSyncRun=NOOP` bem-sucedido.
 - Toda saída não revisada de IA (`candidate_site`, `news`, `gemini_research`) é `DRAFT`, `AI_EXTRACTION` e `isPublished=false`; editorial existente não é alterado.
+
+## 2026-08-02 — Reconciliação independente da ordem das fontes
+- Como Legislativo roda 03:00 UTC e TSE 07:00 UTC, o vínculo exato precisa funcionar nos dois sentidos.
+- Um único Person/Candidate com nome normalizado, cargo, partido e UF é reutilizado; múltiplos IDs distintos criam Person separada + `IDENTITY_AMBIGUITY` e nunca auto-merge.
+- Identificadores oficiais Câmara/Senado continuam tendo precedência sobre a combinação de campos.
+
+## 2026-08-02 — Preservação na migration inicial
+- A expansão marca como públicas todas as candidaturas legadas nos três cargos habilitados, inclusive senador editorial sem `tseId`.
+- Somente uma sincronização oficial presente pode atualizar deterministicamente o status do próprio registro; aplicar a migration ou receber snapshot vazio não despublica pré-candidato.
+
+## 2026-08-02 — Disposição dos achados de review
+- Votos e projetos legislativos legados são migrados quando o mandato oficial é resolvido; candidateId/Proposal legados permanecem para rollback.
+- Proposta de IA com `reviewedAt` nunca é rebaixada nem tem conteúdo aprovado sobrescrito por reprocessamento.
+- A fachada de detalhe remove chaves normalizadas internas e mantém apenas campos legados mais os quatro opcionais públicos.
+- O enum cobre também `VICE_PREFEITO`; ingestão armazena 13 cargos, enquanto a allowlist pública continua com três.
+- Documentos seguem o catálogo CKAN oficial, cuja fonte declarada é CAND/Candex/DivulgaCand; não inventar endpoint/ID enquanto 2026 não publicar PDFs.

@@ -64,6 +64,28 @@ function identityFields<T extends { name: string; socialName: string | null; per
   }
 }
 
+function publicDetailFields<T extends Candidate & { person: Person | null }>(
+  candidate: T,
+  readModel: CandidateReadModel,
+) {
+  const {
+    person,
+    personId: _personId,
+    electionId: _electionId,
+    officialStatusRaw: _officialStatusRaw,
+    isPublished: _isPublished,
+    sourceUrl: _sourceUrl,
+    syncRunId: _syncRunId,
+    ...publicFields
+  } = candidate
+  if (readModel !== 'normalized' || !person) return publicFields
+  return {
+    ...publicFields,
+    name: person.name,
+    socialName: person.socialName ?? candidate.socialName,
+  }
+}
+
 type CandidateRow = Pick<
   Candidate,
   | 'id'
@@ -234,7 +256,7 @@ async function presentCandidate<
       take: 100,
     })
   }
-  return { ...identityFields(candidate, readModel), slug, votingRecords }
+  return { ...publicDetailFields(candidate, readModel), slug, votingRecords }
 }
 
 export async function getCandidateBySlug(slug: string) {

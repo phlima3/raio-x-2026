@@ -14,6 +14,7 @@ export const PositionSchema = z.enum([
   'GOVERNADOR',
   'VICE_GOVERNADOR',
   'PREFEITO',
+  'VICE_PREFEITO',
   'VEREADOR',
 ])
 

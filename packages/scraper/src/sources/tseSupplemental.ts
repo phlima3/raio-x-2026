@@ -73,6 +73,9 @@ function positionFromTse(value: string | null): Position | null {
     DEPUTADO_FEDERAL: Position.DEPUTADO_FEDERAL,
     DEPUTADO_ESTADUAL: Position.DEPUTADO_ESTADUAL,
     DEPUTADO_DISTRITAL: Position.DEPUTADO_DISTRITAL,
+    PREFEITO: Position.PREFEITO,
+    VICE_PREFEITO: Position.VICE_PREFEITO,
+    VEREADOR: Position.VEREADOR,
   }
   return positions[token.replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '')] ?? null
 }

@@ -1,4 +1,11 @@
-import { DataSource, MandateHouse, Position, PrismaClient } from '@prisma/client'
+import {
+  DataSource,
+  MandateHouse,
+  Position,
+  PrismaClient,
+  ProposalOrigin,
+  VoteType,
+} from '@prisma/client'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { upsertLegislatorMandate } from '../src/legislative/persistence'
@@ -13,6 +20,10 @@ const prisma = new PrismaClient()
 describe('legislative persistence', () => {
   beforeEach(async () => {
     await prisma.reviewItem.deleteMany()
+    await prisma.votingRecord.deleteMany()
+    await prisma.legislativeBillAuthor.deleteMany()
+    await prisma.legislativeBill.deleteMany()
+    await prisma.proposal.deleteMany()
     await prisma.candidate.deleteMany()
     await prisma.mandate.deleteMany()
     await prisma.person.deleteMany()
@@ -126,5 +137,76 @@ describe('legislative persistence', () => {
     expect(await prisma.person.count()).toBe(3)
     expect(await prisma.candidate.count()).toBe(2)
     expect(await prisma.reviewItem.count({ where: { personId: ids.personId } })).toBe(1)
+  })
+
+  it('migrates legacy candidate votes onto the resolved mandate without changing the legacy link', async () => {
+    const person = await prisma.person.create({
+      data: { name: 'Deputada com Histórico', normalizedName: 'DEPUTADA COM HISTORICO' },
+    })
+    const candidate = await prisma.candidate.create({
+      data: {
+        id: 'legacy-deputy',
+        name: 'Deputada com Histórico',
+        party: 'PX',
+        state: 'SP',
+        position: Position.DEPUTADO_FEDERAL,
+        partyHistory: [],
+        personId: person.id,
+      },
+    })
+    const vote = await prisma.votingRecord.create({
+      data: {
+        externalId: 'legacy-vote-1',
+        source: 'camara',
+        proposalName: 'Votação histórica',
+        voteType: VoteType.YES,
+        votedAt: new Date('2025-05-01T12:00:00Z'),
+        candidateId: candidate.id,
+      },
+    })
+    const proposal = await prisma.proposal.create({
+      data: {
+        externalId: 'legacy-bill-1',
+        source: 'camara',
+        title: 'Projeto legislativo legado',
+        description: 'Descrição preservada',
+        tags: ['legado'],
+        candidateId: candidate.id,
+      },
+    })
+
+    const ids = await upsertLegislatorMandate(prisma, {
+      source: DataSource.CAMARA,
+      house: MandateHouse.CAMARA,
+      externalId: 'camara-historic',
+      legislatureId: '57',
+      name: 'Deputada com Histórico',
+      socialName: 'Deputada com Histórico',
+      party: 'PX',
+      state: 'SP',
+      role: 'DEPUTADO_FEDERAL',
+      sourceUrl: 'https://camara.example/historic',
+      syncedAt: new Date('2026-08-02T00:00:00Z'),
+    })
+
+    await expect(prisma.votingRecord.findUniqueOrThrow({ where: { id: vote.id } }))
+      .resolves.toEqual(expect.objectContaining({
+        candidateId: candidate.id,
+        personId: person.id,
+        mandateId: ids.mandateId,
+      }))
+    await expect(prisma.legislativeBill.findUniqueOrThrow({
+      where: {
+        source_externalId: { source: DataSource.CAMARA, externalId: 'legacy-bill-1' },
+      },
+    })).resolves.toEqual(expect.objectContaining({ title: proposal.title }))
+    await expect(prisma.legislativeBillAuthor.count({
+      where: { mandateId: ids.mandateId },
+    })).resolves.toBe(1)
+    await expect(prisma.proposal.findUniqueOrThrow({ where: { id: proposal.id } }))
+      .resolves.toEqual(expect.objectContaining({
+        isPublished: false,
+        origin: ProposalOrigin.LEGACY,
+      }))
   })
 })

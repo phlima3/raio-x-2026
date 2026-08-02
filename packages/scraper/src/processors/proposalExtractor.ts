@@ -84,7 +84,7 @@ export async function processProposalsFromSite(
     return 0
   }
 
-  const saved = await persistProposals(proposals)
+  const saved = await persistExtractedProposals(proposals)
   logger.info(`[extractor] ${saved} proposals saved for ${candidateName}`)
   return saved
 }
@@ -161,12 +161,25 @@ function flattenByTheme(
   return results
 }
 
-async function persistProposals(proposals: ProcessedProposal[]): Promise<number> {
+type ProposalPersistence = Pick<PrismaClient, 'proposal'>
+
+export async function persistExtractedProposals(
+  proposals: ProcessedProposal[],
+  db: ProposalPersistence = prisma,
+): Promise<number> {
   let saved = 0
 
   for (const p of proposals) {
     try {
-      await prisma.proposal.upsert({
+      const existing = await db.proposal.findUnique({
+        where: { externalId: p.externalId },
+        select: { reviewedAt: true },
+      })
+      if (existing?.reviewedAt) {
+        saved++
+        continue
+      }
+      await db.proposal.upsert({
         where: { externalId: p.externalId },
         update: {
           title: p.title,
@@ -197,6 +210,7 @@ async function persistProposals(proposals: ProcessedProposal[]): Promise<number>
         `[extractor] Failed to save proposal ${p.externalId}`,
         err instanceof Error ? err.message : err,
       )
+      throw err
     }
   }
 

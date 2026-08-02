@@ -61,10 +61,13 @@ const VALID_STATES = new Set([
   'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO',
 ])
 
-const SENSITIVE_COLUMNS = new Set([
-  'NR_CPF_CANDIDATO',
-  'NR_TITULO_ELEITORAL_CANDIDATO',
-])
+function isSensitiveColumn(column: string): boolean {
+  const normalized = column
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+  return normalized.includes('CPF') || normalized.includes('TITULO_ELEITORAL')
+}
 
 function normalizeText(value: unknown): string | null {
   if (value == null) return null
@@ -128,14 +131,14 @@ export function parseTseCandidateCsv(
     trim: true,
   }) as Array<Record<string, unknown>>
 
-  const columns = rows[0] ? Object.keys(rows[0]) : []
+  const columns = rows[0] ? Object.keys(rows[0]).filter((column) => !isSensitiveColumn(column)) : []
   const records: TseCandidateRecord[] = []
   const rejected: RejectedTseCandidateRow[] = []
 
   rows.forEach((row, index) => {
     const raw = Object.fromEntries(
       Object.entries(row)
-        .filter(([key]) => !SENSITIVE_COLUMNS.has(key))
+        .filter(([key]) => !isSensitiveColumn(key))
         .map(([key, value]) => [key, normalizeText(value)]),
     )
     const get = (column: string): string | null => raw[column] ?? null

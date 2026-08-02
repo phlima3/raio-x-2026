@@ -8,7 +8,11 @@ const app = createApp()
 
 app.listen(PORT, () => {
   console.info(`[api] Running on http://localhost:${PORT}`)
-  invalidate('candidates:*').catch(() => {})
+  Promise.all([
+    invalidate('candidates:*'),
+    invalidate('proposals:*'),
+    invalidate('comparison:*'),
+  ]).catch(() => {})
 })
 
 export default app

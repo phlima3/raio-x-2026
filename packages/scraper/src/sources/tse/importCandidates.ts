@@ -46,6 +46,7 @@ const POSITION_MAP: Readonly<Record<string, Position>> = {
   GOVERNADOR: Position.GOVERNADOR,
   VICE_GOVERNADOR: Position.VICE_GOVERNADOR,
   PREFEITO: Position.PREFEITO,
+  VICE_PREFEITO: Position.VICE_PREFEITO,
   VEREADOR: Position.VEREADOR,
 }
 

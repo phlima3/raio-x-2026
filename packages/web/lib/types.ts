@@ -12,6 +12,7 @@ export type Position =
   | 'GOVERNADOR'
   | 'VICE_GOVERNADOR'
   | 'PREFEITO'
+  | 'VICE_PREFEITO'
   | 'VEREADOR'
 
 export type VoteType = 'YES' | 'NO' | 'ABSTENTION' | 'ABSENT' | 'OBSTRUCTION'

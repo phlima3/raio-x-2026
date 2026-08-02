@@ -131,10 +131,14 @@ async function importCandidate(output: GeminiOutput): Promise<void> {
         if (!DRY_RUN) {
           const existing = await prisma.proposal.findUnique({
             where: { externalId },
-            select: { id: true },
+            select: { id: true, reviewedAt: true },
           })
 
           if (existing) {
+            if (existing.reviewedAt) {
+              log('      preservada: proposta já revisada')
+              continue
+            }
             await prisma.proposal.update({
               where: { externalId },
               data: {
@@ -169,18 +173,6 @@ async function importCandidate(output: GeminiOutput): Promise<void> {
   }
 }
 
-// ── Pre-flight migrations ─────────────────────────────────────────────────────
-
-async function runPreflightFixes(): Promise<void> {
-  // Idempotent: fix Renan Santos MBL → Missão (one-time migration)
-  const n = await prisma.$executeRaw`
-    UPDATE "Candidate"
-    SET party = 'Missão', slug = 'renan-santos-missao-sp'
-    WHERE name = 'Renan Santos' AND state = 'SP' AND position = 'PRESIDENTE' AND party = 'MBL'
-  `
-  if (n > 0) log(`[preflight] Renan Santos: updated party MBL → Missão`)
-}
-
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
@@ -189,8 +181,6 @@ async function main(): Promise<void> {
   if (!fs.existsSync(outputsDir)) {
     throw new Error(`Outputs directory not found: ${outputsDir}`)
   }
-
-  if (!DRY_RUN) await runPreflightFixes()
 
   const files = readOutputFiles(outputsDir)
   log(`Found ${files.length} output file(s) to import${DRY_RUN ? ' [DRY RUN]' : ''}`)

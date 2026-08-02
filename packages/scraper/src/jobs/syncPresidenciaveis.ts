@@ -181,6 +181,14 @@ async function saveProposalsFromArticles(articles: FetchedArticle[]): Promise<vo
       const externalId = `news_${candidate.id}_${p.theme}_${hash}`
 
       try {
+        const existing = await prisma.proposal.findUnique({
+          where: { externalId },
+          select: { reviewedAt: true },
+        })
+        if (existing?.reviewedAt) {
+          saved++
+          continue
+        }
         await prisma.proposal.upsert({
           where: { externalId },
           update: {

@@ -1,11 +1,11 @@
 # Progress
 
 ## Current status
-- Phase: Legislative ingestion, documents and CI completion
+- Phase: Final review and handoff
 - State: active
-- Last completed action: documentos/PDF, seis datasets suplementares TSE e política de revisão IA validados; suite em 13 unitários e 19 integrações.
-- Next action: finalizar CI/schedules, relatório CLI de ReviewItem, documentação operacional e validação/review final.
-- Last known good commit: a2602521fa4a7ef7b06e281d65160ab31247e78a
+- Last completed action: review em dois eixos concluído; achados materiais corrigidos e ladder final passou com 14 migrations, 13 unitários e 25 integrações.
+- Next action: criar checkpoint de review, finalizar relatório/estado persistente e verificar worktree limpo.
+- Last known good commit: ee483ef
 - Working tree status: dirty com implementação do run; nenhuma mudança preexistente do usuário foi encontrada.
 
 ## Timeline
@@ -31,3 +31,12 @@
 - 2026-08-02T02:44Z — Datasets complementares ganham arquivo imutável e OfficialDatasetRecord sanitizado; integração idempotente materializa status, bens, coligação e rede social.
 - 2026-08-02T02:45Z — Dry-run oficial suplementar contou 6 recursos/25.493 registros; documentos retornaram NOOP porque o catálogo atual não contém PDFs.
 - 2026-08-02T02:53Z — Suite intermediária completa: 7 arquivos/13 unitários e 10 arquivos/19 integrações PostgreSQL passaram.
+- 2026-08-02T03:10Z — Reconciliação identidade ficou bidirecional: Legislativo reutiliza Person TSE inequívoca e TSE reutiliza Person/Mandate inequívoca; homônimos nunca são mesclados e geram ReviewItem.
+- 2026-08-02T03:12Z — Workflows separados nas agendas pedidas, action única de instalação/generate, seed removido de ambos os pre-starts e relatório CLI de revisão concluídos.
+- 2026-08-02T03:16Z — Treze migrations aplicadas do zero em `raiox2026_fresh_20260802_test` no PostgreSQL 16; status atualizado.
+- 2026-08-02T03:17Z — Ladder completa passou: 13 unitários, 23 integrações, typecheck dos três pacotes e builds API/scraper/web.
+- 2026-08-02T03:18Z — Todos os YAMLs e `git diff --check` passaram; `review:report` executou. Lint legado não é executável por ausência preexistente de ESLint/config na API/web.
+- 2026-08-02T03:23Z — Skill `review` executou eixos Standards/Spec em paralelo: Standards sem achados; Spec identificou migração legislativa, propagação de erro, lifecycle IA, cargos e campos internos, além da disponibilidade documental/final report.
+- 2026-08-02T03:35Z — Votos/projetos legados agora migram ao mandato sem perder relações legadas; falha de persistência de site propaga; proposta revisada não é sobrescrita; `VICE_PREFEITO` completa cargos TSE; resposta pública omite campos internos.
+- 2026-08-02T03:38Z — Catálogo oficial 2026 segue sem recurso PDF; catálogo TSE 2024 confirma PDFs por UF no mesmo CKAN e fonte CAND/Candex/DivulgaCand, compatível com o adapter implementado.
+- 2026-08-02T03:40Z — Ladder pós-review passou: 7 arquivos/13 unitários, 11 arquivos/25 integrações, typecheck e builds dos três pacotes; YAML/diff/review CLI verdes.

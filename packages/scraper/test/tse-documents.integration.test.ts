@@ -13,6 +13,11 @@ import {
   type TseResource,
 } from '../src/sources/tse/ckanClient'
 
+const databaseUrl = process.env.DATABASE_URL ?? ''
+if (!databaseUrl.includes('_test')) {
+  throw new Error('Integration tests require a DATABASE_URL whose database name contains _test')
+}
+
 const prisma = new PrismaClient()
 
 const resource: TseResource = {

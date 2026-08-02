@@ -3,6 +3,7 @@ import {
   type MandateHouse,
   Position,
   type PrismaClient,
+  ProposalOrigin,
   ReviewItemKind,
 } from '@prisma/client'
 
@@ -158,6 +159,88 @@ export async function upsertLegislatorMandate(
     },
     select: { id: true },
   })
+
+  // Expand-and-migrate: keep the legacy Candidate relation for compatible
+  // responses, while attaching historical rows to the normalized identity.
+  // The source sync creates the mandate before inserting current votes, so
+  // this also prevents the same official vote being inserted a second time.
+  await prisma.votingRecord.updateMany({
+    where: {
+      source: input.source.toLowerCase(),
+      mandateId: null,
+      candidate: { personId: person.id },
+      ...(input.startDate || input.endDate
+        ? {
+            votedAt: {
+              ...(input.startDate ? { gte: input.startDate } : {}),
+              ...(input.endDate ? { lte: input.endDate } : {}),
+            },
+          }
+        : {}),
+    },
+    data: { personId: person.id, mandateId: mandate.id },
+  })
+
+  const legacyProposals = await prisma.proposal.findMany({
+    where: {
+      source: { equals: input.source.toLowerCase(), mode: 'insensitive' },
+      candidate: { personId: person.id },
+      ...(input.startDate || input.endDate
+        ? {
+            OR: [
+              { proposedAt: null },
+              {
+                proposedAt: {
+                  ...(input.startDate ? { gte: input.startDate } : {}),
+                  ...(input.endDate ? { lte: input.endDate } : {}),
+                },
+              },
+            ],
+          }
+        : {}),
+    },
+  })
+  for (const proposal of legacyProposals) {
+    const externalId = proposal.externalId ?? `legacy:${proposal.id}`
+    const bill = await prisma.legislativeBill.upsert({
+      where: { source_externalId: { source: input.source, externalId } },
+      update: {
+        title: proposal.title,
+        description: proposal.description,
+        summary: proposal.summary,
+        status: proposal.status,
+        introducedAt: proposal.proposedAt,
+        url: proposal.url,
+        tags: proposal.tags,
+      },
+      create: {
+        source: input.source,
+        externalId,
+        title: proposal.title,
+        description: proposal.description,
+        summary: proposal.summary,
+        status: proposal.status,
+        introducedAt: proposal.proposedAt,
+        url: proposal.url,
+        tags: proposal.tags,
+      },
+      select: { id: true },
+    })
+    await prisma.legislativeBillAuthor.upsert({
+      where: {
+        legislativeBillId_mandateId: {
+          legislativeBillId: bill.id,
+          mandateId: mandate.id,
+        },
+      },
+      update: {},
+      create: { legislativeBillId: bill.id, mandateId: mandate.id },
+    })
+    await prisma.proposal.update({
+      where: { id: proposal.id },
+      data: { isPublished: false, origin: ProposalOrigin.LEGACY },
+    })
+  }
 
   return { personId: person.id, mandateId: mandate.id }
 }

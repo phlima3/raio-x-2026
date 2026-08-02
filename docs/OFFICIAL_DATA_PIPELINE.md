@@ -18,6 +18,10 @@ fachada compatível da API, e `Mandate` representa exercício legislativo. IDs e
 slugs legados permanecem. Projetos legislativos ficam em `LegislativeBill`;
 propostas de campanha permanecem em `Proposal`.
 
+O importador aceita o conjunto completo de cargos eleitorais do TSE, inclusive
+os cargos municipais (`PREFEITO`, `VICE_PREFEITO` e `VEREADOR`). A allowlist
+pública continua restrita aos três cargos definidos para o lançamento.
+
 O banco não armazena CPF nem título eleitoral. Os parsers removem essas colunas
 antes de criar payloads ou itens de revisão.
 
@@ -87,6 +91,10 @@ pnpm --filter @raiox/scraper run review:report
 Reprocessamento é idempotente. Snapshots vazios ou incompletos não removem nem
 despublicam pré-candidaturas editoriais. Um PDF repetido não é extraído de novo;
 PDF sem texto vira `NEEDS_OCR`; ausência de PDF termina como `NOOP`.
+O catálogo CKAN informa como fonte CAND/Candex/DivulgaCand e o coletor aceita
+recursos PDF diretos ou ZIP, seguindo o padrão publicado pelo TSE em eleições
+anteriores. Enquanto os PDFs de 2026 não aparecem como recursos, o job não
+tenta adivinhar IDs de um endpoint DivulgaCand não documentado.
 
 ## Agenda UTC
 
@@ -125,7 +133,10 @@ fora do escopo.
    colunas/tabelas legadas.
 5. Rodar `backfill:persons` duas vezes e confirmar que a segunda é idempotente.
 6. Rodar os três dry-runs TSE/documentos. Registrar contagens e checksums.
-7. Em staging, rodar TSE, complementares, Câmara e Senado sem `--dry-run`.
+7. Em staging, rodar TSE, complementares, Câmara e Senado sem `--dry-run`. A
+   primeira sincronização legislativa vincula votos legados ao mandato e copia
+   projetos `camara`/`senado` para `LegislativeBill`, preservando as relações
+   legadas para rollback.
 8. Inspecionar `DataSyncRun`, `ReviewItem`, contagens por cargo e amostras de
    IDs/slugs. Confirmar que deputados não aparecem na API.
 9. Ativar `CANDIDATE_READ_MODEL=normalized` somente em staging e executar smoke
@@ -179,3 +190,6 @@ GROUP BY "extractionStatus";
   presidente/vice-presidente, e 25.493 linhas nos seis recursos suplementares.
 - Não havia recurso de programa de governo no catálogo naquele momento; o job
   diário permanece habilitado para detectar sua disponibilização.
+- Texto oficial extraído fica em `SourceDocument`. Transformá-lo em propostas
+  estruturadas exige extração e revisão; qualquer futura saída de IA deve
+  seguir `DRAFT` + `isPublished=false` e não sobrescrever item já revisado.

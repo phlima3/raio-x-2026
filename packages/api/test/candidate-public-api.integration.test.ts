@@ -28,6 +28,9 @@ describe('public candidate API', () => {
   })
 
   it('returns only published candidates in enabled offices across lists, stats and details', async () => {
+    const person = await prisma.person.create({
+      data: { name: 'Identidade Oficial', normalizedName: 'IDENTIDADE OFICIAL' },
+    })
     await prisma.candidate.createMany({
       data: [
         {
@@ -38,6 +41,11 @@ describe('public candidate API', () => {
           state: 'BR',
           position: Position.PRESIDENTE,
           partyHistory: [],
+          personId: person.id,
+          electionId: 'official-election-id',
+          isOfficial: true,
+          officialStatusRaw: 'APTO',
+          sourceUrl: 'https://tse.example/candidate',
           isPublished: true,
         },
         {
@@ -106,6 +114,23 @@ describe('public candidate API', () => {
     }))
     expect(detail.body.data.proposals.map((proposal: { externalId: string }) => proposal.externalId))
       .toEqual(['editorial-visible'])
+    expect(detail.body.data).toEqual(expect.objectContaining({
+      id: 'published-president',
+      isOfficial: true,
+      officialStatus: null,
+      dataSource: DataSource.EDITORIAL,
+    }))
+    for (const internalField of [
+      'person',
+      'personId',
+      'electionId',
+      'officialStatusRaw',
+      'isPublished',
+      'sourceUrl',
+      'syncRunId',
+    ]) {
+      expect(detail.body.data).not.toHaveProperty(internalField)
+    }
     expect(JSON.stringify(proposals.body.data)).not.toContain('ai-hidden')
   })
 

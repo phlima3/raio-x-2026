@@ -180,6 +180,9 @@ describe('importTseCandidates', () => {
       'DEPUTADO_FEDERAL',
       'DEPUTADO_ESTADUAL',
       'DEPUTADO_DISTRITAL',
+      'PREFEITO',
+      'VICE_PREFEITO',
+      'VEREADOR',
     ]
     const records = positions.map((position, index) => officialCandidate({
       tseId: `2600000002${String(index).padStart(2, '0')}`,
@@ -196,8 +199,8 @@ describe('importTseCandidates', () => {
       batchSize: 3,
     })
 
-    expect(metrics).toEqual(expect.objectContaining({ created: 10, published: 3, hidden: 7 }))
-    await expect(prisma.candidate.count()).resolves.toBe(10)
+    expect(metrics).toEqual(expect.objectContaining({ created: 13, published: 3, hidden: 10 }))
+    await expect(prisma.candidate.count()).resolves.toBe(13)
     await expect(prisma.candidate.count({ where: { isPublished: true } })).resolves.toBe(3)
   })
 

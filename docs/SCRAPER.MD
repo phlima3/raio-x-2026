@@ -11,8 +11,10 @@ O runbook canônico é [OFFICIAL_DATA_PIPELINE.md](OFFICIAL_DATA_PIPELINE.md).
 - `sources/camara.ts` e `sources/senado.ts`: pessoas, mandatos, projetos e votos;
 - `sources/candidateSites.ts` e jobs de notícias: enriquecimento não canônico.
 
-Câmara/Senado nunca criam `Candidate`. Notícias/sites nunca criam candidatura e
-propostas extraídas por IA ficam ocultas até revisão.
+Câmara/Senado nunca criam `Candidate`; ao resolver o mandato, migram em modo
+expand-and-migrate votos e projetos legislativos legados. Notícias/sites nunca
+criam candidatura e propostas extraídas por IA ficam ocultas até revisão, sem
+sobrescrever uma decisão de revisão em reprocessamentos.
 
 ## Execução
 
