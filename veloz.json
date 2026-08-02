@@ -8,7 +8,7 @@
   "defaults": {
     "build": {
       "nodeVersion": "20",
-      "packageManager": "yarn"
+      "packageManager": "pnpm"
     }
   },
   "services": {
