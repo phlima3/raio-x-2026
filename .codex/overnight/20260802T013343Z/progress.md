@@ -3,9 +3,9 @@
 ## Current status
 - Phase: Legislative ingestion, documents and CI completion
 - State: active
-- Last completed action: schema/migration aditivos, runner observado, backfill, ingestão TSE oficial, fachada pública e persistência/paginação Câmara validados por 8 testes unitários e 12 de integração.
-- Next action: substituir persistência legada do Senado, finalizar documentos/propostas, filtros públicos e workflows separados.
-- Last known good commit: 4904bd81f48f8adc35ebf31a6dbd153b989c124f
+- Last completed action: Câmara e Senado normalizados, paginados e observados; suite conjunta com 11 testes unitários e 15 de integração verde.
+- Next action: implementar SourceDocument/PDF, estado NEEDS_OCR, no-op sem documentos e política DRAFT para extrações IA.
+- Last known good commit: 959bd68c84f1ffec219735f2144c29c5c44bc38a
 - Working tree status: dirty com implementação do run; nenhuma mudança preexistente do usuário foi encontrada.
 
 ## Timeline
@@ -23,3 +23,6 @@
 - 2026-08-02T02:16Z — Fachada `legacy|normalized` e filtros públicos passaram via Supertest mantendo IDs/slugs.
 - 2026-08-02T02:18Z — Câmara passou a paginar `rel=next`, persistir mandatos/votos/projetos normalizados e falhar o job se qualquer parlamentar falhar.
 - 2026-08-02T02:21Z — Suite conjunta estabilizada: 5 arquivos/8 testes unitários e 6 arquivos/12 testes PostgreSQL passaram; conexão reproduzível usa porta 5433 do compose.
+- 2026-08-02T02:30Z — Senado migrou para `/processo` e `/votacao`, mandato oficial e persistência normalizada; `populate:senado` não faz mais fuzzy-link em Candidate.
+- 2026-08-02T02:32Z — Câmara recebeu runner injetável observado e lifecycle seguro de Prisma; falha remota persiste FAILED e propaga exit não zero.
+- 2026-08-02T02:33Z — Suite completa intermediária: 6 arquivos/11 unitários e 8 arquivos/15 integrações PostgreSQL passaram.

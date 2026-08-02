@@ -95,3 +95,27 @@
 - Result: PASS
 - Evidence: 5 arquivos/8 testes unitários e 6 arquivos/12 testes de integração passaram. Uma tentativa anterior em porta 5432 falhou por conexão; a primeira execução conjunta na porta correta expôs e corrigiu limpeza relacional de mandatos entre suites.
 - Follow-up: ampliar suites para Senado e documentos, depois repetir ladder completa.
+
+### 2026-08-02T02:25Z TDD RED→GREEN — Senado pagination
+- Command: `pnpm exec vitest run packages/scraper/test/senado-pagination.test.ts`
+- Result: RED (`collectSenadoPages is not a function`) → PASS
+- Evidence: 3 casos cobrem duas próximas páginas, resposta array oficial e detecção de loop; TypeScript scraper passa.
+- Follow-up: ligar o collector ao sync persistente.
+
+### 2026-08-02T02:30Z TDD RED→GREEN — Senado normalized sync
+- Command: integração focada `senado-sync.integration.test.ts` em PostgreSQL 16.
+- Result: RED (`runSenadoSync is not a function`) → PASS
+- Evidence: duas execuções mantêm 1 Person, 1 Mandate, 1 LegislativeBill, 1 autoria, 1 voto e 0 Candidate; páginas 2 de processo/votação foram chamadas nas duas execuções.
+- Follow-up: observar Câmara pelo mesmo runner.
+
+### 2026-08-02T02:31Z TDD RED→GREEN — Câmara observed sync
+- Command: integração focada `camara-sync.integration.test.ts` em PostgreSQL 16.
+- Result: RED (`runCamaraSync is not a function`) → PASS
+- Evidence: deputado cria Person/Mandate e zero Candidate; erro remoto persiste DataSyncRun FAILED e é relançado.
+- Follow-up: executar suites conjuntas.
+
+### 2026-08-02T02:33Z combined legislative suites
+- Command: `pnpm test:unit`; `pnpm test:integration` com PostgreSQL 16 em localhost:5433.
+- Result: PASS
+- Evidence: 6 arquivos/11 testes unitários e 8 arquivos/15 testes de integração passaram.
+- Follow-up: implementar documentos oficiais.

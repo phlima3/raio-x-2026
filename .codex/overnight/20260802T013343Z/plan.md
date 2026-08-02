@@ -59,9 +59,9 @@
 
 ## Phase 6 — Legislative ingestion and domain separation
 - [x] Paginar Câmara integralmente por links/próxima página.
-- [ ] Paginar/adaptar Senado integralmente conforme contratos oficiais.
-- [x] Upsert somente `Person`/`Mandate`; nunca `Candidate` na implementação Câmara e adapter compartilhado.
-- [x] Persistir votações no mandato/pessoa e projetos em `LegislativeBill` na implementação Câmara, mantendo fachada compatível.
+- [x] Paginar/adaptar Senado integralmente conforme contratos oficiais.
+- [x] Upsert somente `Person`/`Mandate`; nunca `Candidate` nas duas fontes.
+- [x] Persistir votações no mandato/pessoa e projetos em `LegislativeBill`, mantendo fachada compatível.
 - Deliverable: histórico legislativo normalizado sem candidaturas artificiais.
 - Validation: testes de múltiplas páginas, zero criação de candidaturas, idempotência e respostas compatíveis.
 - Dependencies: Phase 3.

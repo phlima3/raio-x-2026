@@ -10,6 +10,11 @@ import {
 } from '@prisma/client'
 import { logger } from '../utils/logger'
 import { upsertLegislatorMandate, type LegislatorMandateIds } from '../legislative/persistence'
+import {
+  createPrismaSyncRunStore,
+  runDataSourceSync,
+  type CompletedSyncRun,
+} from '../sync/runDataSourceSync'
 
 // ── API response envelope ─────────────────────────────────────────────────────
 
@@ -305,7 +310,6 @@ function mapProposalStatus(situacao: string): ProposalStatus {
 // ── Module-level singletons ───────────────────────────────────────────────────
 
 const http = createClient()
-const prisma = new PrismaClient()
 
 // ── Public API functions ──────────────────────────────────────────────────────
 
@@ -425,7 +429,10 @@ export async function getProposicoesByDeputado(
 /**
  * Upserts a deputy as a person with a Câmara mandate. It never creates a candidacy.
  */
-async function saveDeputado(detail: CamaraDeputadoDetail): Promise<LegislatorMandateIds> {
+async function saveDeputado(
+  prisma: PrismaClient,
+  detail: CamaraDeputadoDetail,
+): Promise<LegislatorMandateIds> {
   const s = detail.ultimoStatus
   return upsertLegislatorMandate(prisma, {
     source: DataSource.CAMARA,
@@ -448,6 +455,7 @@ async function saveDeputado(detail: CamaraDeputadoDetail): Promise<LegislatorMan
  * Returns the number of new records inserted.
  */
 async function saveVotacoes(
+  prisma: PrismaClient,
   ids: LegislatorMandateIds,
   votacoes: CamaraVotacaoDeputado[],
 ): Promise<number> {
@@ -490,6 +498,8 @@ async function saveVotacoes(
  * Returns number of proposals processed.
  */
 async function saveProposicoes(
+  prisma: PrismaClient,
+  client: CamaraHttpPort,
   mandateId: string,
   proposicoes: CamaraProposicaoSummary[],
 ): Promise<number> {
@@ -512,7 +522,7 @@ async function saveProposicoes(
 
     try {
       const detailRes = await withRetry(() =>
-        http.get<CamaraResponse<CamaraProposicaoDetail>>(`/proposicoes/${p.id}`),
+        client.get<CamaraResponse<CamaraProposicaoDetail>>(`/proposicoes/${p.id}`),
       )
       const d = detailRes.data.dados
       if (d.statusProposicao?.descricaoSituacao) {
@@ -568,66 +578,91 @@ async function saveProposicoes(
  * @param votacoesFilters - Date window for vote fetching. For daily syncs,
  *   pass `{ dateFrom: yesterday }` to avoid scanning the full session history.
  */
-export interface CamaraSyncMetrics {
-  legislators: number
-  synced: number
-  failed: number
+export interface RunCamaraSyncOptions {
+  prisma: PrismaClient
+  client?: CamaraHttpPort
+  filters?: DeputadoFilters
+  votingFilters?: VotacoesFilters
+  pauseMs?: number
+}
+
+export async function runCamaraSync(
+  options: RunCamaraSyncOptions,
+): Promise<CompletedSyncRun> {
+  const client = options.client ?? http
+  const filters = options.filters ?? {}
+  const votingFilters = options.votingFilters ?? {}
+  const pauseMs = options.pauseMs ?? 500
+
+  return runDataSourceSync({
+    source: DataSource.CAMARA,
+    kind: 'legislative',
+    sourceUrl: process.env.CAMARA_API_URL ?? 'https://dadosabertos.camara.leg.br/api/v2',
+    store: createPrismaSyncRunStore(options.prisma),
+    execute: async () => {
+      const deputados = await getDeputados(filters, client)
+      const concurrency = Math.max(1, Number(process.env.SCRAPER_CONCURRENCY) || 3)
+      let synced = 0
+      let failed = 0
+      let bills = 0
+      let votes = 0
+
+      for (let index = 0; index < deputados.length; index += concurrency) {
+        const batch = deputados.slice(index, index + concurrency)
+        await Promise.all(batch.map(async (deputy) => {
+          try {
+            const detail = await getDeputadoById(deputy.id, client)
+            const ids = await saveDeputado(options.prisma, detail)
+            const [votacoes, proposicoes] = await Promise.all([
+              getVotacoesByDeputado(deputy.id, votingFilters, client),
+              getProposicoesByDeputado(deputy.id, client),
+            ])
+            const [savedVotes, savedBills] = await Promise.all([
+              saveVotacoes(options.prisma, ids, votacoes),
+              saveProposicoes(options.prisma, client, ids.mandateId, proposicoes),
+            ])
+            votes += savedVotes
+            bills += savedBills
+            synced++
+          } catch (error) {
+            failed++
+            logger.error(
+              `[camara] Failed deputy ${deputy.id} (${deputy.nome})`,
+              error instanceof Error ? error.message : error,
+            )
+          }
+        }))
+        if (index + concurrency < deputados.length) await sleep(pauseMs)
+      }
+
+      if (failed > 0) throw new Error(`[camara] ${failed} of ${deputados.length} legislators failed`)
+      return {
+        noop: deputados.length === 0,
+        metrics: {
+          legislators: deputados.length,
+          synced,
+          failed,
+          bills,
+          votes,
+        },
+      }
+    },
+  })
 }
 
 export async function syncCamara(
   filters: DeputadoFilters = {},
-  votacoesFilters: VotacoesFilters = {},
-): Promise<CamaraSyncMetrics> {
-  logger.info('[camara] Starting sync…', votacoesFilters)
-
-  const deputados = await getDeputados(filters)
-  logger.info(`[camara] ${deputados.length} deputados to process`)
-
-  const concurrency = Math.max(1, Number(process.env.SCRAPER_CONCURRENCY) || 3)
-  let synced = 0
-  let failed = 0
-
-  for (let i = 0; i < deputados.length; i += concurrency) {
-    const batch = deputados.slice(i, i + concurrency)
-
-    await Promise.all(
-      batch.map(async (dep) => {
-        try {
-          const detail = await getDeputadoById(dep.id)
-          const ids = await saveDeputado(detail)
-
-          const [votacoes, proposicoes] = await Promise.all([
-            getVotacoesByDeputado(dep.id, votacoesFilters),
-            getProposicoesByDeputado(dep.id),
-          ])
-
-          const [vSaved, pSaved] = await Promise.all([
-            saveVotacoes(ids, votacoes),
-            saveProposicoes(ids.mandateId, proposicoes),
-          ])
-
-          logger.info(
-            `[camara] ✓ ${dep.nome} (${dep.siglaPartido}-${dep.siglaUf}) ` +
-            `— ${vSaved} votes, ${pSaved} proposals`,
-          )
-          synced++
-        } catch (err) {
-          logger.error(
-            `[camara] ✗ ${dep.id} (${dep.nome})`,
-            err instanceof Error ? err.message : err,
-          )
-          failed++
-        }
-      }),
-    )
-
-    if (i + concurrency < deputados.length) await sleep(500)
+  votingFilters: VotacoesFilters = {},
+): Promise<CompletedSyncRun> {
+  const prisma = new PrismaClient()
+  try {
+    logger.info('[camara] Starting official legislative sync', votingFilters)
+    const result = await runCamaraSync({ prisma, filters, votingFilters })
+    logger.info('[camara] Official legislative sync complete', result)
+    return result
+  } finally {
+    await prisma.$disconnect()
   }
-
-  logger.info(`[camara] Sync complete — ${synced} ok, ${failed} failed`)
-  await prisma.$disconnect()
-  if (failed > 0) throw new Error(`[camara] ${failed} of ${deputados.length} legislators failed`)
-  return { legislators: deputados.length, synced, failed }
 }
 
 // ── Direct execution ──────────────────────────────────────────────────────────

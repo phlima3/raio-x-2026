@@ -41,3 +41,9 @@
 
 ## 2026-08-02 — Banco local de integração
 - O `docker-compose.yml` publica PostgreSQL 16 em `localhost:5433`; documentação e CI local devem usar essa porta, enquanto o serviço CI interno usa 5432.
+
+## 2026-08-02 — Contratos legislativos do Senado
+- Usar os endpoints atuais `/processo?codigoParlamentarAutor=...` e `/votacao?codigoParlamentar=...`; os endpoints antigos de autoria/votações estão marcados deprecated no OpenAPI oficial.
+- Datas dos filtros modernos usam ISO `YYYY-MM-DD`; entradas legadas `YYYYMMDD` são normalizadas para preservar compatibilidade de chamadas existentes.
+- A resposta oficial atual é um array completo; o collector também segue `links[rel=next]` e cabeçalho HTTP `Link` para não truncar instalações paginadas.
+- Legislatura e datas vêm de `/senador/{codigo}/mandatos`; nenhum parlamentar atual é reconciliado a Candidate por nome.
