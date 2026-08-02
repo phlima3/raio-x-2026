@@ -47,6 +47,7 @@ export async function withCache<T>(
   ttlSeconds: number,
   fn: () => Promise<T>,
 ): Promise<T> {
+  if (process.env.CACHE_DISABLED === 'true') return fn()
   const client = getRedis()
 
   try {
@@ -75,6 +76,7 @@ export async function withCache<T>(
  * Pattern invalidation uses SCAN to avoid blocking Redis with KEYS.
  */
 export async function invalidate(keyOrPattern: string): Promise<void> {
+  if (process.env.CACHE_DISABLED === 'true') return
   const client = getRedis()
 
   try {
@@ -103,5 +105,5 @@ export const cacheKey = {
   categories: () => 'proposals:categories',
   comparison: (a: string, b: string, topic: string) =>
     `comparison:${[a, b].sort().join(':')}:${topic}`,
-  stats: () => 'candidates:stats',
+  stats: (readModel = 'legacy') => `candidates:stats:${readModel}`,
 }

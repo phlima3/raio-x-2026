@@ -23,3 +23,21 @@
 - Parlamentares atuais serão `Person` + `Mandate`; nunca candidaturas implícitas de 2026.
 - Campos determinísticos oficiais podem publicar apenas cargos habilitados; dados extraídos por IA começam `DRAFT` e ocultos.
 - Ausência/incompletude de snapshot não autoriza delete ou unpublish editorial.
+
+## 2026-08-02 — Ordem de implementação ajustada
+- Após instalar Vitest/Supertest e concluir o parser TSE básico, antecipar a expansão aditiva do schema antes de finalizar jobs/workflows.
+- Motivo: `DataSyncRun`, `Person` e `Mandate` são dependências reais dos comportamentos de falha, ingestão e integração; manter a ordem antiga exigiria adapters descartáveis.
+
+## 2026-08-02 — Snapshot oficial TSE revalidado
+- O catálogo CKAN oficial expõe sete recursos de 2026: candidaturas, complementares, bens, coligações, vagas, cassações e redes sociais; não há programa de governo disponível neste momento.
+- O `consulta_cand_2026_BRASIL.csv` contém 3.465 linhas, zero presidente/vice-presidente e todos os cargos legislativos observados; `consulta_cand_2026_BR.csv` está vazio.
+- A seleção de arquivo prioriza explicitamente `BRASIL.csv`; um teste foi adicionado após o snapshot real revelar a colisão com o arquivo vazio `BR.csv`.
+- CPF e título eleitoral são descartados antes de formar dados brutos/revisões; não são persistidos.
+
+## 2026-08-02 — Publicação e reconciliação
+- Match automático exige igualdade normalizada de nome, cargo, partido e UF; zero ou múltiplos matches nunca alteram uma candidatura editorial por aproximação.
+- Snapshot vazio/incompleto somente cria/atualiza o que está presente; não remove nem despublica registros editoriais.
+- A API pública aplica simultaneamente `isPublished` e allowlist presidente/governador/senador, inclusive no modo `legacy`; o modo seleciona a origem da identidade, não relaxa visibilidade.
+
+## 2026-08-02 — Banco local de integração
+- O `docker-compose.yml` publica PostgreSQL 16 em `localhost:5433`; documentação e CI local devem usar essa porta, enquanto o serviço CI interno usa 5432.

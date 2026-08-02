@@ -1,0 +1,114 @@
+import { DataSource, Position, PrismaClient } from '@prisma/client'
+import request from 'supertest'
+import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+
+import { createApp } from '../src/app'
+
+const databaseUrl = process.env.DATABASE_URL ?? ''
+if (!databaseUrl.includes('_test')) {
+  throw new Error('Integration tests require a DATABASE_URL whose database name contains _test')
+}
+
+process.env.CACHE_DISABLED = 'true'
+
+const prisma = new PrismaClient()
+const app = createApp()
+
+describe('public candidate API', () => {
+  beforeEach(async () => {
+    process.env.CANDIDATE_READ_MODEL = 'legacy'
+    await prisma.reviewItem.deleteMany()
+    await prisma.candidate.deleteMany()
+    await prisma.mandate.deleteMany()
+    await prisma.person.deleteMany()
+  })
+
+  afterAll(async () => {
+    await prisma.$disconnect()
+  })
+
+  it('returns only published candidates in enabled offices across lists, stats and details', async () => {
+    await prisma.candidate.createMany({
+      data: [
+        {
+          id: 'published-president',
+          slug: 'presidente-publicado-abc-br',
+          name: 'Presidente Publicado',
+          party: 'ABC',
+          state: 'BR',
+          position: Position.PRESIDENTE,
+          partyHistory: [],
+          isPublished: true,
+        },
+        {
+          id: 'published-deputy',
+          slug: 'deputado-nao-publicavel-abc-sp',
+          name: 'Deputado Não Publicável',
+          party: 'ABC',
+          state: 'SP',
+          position: Position.DEPUTADO_FEDERAL,
+          partyHistory: [],
+          isPublished: true,
+        },
+        {
+          id: 'hidden-governor',
+          slug: 'governador-oculto-xyz-rj',
+          name: 'Governador Oculto',
+          party: 'XYZ',
+          state: 'RJ',
+          position: Position.GOVERNADOR,
+          partyHistory: [],
+          isPublished: false,
+        },
+      ],
+    })
+
+    const list = await request(app).get('/api/candidates').expect(200)
+    const stats = await request(app).get('/api/candidates/stats').expect(200)
+    await request(app).get('/api/candidates/deputado-nao-publicavel-abc-sp').expect(404)
+
+    expect(list.body.data.map((candidate: { id: string }) => candidate.id)).toEqual([
+      'published-president',
+    ])
+    expect(list.body.meta.total).toBe(1)
+    expect(stats.body.data).toEqual(expect.objectContaining({
+      total: 1,
+      byPosition: { PRESIDENTE: 1 },
+    }))
+  })
+
+  it('keeps the legacy ID and slug while normalized reads use Person identity', async () => {
+    const person = await prisma.person.create({
+      data: {
+        id: 'person-senator',
+        name: 'Nome Oficial do Senado',
+        normalizedName: 'NOME OFICIAL DO SENADO',
+        dataSource: DataSource.SENADO,
+      },
+    })
+    await prisma.candidate.create({
+      data: {
+        id: 'legacy-senator-id',
+        slug: 'slug-estavel-senador',
+        name: 'Nome Editorial Antigo',
+        party: 'ABC',
+        state: 'SP',
+        position: Position.SENADOR,
+        partyHistory: [],
+        isPublished: true,
+        personId: person.id,
+      },
+    })
+    process.env.CANDIDATE_READ_MODEL = 'normalized'
+
+    const response = await request(app)
+      .get('/api/candidates/slug-estavel-senador')
+      .expect(200)
+
+    expect(response.body.data).toEqual(expect.objectContaining({
+      id: 'legacy-senator-id',
+      slug: 'slug-estavel-senador',
+      name: 'Nome Oficial do Senado',
+    }))
+  })
+})

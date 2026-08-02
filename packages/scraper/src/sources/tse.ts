@@ -1,70 +1,109 @@
+import 'dotenv/config'
+import { DataSource, PrismaClient } from '@prisma/client'
+
+import {
+  createPrismaSyncRunStore,
+  runDataSourceSync,
+  type CompletedSyncRun,
+} from '../sync/runDataSourceSync'
 import { logger } from '../utils/logger'
+import { parseTseCandidateArchive } from './tse/candidateArchive'
+import {
+  createTseCkanClient,
+  TseResourceKind,
+  type TseCkanClient,
+} from './tse/ckanClient'
+import { importTseCandidates } from './tse/importCandidates'
 
-// TSE (Tribunal Superior Eleitoral) API
-// Docs: https://dadosabertos.tse.jus.br
-// Base URL: https://dadosabertos.tse.jus.br/api
-//
-// Key datasets:
-//   - Candidaturas: /candidaturas (nome, partido, cargo, estado, foto)
-//   - Bens dos candidatos: /bens (patrimônio declarado)
-//   - Receitas e despesas: /prestacao-de-contas (financiamento de campanha)
-
-// TODO: TSE releases election data in bulk ZIP files — may need to download and parse CSV
-// TODO: Check if REST API is available or if bulk download is required for 2026
-
-const BASE_URL = process.env.TSE_API_URL ?? 'https://dadosabertos.tse.jus.br/api'
-
-interface TseCandidato {
-  SQ_CANDIDATO: string
-  NM_CANDIDATO: string
-  NM_URNA_CANDIDATO: string
-  SG_PARTIDO: string
-  SG_UF: string
-  DS_CARGO: string
-  NR_CANDIDATO: number
-  DS_SITUACAO_CANDIDATURA: string
-  URL_FOTO?: string
+export interface RunTseCandidateSyncOptions {
+  prisma: PrismaClient
+  client?: TseCkanClient
+  year?: number
+  dryRun?: boolean
 }
 
-interface TseBemCandidato {
-  SQ_CANDIDATO: string
-  DS_BEM_CANDIDATO: string
-  VR_BEM_CANDIDATO: number
-  DS_TIPO_BEM_CANDIDATO: string
+export async function runTseCandidateSync(
+  options: RunTseCandidateSyncOptions,
+): Promise<CompletedSyncRun> {
+  const year = options.year ?? 2026
+  const client = options.client ?? createTseCkanClient()
+
+  return runDataSourceSync({
+    source: DataSource.TSE,
+    kind: 'candidates',
+    dryRun: options.dryRun,
+    store: createPrismaSyncRunStore(options.prisma),
+    execute: async ({ runId }) => {
+      const resources = await client.discover(year)
+      const resource = resources.find((candidate) => candidate.kind === TseResourceKind.CANDIDATES)
+      if (!resource) {
+        throw new Error(`Catálogo TSE candidatos-${year} não contém o recurso de candidaturas`)
+      }
+
+      const downloaded = await client.download(resource)
+      await options.prisma.dataSyncRun.update({
+        where: { id: runId },
+        data: {
+          sourceUrl: resource.url,
+          checksum: downloaded.sha256,
+        },
+      })
+
+      const parsed = parseTseCandidateArchive(downloaded.bytes)
+      if (parsed.records.length === 0 && parsed.rejected.length > 0) {
+        throw new Error(
+          `Snapshot TSE sem registros válidos (${parsed.rejected.length} linhas rejeitadas)`,
+        )
+      }
+
+      const imported = await importTseCandidates(options.prisma, {
+        records: parsed.records,
+        sourceUrl: resource.url,
+        checksum: downloaded.sha256,
+        syncRunId: runId,
+        syncedAt: downloaded.fetchedAt,
+        dryRun: options.dryRun,
+      })
+
+      return {
+        noop: parsed.records.length === 0,
+        metrics: {
+          catalogResources: resources.length,
+          parsed: parsed.records.length,
+          rejected: parsed.rejected.length,
+          created: imported.created,
+          matched: imported.matched,
+          updated: imported.updated,
+          ambiguous: imported.ambiguous,
+          conflicts: imported.conflicts,
+          reviewItems: imported.reviewItems,
+          published: imported.published,
+          hidden: imported.hidden,
+        },
+      }
+    },
+  })
 }
 
-interface TseReceitaCandidato {
-  SQ_CANDIDATO: string
-  NM_DOADOR: string
-  VR_RECEITA: number
-  DS_ORIGEM_RECEITA: string
-  DT_RECEITA: string
+export async function syncTse(year = 2026, dryRun = false): Promise<CompletedSyncRun> {
+  const prisma = new PrismaClient()
+  try {
+    logger.info(`[tse] Starting official candidate sync for ${year}${dryRun ? ' (dry-run)' : ''}`)
+    const result = await runTseCandidateSync({ prisma, year, dryRun })
+    logger.info('[tse] Official candidate sync complete', result)
+    return result
+  } finally {
+    await prisma.$disconnect()
+  }
 }
 
-export async function fetchCandidatos(ano: number, uf?: string): Promise<TseCandidato[]> {
-  // TODO: Download and parse TSE bulk data for the given election year
-  // TODO: Filter by UF if provided
-  logger.info(`[tse] Fetching candidatos for ${ano}${uf ? ` - ${uf}` : ''}…`)
-  throw new Error('Not implemented')
-}
+if (require.main === module) {
+  const dryRun = process.argv.includes('--dry-run')
+  const yearArg = process.argv.find((argument) => /^--year=\d{4}$/.test(argument))
+  const year = yearArg ? Number(yearArg.split('=')[1]) : 2026
 
-export async function fetchBensCandidato(sqCandidato: string): Promise<TseBemCandidato[]> {
-  // TODO: Fetch from TSE asset declarations dataset
-  // TODO: Sum total value and store individual assets as JSON
-  logger.info(`[tse] Fetching bens for candidato ${sqCandidato}`)
-  throw new Error('Not implemented')
-}
-
-export async function fetchReceitasCandidato(sqCandidato: string): Promise<TseReceitaCandidato[]> {
-  // TODO: Fetch campaign donations dataset for the candidate
-  // TODO: Summarize top donors
-  logger.info(`[tse] Fetching receitas for candidato ${sqCandidato}`)
-  throw new Error('Not implemented')
-}
-
-export async function syncTse(ano = 2026): Promise<void> {
-  // TODO: Orchestrate full TSE sync: candidatos → bens → receitas
-  // TODO: Upsert candidates with tseId as unique key
-  logger.info(`[tse] Starting sync for ${ano}…`)
-  throw new Error('Not implemented')
+  syncTse(year, dryRun).catch((error) => {
+    logger.error('[tse] Fatal error', error)
+    process.exit(1)
+  })
 }

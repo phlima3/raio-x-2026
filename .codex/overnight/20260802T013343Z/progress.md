@@ -1,12 +1,12 @@
 # Progress
 
 ## Current status
-- Phase: Test infrastructure and CI/Prisma
+- Phase: Legislative ingestion, documents and CI completion
 - State: active
-- Last completed action: Baseline concluído: install, Prisma generate, três typechecks e build completo passam.
-- Next action: Adicionar Vitest/Supertest e escrever o primeiro tracer bullet RED para política pública de candidatos.
-- Last known good commit: 4383a0c4463372e5e484d677efde926a95941303
-- Working tree status: dirty apenas por `.codex/overnight/20260802T013343Z` criado por este run.
+- Last completed action: schema/migration aditivos, runner observado, backfill, ingestão TSE oficial, fachada pública e persistência/paginação Câmara validados por 8 testes unitários e 12 de integração.
+- Next action: substituir persistência legada do Senado, finalizar documentos/propostas, filtros públicos e workflows separados.
+- Last known good commit: 4904bd81f48f8adc35ebf31a6dbd153b989c124f
+- Working tree status: dirty com implementação do run; nenhuma mudança preexistente do usuário foi encontrada.
 
 ## Timeline
 - 2026-08-02T01:33:43Z — Criado run `20260802T013343Z` via `bootstrap_run.py`.
@@ -15,3 +15,11 @@
 - 2026-08-02T01:47Z — Confirmadas 12 falhas agendadas consecutivas; run 30687041481 falha ao procurar `packages/api/node_modules` após generate em `node_modules/.pnpm`.
 - 2026-08-02T01:50Z — Plano ajustado às evidências: jobs legislativos hoje criam candidatos, paginação é parcial, TSE é TODO e seed roda no pre-start.
 - 2026-08-02T01:54Z — `pnpm install --frozen-lockfile`, generate, typechecks e build passaram; não havia testes no repositório.
+- 2026-08-02T01:58Z — Primeiro tracer bullet falhou por módulo ausente e passou após implementar parser CSV.
+- 2026-08-02T02:01Z — Parser ampliado para Latin-1/nulos/UF/colunas novas; ZIP ganhou erro tipado; 5/5 testes passam.
+- 2026-08-02T02:07Z — Schema Prisma e migration SQL aditivos criados e aplicados em PostgreSQL 16; nenhuma tabela ou coluna legada é removida.
+- 2026-08-02T02:10Z — Backfill idempotente, runner `DataSyncRun` e persistência Person/Mandate passaram em integração real.
+- 2026-08-02T02:13Z — Cliente CKAN, importador/reconciliador TSE e política de publicação passaram; dry-run oficial contou 3.465 registros e zero rejeições.
+- 2026-08-02T02:16Z — Fachada `legacy|normalized` e filtros públicos passaram via Supertest mantendo IDs/slugs.
+- 2026-08-02T02:18Z — Câmara passou a paginar `rel=next`, persistir mandatos/votos/projetos normalizados e falhar o job se qualquer parlamentar falhar.
+- 2026-08-02T02:21Z — Suite conjunta estabilizada: 5 arquivos/8 testes unitários e 6 arquivos/12 testes PostgreSQL passaram; conexão reproduzível usa porta 5433 do compose.

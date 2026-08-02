@@ -1,13 +1,25 @@
 import 'dotenv/config'
 import axios, { AxiosError, AxiosInstance } from 'axios'
-import { Prisma, PrismaClient, VoteType, ProposalStatus, Position } from '@prisma/client'
+import {
+  DataSource,
+  MandateHouse,
+  Prisma,
+  PrismaClient,
+  ProposalStatus,
+  VoteType,
+} from '@prisma/client'
 import { logger } from '../utils/logger'
+import { upsertLegislatorMandate, type LegislatorMandateIds } from '../legislative/persistence'
 
 // ── API response envelope ─────────────────────────────────────────────────────
 
 interface CamaraResponse<T> {
   dados: T
   links: Array<{ rel: string; href: string }>
+}
+
+export interface CamaraHttpPort {
+  get<T>(url: string, config?: { params?: Record<string, unknown> }): Promise<{ data: T }>
 }
 
 // ── API types — /deputados ────────────────────────────────────────────────────
@@ -206,6 +218,32 @@ async function withRetry<T>(
   throw lastError
 }
 
+export async function collectCamaraPages<T>(
+  client: CamaraHttpPort,
+  initialUrl: string,
+  params?: Record<string, unknown>,
+): Promise<T[]> {
+  const rows: T[] = []
+  const visited = new Set<string>()
+  let url: string | undefined = initialUrl
+  let firstRequest = true
+
+  while (url) {
+    if (visited.has(url)) throw new Error(`[camara] Pagination loop detected at ${url}`)
+    visited.add(url)
+    if (visited.size > 10_000) throw new Error('[camara] Pagination exceeded 10,000 pages')
+
+    const response = await withRetry(() =>
+      client.get<CamaraResponse<T[]>>(url as string, firstRequest ? { params } : undefined),
+    )
+    rows.push(...response.data.dados)
+    url = response.data.links.find((link) => link.rel === 'next')?.href
+    firstRequest = false
+  }
+
+  return rows
+}
+
 // ── HTTP client ───────────────────────────────────────────────────────────────
 
 function createClient(): AxiosInstance {
@@ -276,28 +314,29 @@ const prisma = new PrismaClient()
  */
 export async function getDeputados(
   filters: DeputadoFilters = {},
+  client: CamaraHttpPort = http,
 ): Promise<CamaraDeputadoSummary[]> {
   const { itens = 100, ...params } = filters
 
   logger.info('[camara] getDeputados', { itens, ...params })
 
-  const res = await withRetry(() =>
-    http.get<CamaraResponse<CamaraDeputadoSummary[]>>('/deputados', {
-      params: { itens: Math.min(itens, 100), ...params },
-    }),
-  )
-
-  return res.data.dados
+  return collectCamaraPages<CamaraDeputadoSummary>(client, '/deputados', {
+    itens: Math.min(itens, 100),
+    ...params,
+  })
 }
 
 /**
  * Returns full details for a single deputy.
  */
-export async function getDeputadoById(id: number): Promise<CamaraDeputadoDetail> {
+export async function getDeputadoById(
+  id: number,
+  client: CamaraHttpPort = http,
+): Promise<CamaraDeputadoDetail> {
   logger.info(`[camara] getDeputadoById ${id}`)
 
   const res = await withRetry(() =>
-    http.get<CamaraResponse<CamaraDeputadoDetail>>(`/deputados/${id}`),
+    client.get<CamaraResponse<CamaraDeputadoDetail>>(`/deputados/${id}`),
   )
 
   return res.data.dados
@@ -313,24 +352,19 @@ export async function getDeputadoById(id: number): Promise<CamaraDeputadoDetail>
 export async function getVotacoesByDeputado(
   id: number,
   filters: VotacoesFilters = {},
+  client: CamaraHttpPort = http,
 ): Promise<CamaraVotacaoDeputado[]> {
   const { dateFrom, dateTo } = filters
   logger.info(`[camara] getVotacoesByDeputado ${id}`, filters)
 
   // Step 1 — fetch recent voting sessions
-  const sessionsRes = await withRetry(() =>
-    http.get<CamaraResponse<CamaraVotacaoSession[]>>('/votacoes', {
-      params: {
-        itens: 100,
-        ordem: 'DESC',
-        ordenarPor: 'dataHoraRegistro',
-        ...(dateFrom && { dataInicio: dateFrom }),
-        ...(dateTo && { dataFim: dateTo }),
-      },
-    }),
-  )
-
-  const sessions = sessionsRes.data.dados
+  const sessions = await collectCamaraPages<CamaraVotacaoSession>(client, '/votacoes', {
+    itens: 100,
+    ordem: 'DESC',
+    ordenarPor: 'dataHoraRegistro',
+    ...(dateFrom && { dataInicio: dateFrom }),
+    ...(dateTo && { dataFim: dateTo }),
+  })
   if (sessions.length === 0) return []
 
   // Step 2 — for each session, fetch individual votes and filter by deputado id
@@ -338,11 +372,12 @@ export async function getVotacoesByDeputado(
 
   for (const session of sessions) {
     try {
-      const votosRes = await withRetry(() =>
-        http.get<CamaraResponse<CamaraVotoDeputado[]>>(`/votacoes/${session.id}/votos`),
+      const votos = await collectCamaraPages<CamaraVotoDeputado>(
+        client,
+        `/votacoes/${session.id}/votos`,
+        { itens: 100 },
       )
-
-      const voto = votosRes.data.dados.find((v) => v.deputado_?.id === id)
+      const voto = votos.find((candidateVote) => candidateVote.deputado_?.id === id)
       if (voto) {
         results.push({
           sessionId: session.id,
@@ -373,58 +408,39 @@ export async function getVotacoesByDeputado(
  */
 export async function getProposicoesByDeputado(
   id: number,
+  client: CamaraHttpPort = http,
 ): Promise<CamaraProposicaoSummary[]> {
   logger.info(`[camara] getProposicoesByDeputado ${id}`)
 
-  const res = await withRetry(() =>
-    http.get<CamaraResponse<CamaraProposicaoSummary[]>>('/proposicoes', {
-      params: {
-        idDeputadoAutor: id,
-        itens: 100,
-        ordem: 'DESC',
-        ordenarPor: 'id',
-      },
-    }),
-  )
-
-  return res.data.dados
+  return collectCamaraPages<CamaraProposicaoSummary>(client, '/proposicoes', {
+    idDeputadoAutor: id,
+    itens: 100,
+    ordem: 'DESC',
+    ordenarPor: 'id',
+  })
 }
 
 // ── DB persistence ────────────────────────────────────────────────────────────
 
 /**
- * Upserts a deputy into the Candidate table using camaraId as the stable key.
- * Returns the internal candidate cuid.
+ * Upserts a deputy as a person with a Câmara mandate. It never creates a candidacy.
  */
-async function saveDeputado(detail: CamaraDeputadoDetail): Promise<string> {
+async function saveDeputado(detail: CamaraDeputadoDetail): Promise<LegislatorMandateIds> {
   const s = detail.ultimoStatus
-
-  const candidate = await prisma.candidate.upsert({
-    where: { camaraId: String(detail.id) },
-    update: {
-      name: s.nomeEleitoral || detail.nomeCivil,
-      party: s.siglaPartido,
-      state: s.siglaUf,
-      photoUrl: s.urlFoto || null,
-      email: s.email || null,
-      siteUrl: detail.urlWebsite || null,
-    },
-    create: {
-      camaraId: String(detail.id),
-      name: s.nomeEleitoral || detail.nomeCivil,
-      party: s.siglaPartido,
-      state: s.siglaUf,
-      position: Position.DEPUTADO_FEDERAL,
-      photoUrl: s.urlFoto || null,
-      email: s.email || null,
-      siteUrl: detail.urlWebsite || null,
-      electionYear: 2026,
-      isIncumbent: true,
-    },
-    select: { id: true },
+  return upsertLegislatorMandate(prisma, {
+    source: DataSource.CAMARA,
+    house: MandateHouse.CAMARA,
+    externalId: String(detail.id),
+    legislatureId: String(s.idLegislatura),
+    name: detail.nomeCivil || s.nome,
+    socialName: s.nomeEleitoral || s.nome || null,
+    party: s.siglaPartido,
+    state: s.siglaUf,
+    role: 'DEPUTADO_FEDERAL',
+    sourceUrl: detail.uri,
+    syncedAt: new Date(),
+    isCurrent: s.situacao.toLowerCase().includes('exercício'),
   })
-
-  return candidate.id
 }
 
 /**
@@ -432,14 +448,14 @@ async function saveDeputado(detail: CamaraDeputadoDetail): Promise<string> {
  * Returns the number of new records inserted.
  */
 async function saveVotacoes(
-  candidateId: string,
+  ids: LegislatorMandateIds,
   votacoes: CamaraVotacaoDeputado[],
 ): Promise<number> {
   if (votacoes.length === 0) return 0
 
   // Load all existing externalIds for this candidate to skip duplicates
   const existing = await prisma.votingRecord.findMany({
-    where: { candidateId, source: 'camara' },
+    where: { mandateId: ids.mandateId, source: 'camara' },
     select: { externalId: true },
   })
   const existingIds = new Set(existing.map((r) => r.externalId))
@@ -458,7 +474,8 @@ async function saveVotacoes(
       voteType: mapVoteType(v.tipoVoto),
       votedAt,
       session: v.siglaOrgao ?? null,
-      candidateId,
+      personId: ids.personId,
+      mandateId: ids.mandateId,
     }]
   })
 
@@ -473,13 +490,13 @@ async function saveVotacoes(
  * Returns number of proposals processed.
  */
 async function saveProposicoes(
-  candidateId: string,
+  mandateId: string,
   proposicoes: CamaraProposicaoSummary[],
 ): Promise<number> {
   let count = 0
 
   for (const p of proposicoes) {
-    const externalId = `camara_${p.id}`
+    const externalId = String(p.id)
     const title = `${p.siglaTipo} ${p.numero}/${p.ano}`
 
     // Parse presentation date from the list response (no detail fetch needed)
@@ -506,20 +523,32 @@ async function saveProposicoes(
       // Non-critical — proceed with summary data
     }
 
-    await prisma.proposal.upsert({
-      where: { externalId },
+    const bill = await prisma.legislativeBill.upsert({
+      where: {
+        source_externalId: { source: DataSource.CAMARA, externalId },
+      },
       update: { title, description: fullDescription, status },
       create: {
         externalId,
-        source: 'camara',
+        source: DataSource.CAMARA,
         title,
         description: fullDescription,
         status,
-        proposedAt: proposedAt ?? new Date(p.ano, 0, 1),
+        introducedAt: proposedAt ?? new Date(p.ano, 0, 1),
         url: `https://www.camara.leg.br/proposicoesWeb/fichadetramitacao?idProposicao=${p.id}`,
         tags: [p.siglaTipo],
-        candidateId,
       },
+      select: { id: true },
+    })
+    await prisma.legislativeBillAuthor.upsert({
+      where: {
+        legislativeBillId_mandateId: {
+          legislativeBillId: bill.id,
+          mandateId,
+        },
+      },
+      update: {},
+      create: { legislativeBillId: bill.id, mandateId },
     })
 
     count++
@@ -539,10 +568,16 @@ async function saveProposicoes(
  * @param votacoesFilters - Date window for vote fetching. For daily syncs,
  *   pass `{ dateFrom: yesterday }` to avoid scanning the full session history.
  */
+export interface CamaraSyncMetrics {
+  legislators: number
+  synced: number
+  failed: number
+}
+
 export async function syncCamara(
   filters: DeputadoFilters = {},
   votacoesFilters: VotacoesFilters = {},
-): Promise<void> {
+): Promise<CamaraSyncMetrics> {
   logger.info('[camara] Starting sync…', votacoesFilters)
 
   const deputados = await getDeputados(filters)
@@ -559,7 +594,7 @@ export async function syncCamara(
       batch.map(async (dep) => {
         try {
           const detail = await getDeputadoById(dep.id)
-          const candidateId = await saveDeputado(detail)
+          const ids = await saveDeputado(detail)
 
           const [votacoes, proposicoes] = await Promise.all([
             getVotacoesByDeputado(dep.id, votacoesFilters),
@@ -567,8 +602,8 @@ export async function syncCamara(
           ])
 
           const [vSaved, pSaved] = await Promise.all([
-            saveVotacoes(candidateId, votacoes),
-            saveProposicoes(candidateId, proposicoes),
+            saveVotacoes(ids, votacoes),
+            saveProposicoes(ids.mandateId, proposicoes),
           ])
 
           logger.info(
@@ -591,6 +626,8 @@ export async function syncCamara(
 
   logger.info(`[camara] Sync complete — ${synced} ok, ${failed} failed`)
   await prisma.$disconnect()
+  if (failed > 0) throw new Error(`[camara] ${failed} of ${deputados.length} legislators failed`)
+  return { legislators: deputados.length, synced, failed }
 }
 
 // ── Direct execution ──────────────────────────────────────────────────────────

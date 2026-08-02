@@ -11,8 +11,8 @@
 - Rollback: nenhum código de produto alterado.
 
 ## Phase 2 — Test infrastructure and CI/Prisma
-- [ ] Adicionar Vitest/Supertest e helpers PostgreSQL 16.
-- [ ] Criar fixtures TSE sintéticas e primeiro tracer bullet RED→GREEN.
+- [x] Adicionar Vitest/Supertest e helpers PostgreSQL 16.
+- [x] Criar fixtures TSE sintéticas e primeiro tracer bullet RED→GREEN.
 - [ ] Centralizar instalação/geração Prisma no workspace; remover cópias manuais.
 - [ ] Separar workflows/schedules por fonte e garantir exit code não zero.
 - [ ] Remover seed automático do pre-start, mantendo comando explícito.
@@ -23,10 +23,10 @@
 - Rollback: reverter checkpoint da fase; nenhum dado migrado.
 
 ## Phase 3 — Additive normalized schema and observability
-- [ ] Criar enums/modelos `Person`, `Candidacy`/extensão compatível de `Candidate`, `Mandate`, `LegislativeBill`, `SourceDocument`, `DataSyncRun`, `ReviewItem` e relações de voto.
-- [ ] Escrever migration SQL aditiva/idempotente, sem drops.
-- [ ] Implementar runner comum de fontes com métricas e estados de erro.
-- [ ] Implementar backfill idempotente de pessoas/duplicatas conhecidas.
+- [x] Criar enums/modelos `Person`, `Candidacy`/extensão compatível de `Candidate`, `Mandate`, `LegislativeBill`, `SourceDocument`, `DataSyncRun`, `ReviewItem` e relações de voto.
+- [x] Escrever migration SQL aditiva/idempotente, sem drops.
+- [x] Implementar runner comum de fontes com métricas e estados de erro.
+- [x] Implementar backfill idempotente de pessoas/duplicatas conhecidas.
 - Deliverable: modelo expandido coexistindo com legado.
 - Validation: `prisma validate`, banco PostgreSQL 16 limpo + migrate deploy, testes de backfill/idempotência.
 - Dependencies: Phase 2.
@@ -34,8 +34,8 @@
 - Rollback: manter novas tabelas/colunas sem ativar read model; `legacy` continua padrão.
 
 ## Phase 4 — Compatible read facade and public visibility
-- [ ] Criar módulo profundo de leitura com adapters `legacy` e `normalized` selecionados por env.
-- [ ] Preservar shape/IDs/slugs; gerar novos slugs `nome-partido-UF-cargo-ano` sem alterar existentes.
+- [x] Criar módulo profundo de leitura com adapters `legacy` e `normalized` selecionados por env.
+- [x] Preservar shape/IDs/slugs; gerar novos slugs `nome-partido-UF-cargo-ano` sem alterar existentes.
 - [ ] Aplicar published+office policy a lista, detalhe, stats, busca, comparação, propostas, sitemap e cache.
 - [ ] Acrescentar campos oficiais opcionais aos tipos web.
 - Deliverable: contratos públicos compatíveis e rollback por variável.
@@ -45,11 +45,11 @@
 - Rollback: `CANDIDATE_READ_MODEL=legacy`.
 
 ## Phase 5 — TSE official ingestion and reconciliation
-- [ ] Implementar descoberta CKAN/download por interfaces injetáveis.
-- [ ] Implementar ZIP/CSV, encodings, delimitador/aspas/nulos/colunas extras/UF/cargos.
-- [ ] Persistir snapshots em batches idempotentes e métricas/erros.
-- [ ] Reconciliar editorial com match determinístico; ambiguidades viram `ReviewItem`.
-- [ ] Garantir snapshot vazio/incompleto não destrutivo e política de publicação.
+- [x] Implementar descoberta CKAN/download por interfaces injetáveis.
+- [x] Implementar ZIP/CSV, encodings, delimitador/aspas/nulos/colunas extras/UF/cargos.
+- [x] Persistir snapshots em batches idempotentes e métricas/erros.
+- [x] Reconciliar editorial com match determinístico; ambiguidades viram `ReviewItem`.
+- [x] Garantir snapshot vazio/incompleto não destrutivo e política de publicação.
 - [ ] Preparar importadores complementares (bens, coligações, vagas, cassações, redes) conforme recursos disponíveis.
 - Deliverable: ingestão TSE official-first testada por fixtures.
 - Validation: matriz de parser, reprocessamento, contagens, reconciliação e falhas.
@@ -58,10 +58,10 @@
 - Rollback: manter dados oficiais ocultos e usar read model legado.
 
 ## Phase 6 — Legislative ingestion and domain separation
-- [ ] Paginar Câmara integralmente por links/próxima página.
+- [x] Paginar Câmara integralmente por links/próxima página.
 - [ ] Paginar/adaptar Senado integralmente conforme contratos oficiais.
-- [ ] Upsert somente `Person`/`Mandate`; nunca `Candidate`.
-- [ ] Persistir votações no mandato/pessoa e projetos em `LegislativeBill`, mantendo fachada compatível.
+- [x] Upsert somente `Person`/`Mandate`; nunca `Candidate` na implementação Câmara e adapter compartilhado.
+- [x] Persistir votações no mandato/pessoa e projetos em `LegislativeBill` na implementação Câmara, mantendo fachada compatível.
 - Deliverable: histórico legislativo normalizado sem candidaturas artificiais.
 - Validation: testes de múltiplas páginas, zero criação de candidaturas, idempotência e respostas compatíveis.
 - Dependencies: Phase 3.

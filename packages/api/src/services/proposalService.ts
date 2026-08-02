@@ -1,6 +1,7 @@
 import { PrismaClient, Prisma } from '@prisma/client'
 import { ProposalFilters } from '../types/proposal'
 import { withCache, cacheKey, TTL } from './cacheService'
+import { publicCandidateWhere } from './candidateService'
 
 const prisma = new PrismaClient()
 
@@ -11,6 +12,8 @@ export async function listProposals(filters: ProposalFilters) {
   const skip = (page - 1) * limit
 
   const where: Prisma.ProposalWhereInput = {
+    isPublished: true,
+    candidate: publicCandidateWhere(),
     ...(candidateId && { candidateId }),
     ...(category && { category: { contains: category, mode: 'insensitive' } }),
     ...(status && { status }),
@@ -53,8 +56,8 @@ export async function listProposals(filters: ProposalFilters) {
 // ── Get proposal by ID ────────────────────────────────────────────────────────
 
 export async function getProposalById(id: string) {
-  return prisma.proposal.findUnique({
-    where: { id },
+  return prisma.proposal.findFirst({
+    where: { id, isPublished: true, candidate: publicCandidateWhere() },
     include: {
       candidate: {
         select: { id: true, name: true, party: true, state: true, position: true },
@@ -68,7 +71,7 @@ export async function getProposalById(id: string) {
 export async function getProposalsByCandidate(candidateId: string) {
   return withCache(cacheKey.candidateProposals(candidateId), TTL.PROPOSALS, async () => {
     const proposals = await prisma.proposal.findMany({
-      where: { candidateId },
+      where: { candidateId, isPublished: true },
       orderBy: [{ category: 'asc' }, { proposedAt: 'desc' }],
     })
 
@@ -91,7 +94,11 @@ export async function getProposalCategories() {
       by: ['category'],
       _count: { id: true },
       orderBy: { _count: { id: 'desc' } },
-      where: { category: { not: null } },
+      where: {
+        category: { not: null },
+        isPublished: true,
+        candidate: publicCandidateWhere(),
+      },
     })
 
     return rows.map((r) => ({ category: r.category, count: r._count.id }))

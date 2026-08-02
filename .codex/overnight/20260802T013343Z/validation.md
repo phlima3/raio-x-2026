@@ -35,3 +35,63 @@
 - Result: PASS
 - Evidence: API e scraper compilaram; Next.js compilou e gerou 7 páginas. Aviso não bloqueante preexistente: override da fonte `Bodoni Moda` não encontrado.
 - Follow-up: repetir no encerramento.
+
+### 2026-08-02T01:58Z TDD RED — CSV TSE
+- Command: `pnpm exec vitest run packages/scraper/test/tse-candidate-csv.test.ts`
+- Result: FAIL
+- Evidence: módulo público `sources/tse/candidateCsv` ainda não existia; nenhum teste executado.
+- Follow-up: implementar o mínimo para o registro UTF-8 citado no teste.
+
+### 2026-08-02T02:00Z TDD GREEN — CSV TSE
+- Command: mesmo teste focado; `pnpm --filter @raiox/scraper exec tsc --noEmit`
+- Result: PASS
+- Evidence: 3 casos cobrem UTF-8, Latin-1 auto, aspas/`;`, nulos, coluna desconhecida e UF inválida; typecheck passa.
+- Follow-up: adicionar envelope ZIP.
+
+### 2026-08-02T02:00Z TDD RED — ZIP TSE
+- Command: `pnpm exec vitest run packages/scraper/test/tse-candidate-archive.test.ts`
+- Result: FAIL
+- Evidence: módulo `candidateArchive` ausente.
+- Follow-up: implementar seleção de `consulta_cand` e erro tipado.
+
+### 2026-08-02T02:01Z TDD GREEN — ZIP TSE
+- Command: `pnpm exec vitest run packages/scraper/test/tse-candidate-csv.test.ts packages/scraper/test/tse-candidate-archive.test.ts`
+- Result: PASS
+- Evidence: 2 arquivos, 5 testes; ZIP válido selecionado e ZIP inválido rejeitado; scraper typecheck passa.
+- Follow-up: integrar o parser ao modelo persistente.
+
+### 2026-08-02T02:07Z additive Prisma migration
+- Command: `prisma format`; `prisma validate`; `prisma migrate deploy` contra PostgreSQL 16; `pnpm db:generate`
+- Result: PASS
+- Evidence: 11 migrations aplicadas, incluindo `20260802020000_official_first_models`; schema válido e client gerado. A migration nova contém apenas criação/alteração aditiva e torna `VotingRecord.candidateId` opcional.
+- Follow-up: validar os comportamentos persistentes em integração.
+
+### 2026-08-02T02:10Z TDD GREEN — observability, backfill and mandates
+- Command: testes focados `sync-runner`, `backfill-persons` e `legislative-persistence` contra PostgreSQL 16.
+- Result: PASS
+- Evidence: falha de fonte persiste `DataSyncRun=FAILED` antes de relançar; backfill conhecido preserva IDs/slugs e homônimo ambíguo gera revisão; Câmara/Senado criam somente Person/Mandate.
+- Follow-up: integrar fontes remotas aos adapters.
+
+### 2026-08-02T02:13Z TDD GREEN — CKAN/TSE reconciliation
+- Command: testes `tse-ckan-client`, `tse-candidate-import`, `tse-sync`; execução oficial `pnpm --filter @raiox/scraper run sync:tse -- --dry-run`.
+- Result: PASS
+- Evidence: descoberta/download/checksum, importação idempotente e reconciliação passaram. Snapshot oficial: 7 recursos, 3.465 registros parseados, 0 rejeitados e 0 escritas no dry-run.
+- Follow-up: manter ausência de presidenciáveis como condição não destrutiva.
+
+### 2026-08-02T02:16Z TDD GREEN — public facade
+- Command: Supertest `candidate-public-api.integration.test.ts` nos modos legacy e normalized.
+- Result: PASS
+- Evidence: lista/stats/detalhe excluem ocultos e cargos não habilitados; modo normalized usa Person sem alterar ID/slug legado.
+- Follow-up: aplicar a mesma política aos endpoints auxiliares e consumidores web.
+
+### 2026-08-02T02:18Z TDD GREEN — Câmara pagination/persistence
+- Command: `camara-pagination.test.ts`; `legislative-persistence.integration.test.ts`; scraper TypeScript build.
+- Result: PASS
+- Evidence: todas as páginas ligadas por `rel=next` são percorridas, com proteção de loop; persistência não cria Candidate e separa LegislativeBill de Proposal.
+- Follow-up: aplicar o mesmo domínio ao Senado.
+
+### 2026-08-02T02:21Z combined test suites
+- Command: `pnpm test:unit`; `$env:DATABASE_URL='postgresql://postgres:postgres@localhost:5433/raiox2026_test?schema=public'; pnpm test:integration`
+- Result: PASS
+- Evidence: 5 arquivos/8 testes unitários e 6 arquivos/12 testes de integração passaram. Uma tentativa anterior em porta 5432 falhou por conexão; a primeira execução conjunta na porta correta expôs e corrigiu limpeza relacional de mandatos entre suites.
+- Follow-up: ampliar suites para Senado e documentos, depois repetir ladder completa.

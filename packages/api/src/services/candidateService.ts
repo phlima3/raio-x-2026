@@ -1,10 +1,34 @@
-import { PrismaClient, Prisma } from '@prisma/client'
-import { CandidateFilters } from '../types/candidate'
-import { withCache, cacheKey, TTL } from './cacheService'
+import {
+  Position,
+  Prisma,
+  PrismaClient,
+  type Candidate,
+  type Person,
+} from '@prisma/client'
+
+import type { CandidateFilters } from '../types/candidate'
+import { cacheKey, TTL, withCache } from './cacheService'
 
 const prisma = new PrismaClient()
 
-// ── Slug helpers ──────────────────────────────────────────────────────────────
+export type CandidateReadModel = 'legacy' | 'normalized'
+
+const PUBLIC_POSITIONS: Position[] = [
+  Position.PRESIDENTE,
+  Position.GOVERNADOR,
+  Position.SENADOR,
+]
+
+export function getCandidateReadModel(): CandidateReadModel {
+  return process.env.CANDIDATE_READ_MODEL === 'normalized' ? 'normalized' : 'legacy'
+}
+
+export function publicCandidateWhere(): Prisma.CandidateWhereInput {
+  return {
+    isPublished: true,
+    position: { in: PUBLIC_POSITIONS },
+  }
+}
 
 function slugify(text: string): string {
   return text
@@ -20,44 +44,66 @@ export function makeSlug(name: string, party: string, state: string): string {
   return `${slugify(name)}-${slugify(party)}-${slugify(state)}`
 }
 
-function parseSlug(slug: string): { namePart: string; state: string } | null {
+function parseLegacySlug(slug: string): { state: string } | null {
   const parts = slug.split('-')
   if (parts.length < 3) return null
   const state = parts[parts.length - 1]
-  const namePart = parts[0]
-  return { namePart, state }
+  return state.length === 2 ? { state } : null
 }
 
-// ── List candidates ───────────────────────────────────────────────────────────
-
-type CandidateRow = {
-  id: string
-  name: string
-  socialName: string | null
-  party: string
-  state: string
-  position: string
-  photoUrl: string | null
-  ballotNumber: number | null
-  isIncumbent: boolean
-  electionYear: number
-  firstProposalTitle: string | null
+function identityFields<T extends { name: string; socialName: string | null; person?: Person | null }>(
+  candidate: T,
+  readModel: CandidateReadModel,
+): Omit<T, 'person'> {
+  const { person, ...rest } = candidate
+  if (readModel !== 'normalized' || !person) return rest
+  return {
+    ...rest,
+    name: person.name,
+    socialName: person.socialName ?? candidate.socialName,
+  }
 }
+
+type CandidateRow = Pick<
+  Candidate,
+  | 'id'
+  | 'slug'
+  | 'name'
+  | 'socialName'
+  | 'party'
+  | 'state'
+  | 'position'
+  | 'photoUrl'
+  | 'ballotNumber'
+  | 'isIncumbent'
+  | 'electionYear'
+  | 'isOfficial'
+  | 'officialStatus'
+  | 'dataSource'
+  | 'lastSyncedAt'
+> & { firstProposalTitle: string | null }
 
 export async function listCandidates(filters: CandidateFilters) {
   const { party, state, position, electionYear, search, page, limit } = filters
   const skip = (page - 1) * limit
-  const key = cacheKey.candidateList(JSON.stringify(filters))
+  const readModel = getCandidateReadModel()
+  const key = cacheKey.candidateList(`${readModel}:${JSON.stringify(filters)}`)
 
   return withCache(key, TTL.CANDIDATE_LIST, async () => {
-    // When search is present, use raw SQL with unaccent for accent-insensitive matching
-    // ("flavio" must find "Flávio"; Prisma's ILIKE is case-insensitive but not accent-insensitive)
     if (search) {
       const searchParam = `%${search}%`
+      const identityName = readModel === 'normalized'
+        ? Prisma.sql`COALESCE(person.name, c.name)`
+        : Prisma.sql`c.name`
+      const identitySocialName = readModel === 'normalized'
+        ? Prisma.sql`COALESCE(person."socialName", c."socialName", '')`
+        : Prisma.sql`COALESCE(c."socialName", '')`
       const conditions: Prisma.Sql[] = [
+        Prisma.sql`c."isPublished" = true`,
+        Prisma.sql`c.position IN ('PRESIDENTE', 'GOVERNADOR', 'SENADOR')`,
         Prisma.sql`(
-          unaccent(lower(c.name)) LIKE unaccent(lower(${searchParam}))
-          OR unaccent(lower(COALESCE(c."socialName", ''))) LIKE unaccent(lower(${searchParam}))
+          unaccent(lower(${identityName})) LIKE unaccent(lower(${searchParam}))
+          OR unaccent(lower(${identitySocialName})) LIKE unaccent(lower(${searchParam}))
           OR unaccent(lower(c.party)) LIKE unaccent(lower(${searchParam}))
         )`,
       ]
@@ -65,39 +111,49 @@ export async function listCandidates(filters: CandidateFilters) {
       if (state) conditions.push(Prisma.sql`c.state = ${state}`)
       if (position) conditions.push(Prisma.sql`c.position = ${position}`)
       if (electionYear) conditions.push(Prisma.sql`c."electionYear" = ${electionYear}`)
-
       const whereClause = Prisma.join(conditions, ' AND ')
 
       const [countResult, rows] = await Promise.all([
         prisma.$queryRaw<[{ count: bigint }]>`
-          SELECT COUNT(*) AS count FROM "Candidate" c WHERE ${whereClause}
+          SELECT COUNT(*) AS count
+          FROM "Candidate" c
+          LEFT JOIN "Person" person ON person.id = c."personId"
+          WHERE ${whereClause}
         `,
         prisma.$queryRaw<CandidateRow[]>`
-          SELECT c.id, c.name, c."socialName", c.party, c.state, c.position,
-                 c."photoUrl", c."ballotNumber", c."isIncumbent", c."electionYear",
-                 (SELECT p.title FROM "Proposal" p WHERE p."candidateId" = c.id ORDER BY p."proposedAt" DESC NULLS LAST LIMIT 1) AS "firstProposalTitle"
+          SELECT c.id, c.slug, ${identityName} AS name,
+                 NULLIF(${identitySocialName}, '') AS "socialName",
+                 c.party, c.state, c.position, c."photoUrl", c."ballotNumber",
+                 c."isIncumbent", c."electionYear", c."isOfficial",
+                 c."officialStatus", c."dataSource", c."lastSyncedAt",
+                 (SELECT p.title FROM "Proposal" p
+                  WHERE p."candidateId" = c.id AND p."isPublished" = true
+                  ORDER BY p."proposedAt" DESC NULLS LAST LIMIT 1) AS "firstProposalTitle"
           FROM "Candidate" c
+          LEFT JOIN "Person" person ON person.id = c."personId"
           WHERE ${whereClause}
-          ORDER BY c.position ASC, c.state ASC, c.name ASC
+          ORDER BY c.position ASC, c.state ASC, name ASC
           LIMIT ${limit} OFFSET ${skip}
         `,
       ])
 
-      const total = Number(countResult[0].count)
+      const total = Number(countResult[0]?.count ?? 0)
       return {
-        data: rows.map((c) => ({ ...c, slug: makeSlug(c.name, c.party, c.state) })),
+        data: rows.map((candidate) => ({
+          ...candidate,
+          slug: candidate.slug ?? makeSlug(candidate.name, candidate.party, candidate.state),
+        })),
         meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
       }
     }
 
-    // No search: use ORM (supports Prisma type safety + index scans on exact filters)
     const where: Prisma.CandidateWhereInput = {
+      ...publicCandidateWhere(),
       ...(party && { party }),
       ...(state && { state }),
       ...(position && { position }),
       ...(electionYear && { electionYear }),
     }
-
     const [total, candidates] = await Promise.all([
       prisma.candidate.count({ where }),
       prisma.candidate.findMany({
@@ -107,6 +163,7 @@ export async function listCandidates(filters: CandidateFilters) {
         orderBy: [{ position: 'asc' }, { state: 'asc' }, { name: 'asc' }],
         select: {
           id: true,
+          slug: true,
           name: true,
           socialName: true,
           party: true,
@@ -116,9 +173,15 @@ export async function listCandidates(filters: CandidateFilters) {
           ballotNumber: true,
           isIncumbent: true,
           electionYear: true,
+          isOfficial: true,
+          officialStatus: true,
+          dataSource: true,
+          lastSyncedAt: true,
+          person: true,
           proposals: {
+            where: { isPublished: true },
             take: 1,
-            orderBy: { proposedAt: 'desc' as const },
+            orderBy: { proposedAt: 'desc' },
             select: { title: true },
           },
         },
@@ -126,82 +189,114 @@ export async function listCandidates(filters: CandidateFilters) {
     ])
 
     return {
-      data: candidates.map(({ proposals, ...c }) => ({
-        ...c,
-        slug: makeSlug(c.name, c.party, c.state),
-        firstProposalTitle: proposals[0]?.title ?? null,
-      })),
+      data: candidates.map(({ proposals, ...candidate }) => {
+        const identity = identityFields(candidate, readModel)
+        return {
+          ...identity,
+          slug: identity.slug ?? makeSlug(identity.name, identity.party, identity.state),
+          firstProposalTitle: proposals[0]?.title ?? null,
+        }
+      }),
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     }
   })
 }
 
-// ── Get candidate by slug ─────────────────────────────────────────────────────
+const detailInclude = {
+  person: true,
+  proposals: {
+    where: { isPublished: true },
+    orderBy: { proposedAt: 'desc' as const },
+    take: 50,
+  },
+  votingRecords: { orderBy: { votedAt: 'desc' as const }, take: 100 },
+  assetDeclarations: { orderBy: { year: 'desc' as const } },
+  campaignFinancings: { orderBy: { year: 'desc' as const } },
+} satisfies Prisma.CandidateInclude
+
+async function presentCandidate<
+  T extends Candidate & {
+    person: Person | null
+    votingRecords: unknown[]
+  },
+>(candidate: T, slug: string, readModel: CandidateReadModel) {
+  let votingRecords = candidate.votingRecords
+  if (readModel === 'normalized' && candidate.personId) {
+    votingRecords = await prisma.votingRecord.findMany({
+      where: {
+        OR: [
+          { candidateId: candidate.id },
+          { personId: candidate.personId },
+          { mandate: { personId: candidate.personId } },
+        ],
+      },
+      orderBy: { votedAt: 'desc' },
+      take: 100,
+    })
+  }
+  return { ...identityFields(candidate, readModel), slug, votingRecords }
+}
 
 export async function getCandidateBySlug(slug: string) {
-  return withCache(cacheKey.candidateDetail(slug), TTL.CANDIDATE_DETAIL, async () => {
-    // Try direct slug column lookup first (fast path)
-    const bySlug = await prisma.candidate.findFirst({
-      where: { slug },
-      include: {
-        proposals: { orderBy: { proposedAt: 'desc' }, take: 50 },
-        votingRecords: { orderBy: { votedAt: 'desc' }, take: 100 },
-        assetDeclarations: { orderBy: { year: 'desc' } },
-        campaignFinancings: { orderBy: { year: 'desc' } },
-      },
-    })
-    if (bySlug) return { ...bySlug, slug }
+  const readModel = getCandidateReadModel()
+  return withCache(
+    cacheKey.candidateDetail(`${readModel}:${slug}`),
+    TTL.CANDIDATE_DETAIL,
+    async () => {
+      const bySlug = await prisma.candidate.findFirst({
+        where: { slug, ...publicCandidateWhere() },
+        include: detailInclude,
+      })
+      if (bySlug) return presentCandidate(bySlug, slug, readModel)
 
-    // Fallback: filter by state then match slug in JS (handles accented names like "Flávio")
-    const parsed = parseSlug(slug)
-    const candidates = await prisma.candidate.findMany({
-      where: parsed ? { state: { equals: parsed.state.toUpperCase() } } : {},
-      include: {
-        proposals: { orderBy: { proposedAt: 'desc' }, take: 50 },
-        votingRecords: { orderBy: { votedAt: 'desc' }, take: 100 },
-        assetDeclarations: { orderBy: { year: 'desc' } },
-        campaignFinancings: { orderBy: { year: 'desc' } },
-      },
-    })
-
-    const match = candidates.find((c) => makeSlug(c.name, c.party, c.state) === slug)
-    if (!match) return null
-    return { ...match, slug }
-  })
+      const parsed = parseLegacySlug(slug)
+      const candidates = await prisma.candidate.findMany({
+        where: {
+          ...publicCandidateWhere(),
+          ...(parsed && { state: parsed.state.toUpperCase() }),
+        },
+        include: detailInclude,
+      })
+      const match = candidates.find(
+        (candidate) => makeSlug(candidate.name, candidate.party, candidate.state) === slug,
+      )
+      return match ? presentCandidate(match, slug, readModel) : null
+    },
+  )
 }
-
-// ── Get candidate by ID ───────────────────────────────────────────────────────
 
 export async function getCandidateById(id: string) {
-  const candidate = await prisma.candidate.findUnique({
-    where: { id },
-    include: {
-      proposals: { orderBy: { proposedAt: 'desc' }, take: 50 },
-      votingRecords: { orderBy: { votedAt: 'desc' }, take: 100 },
-      assetDeclarations: { orderBy: { year: 'desc' } },
-      campaignFinancings: { orderBy: { year: 'desc' } },
-    },
+  const readModel = getCandidateReadModel()
+  const candidate = await prisma.candidate.findFirst({
+    where: { id, ...publicCandidateWhere() },
+    include: detailInclude,
   })
   if (!candidate) return null
-  return { ...candidate, slug: makeSlug(candidate.name, candidate.party, candidate.state) }
+  const slug = candidate.slug ?? makeSlug(candidate.name, candidate.party, candidate.state)
+  return presentCandidate(candidate, slug, readModel)
 }
 
-// ── Stats ─────────────────────────────────────────────────────────────────────
-
 export async function getCandidateStats() {
-  return withCache(cacheKey.stats(), TTL.STATS, async () => {
-  const [byPosition, byParty, byState, total] = await Promise.all([
-    prisma.candidate.groupBy({ by: ['position'], _count: { id: true } }),
-    prisma.candidate.groupBy({ by: ['party'], _count: { id: true }, orderBy: { _count: { id: 'desc' } }, take: 10 }),
-    prisma.candidate.groupBy({ by: ['state'], _count: { id: true }, orderBy: { _count: { id: 'desc' } } }),
-    prisma.candidate.count(),
-  ])
-
-  return {
-    total,
-    byPosition: Object.fromEntries(byPosition.map((r) => [r.position, r._count.id])),
-    byParty: Object.fromEntries(byParty.map((r) => [r.party, r._count.id])),
-    byState: Object.fromEntries(byState.map((r) => [r.state, r._count.id])),
-  }
+  const readModel = getCandidateReadModel()
+  return withCache(cacheKey.stats(readModel), TTL.STATS, async () => {
+    const where = publicCandidateWhere()
+    const [byPosition, byParty, byState, total] = await Promise.all([
+      prisma.candidate.groupBy({ by: ['position'], where, _count: { id: true } }),
+      prisma.candidate.groupBy({
+        by: ['party'], where, _count: { id: true },
+        orderBy: { _count: { id: 'desc' } }, take: 10,
+      }),
+      prisma.candidate.groupBy({
+        by: ['state'], where, _count: { id: true },
+        orderBy: { _count: { id: 'desc' } },
+      }),
+      prisma.candidate.count({ where }),
+    ])
+    return {
+      total,
+      byPosition: Object.fromEntries(byPosition.map((row) => [row.position, row._count.id])),
+      byParty: Object.fromEntries(byParty.map((row) => [row.party, row._count.id])),
+      byState: Object.fromEntries(byState.map((row) => [row.state, row._count.id])),
+    }
   })
 }
