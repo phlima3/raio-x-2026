@@ -3,8 +3,8 @@
 ## Current status
 - Phase: Operational follow-up
 - State: active
-- Last completed action: TSE suplementar foi loteado, recebeu timeout próprio e runs abandonados agora expiram de forma observável.
-- Next action: reproduzir e tornar resilientes os três timeouts reais do enriquecimento por sites sem mascarar falha de fonte.
+- Last completed action: navegação dos sites foi corrigida e validada nos três URLs que falharam nas Actions.
+- Next action: executar ladder completa, aplicar a skill de review e publicar os três checkpoints na main.
 - Last known good commit: 58896fa
 - Working tree status: limpo; mudanças seguintes serão somente do hotfix incremental e do estado persistente ignorado.
 
@@ -57,3 +57,5 @@
 - 2026-08-03T14:04Z — TSE suplementar passou a usar `createMany/skipDuplicates`, atualizações agrupadas e transações em lotes; idempotência e reparo de vínculo tardio passaram em PostgreSQL.
 - 2026-08-03T14:06Z — Lease de seis horas para `DataSyncRun` foi implementado RED→GREEN: um novo run fecha antecessores realmente abandonados, mas não toca execução recente.
 - 2026-08-03T14:07Z — Workflow TSE foi separado em candidatura canônica (90 min) e complemento dependente (120 min); YAML validado.
+- 2026-08-03T14:10Z — Navegação de sites foi reproduzida RED e corrigida para aguardar `commit`, limitar a espera de DOM e repetir falha transitória sem engolir HTTP/erro final.
+- 2026-08-03T14:13Z — Chromium real com o mesmo contexto do job abriu Planalto, Aldo e Bahia em 1,2 s/0,9 s/1,8 s, todos HTTP 200 e com HTML avaliável; o domínio de Aldo é atualmente uma página estacionada e produz somente enriquecimento IA oculto/no-op.

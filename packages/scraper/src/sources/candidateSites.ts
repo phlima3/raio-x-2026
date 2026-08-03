@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import { Position, PrismaClient } from '@prisma/client'
 import { withPage } from '../utils/playwright'
+import { navigateForContent } from '../utils/siteNavigation'
 import { processProposalsFromSite } from '../processors/proposalExtractor'
 import { logger } from '../utils/logger'
 
@@ -61,21 +62,14 @@ export async function scrapeCandidateSite(
   logger.info(`[sites] Scraping ${targetUrl} for ${config.candidateName}`)
 
   return withPage(async (page) => {
-    const res = await page.goto(targetUrl, {
-      waitUntil: 'domcontentloaded',
-      timeout: 30_000,
-    })
-
-    if (!res || res.status() >= 400) {
-      throw new Error(`HTTP ${res?.status() ?? 'unknown'} on ${targetUrl}`)
-    }
+    await navigateForContent(page, targetUrl)
 
       // If no explicit proposalsPath, try to find the proposals sub-page
     if (!config.proposalsPath) {
       const detected = await detectProposalsLink(page)
       if (detected && detected !== targetUrl) {
         logger.info(`[sites] Detected proposals page at ${detected}`)
-        await page.goto(detected, { waitUntil: 'domcontentloaded', timeout: 30_000 })
+        await navigateForContent(page, detected)
       }
     }
 
@@ -122,7 +116,7 @@ export async function scrapeCandidateSite(
 export async function detectProposalsPage(siteUrl: string): Promise<string | null> {
   return withPage(async (page) => {
     try {
-      await page.goto(siteUrl, { waitUntil: 'domcontentloaded', timeout: 20_000 })
+      await navigateForContent(page, siteUrl, { navigationTimeoutMs: 20_000 })
 
       // Look for links matching common proposal path patterns
       const found = await page.evaluate((paths) => {

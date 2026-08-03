@@ -9,3 +9,4 @@
 - O painel de revisão, OCR e publicação de deputados estão deliberadamente fora do escopo.
 - `pnpm lint` não tinha baseline funcional: API não declara/configura ESLint e Next abre setup interativo. A falha foi registrada; typecheck e builds estão verdes.
 - Execuções canceladas pelo timeout do GitHub deixaram `DataSyncRun` antigos em `RUNNING`; o lease implementado os fechará como `FAILED` no próximo início da mesma fonte/tipo, sem SQL manual em produção.
+- `aldorebelo.com.br` está estacionado para venda, embora o Chromium receba HTTP 200; o job seguirá como no-op para esse conteúdo e qualquer proposta IA continua DRAFT/oculta. Corrigir a URL requer uma nova fonte oficial verificável.

@@ -92,3 +92,8 @@
 - Linhas imutáveis do arquivo oficial usam hash do payload e `createMany(skipDuplicates)`; reprocessamento atualiza proveniência por lote e repara vínculo ausente com Candidate sem duplicar registros.
 - Materializações preservam a semântica anterior (último status/cassação, primeira URL válida) com grupos determinísticos e transações curtas, evitando milhares de round-trips unitários pelo túnel.
 - `DataSyncRun=RUNNING` da mesma fonte/tipo há mais de seis horas é lease abandonado: o próximo run o fecha como `FAILED`; execução recente permanece intocada.
+
+## 2026-08-03 — Navegação de enriquecimento em sites
+- `page.goto` considera a resposta comprometida (`waitUntil=commit`) e dá ao DOM uma janela adicional limitada; páginas que mantêm recursos de terceiros pendentes não travam mais por 30 segundos apesar de já terem HTML útil.
+- Falha de transporte/HTTP 5xx recebe uma repetição curta; HTTP 4xx e a segunda falha continuam propagando, preservando `DataSyncRun=FAILED` e exit não zero.
+- Timeout apenas de `DOMContentLoaded` permite avaliar o HTML já comprometido; falha posterior de avaliação/LLM/persistência continua falhando o job.

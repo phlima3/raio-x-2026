@@ -96,7 +96,7 @@
 - [x] Validar CI, documentos oficiais e deploy automático no commit publicado.
 - [x] Tornar a execução diária da Câmara incremental em vez de repetir o histórico integral por deputado.
 - [x] Separar TSE canônico e complementares em jobs sequenciais com timeouts independentes e persistência suplementar em lotes.
-- [ ] Diagnosticar e corrigir a falha real do enriquecimento de sites sem ampliar publicação.
+- [x] Diagnosticar e corrigir a falha real do enriquecimento de sites sem ampliar publicação.
 - [ ] Reexecutar TSE e Legislativo e registrar métricas reais de produção.
 - [ ] Reexecutar Senado após confirmar a recuperação HTTP 200 do serviço oficial.
 - [ ] Atualizar validação e relatório final com commits, runs e bloqueios externos.

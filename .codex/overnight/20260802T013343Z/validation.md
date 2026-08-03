@@ -300,3 +300,15 @@
 - Result: PASS.
 - Evidence: `candidacies` tem 90 minutos; `supplemental` depende dele e possui 120 minutos/túnel próprios, mantendo concurrency único do workflow.
 - Follow-up: checkpoint local e resiliência do enriquecimento por sites.
+
+### 2026-08-03T14:10Z TDD RED→GREEN — navegação de sites lentos
+- Command: `pnpm exec vitest run packages/scraper/test/site-navigation.test.ts`; typecheck do scraper.
+- Result: RED (módulo de navegação resiliente inexistente) → PASS (2/2 testes + typecheck).
+- Evidence: HTML comprometido continua utilizável quando `DOMContentLoaded` expira; reset de conexão repete uma vez; HTTP 404 falha imediatamente.
+- Follow-up: validar com Chromium real nos três URLs da Action.
+
+### 2026-08-03T14:13Z smoke real dos sites anteriormente lentos
+- Command: Chromium headless, contexto/user-agent/rotas de `withPage`, `navigateForContent`, leitura de título/body; sem LLM e sem escrita em banco.
+- Result: PASS com limitação de conteúdo.
+- Evidence: Planalto 200 em 1,2 s (2.870 caracteres), Aldo 200 em 0,9 s (página estacionada, 180 caracteres), Bahia 200 em 1,8 s (HTML governamental); os três deixaram de depender do evento que expirava na Action.
+- Follow-up: ladder completa e reexecução remota após push.
