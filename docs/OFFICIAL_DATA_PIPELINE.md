@@ -123,6 +123,11 @@ No caminho diário, Câmara e Senado consultam uma janela móvel inclusiva de se
 dias para absorver correções tardias sem repetir todo o histórico. A Câmara lê
 cada sessão/voto compartilhado uma vez por run; qualquer página/sessão que siga
 indisponível após retries falha a fonte, em vez de produzir sucesso parcial.
+Projetos do ano corrente são lidos pela listagem paginada por parlamentar e
+persistidos em lote, sem uma chamada HTTP de detalhe por projeto. O resumo
+oficial é atualizado e um status mais rico já armazenado é preservado.
+Cada parlamentar é uma unidade idempotente e recebe até três tentativas para
+desconexões transitórias; esgotar as tentativas ainda falha a fonte inteira.
 Backfills exigem as flags explícitas mostradas acima.
 
 No workflow TSE, `candidacies` possui timeout de 90 minutos. O job
@@ -224,8 +229,9 @@ GROUP BY "extractionStatus";
 ## Limites atuais
 
 - OCR, publicação de deputados e novo painel de revisão estão fora do escopo.
-- O catálogo TSE revalidado em 3 de agosto de 2026 tinha 3.494 candidaturas, sem
-  presidente/vice-presidente, e 25.493 linhas nos seis recursos suplementares.
+- O catálogo TSE revalidado em produção em 3 de agosto de 2026 tinha 3.600
+  candidaturas, sem presidente/vice-presidente, e 26.762 linhas nos seis
+  recursos suplementares.
 - Não havia recurso de programa de governo no catálogo naquele momento; o job
   diário permanece habilitado para detectar sua disponibilização.
 - Texto oficial extraído fica em `SourceDocument`. Transformá-lo em propostas

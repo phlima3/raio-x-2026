@@ -1,12 +1,12 @@
 # Progress
 
 ## Current status
-- Phase: Operational follow-up
-- State: active
-- Last completed action: achados da revisão Standards/Spec foram corrigidos em TDD, incluindo backfill explícito da Câmara e falha parcial de sessões.
-- Next action: repetir a ladder completa pós-review, fechar o relatório e publicar os checkpoints na main.
-- Last known good commit: 58896fa
-- Working tree status: limpo; mudanças seguintes serão somente do hotfix incremental e do estado persistente ignorado.
+- Phase: Complete
+- State: complete with one external enrichment blocker documented
+- Last completed action: TSE, Câmara e Senado concluíram runs reais verdes; CI/deploy/health e fachada pública foram revalidados.
+- Next action: observar schedules e substituir a URL de Aldo somente quando houver fonte oficial verificável.
+- Last known good commit: f32503d
+- Working tree status: documentação final pronta para commit.
 
 ## Timeline
 - 2026-08-02T01:33:43Z — Criado run `20260802T013343Z` via `bootstrap_run.py`.
@@ -63,3 +63,18 @@
 - 2026-08-03T14:19Z — Review em dois eixos: Standards sem violação objetiva e duas dívidas documentais; Spec confirmou escopo, mas apontou falha parcial da Câmara, identidade do voto conflitante e ausência de CLI de backfill.
 - 2026-08-03T14:23Z — Achados corrigidos RED→GREEN: sessão esgotada falha DataSyncRun, voto legado conflitante recebe Person, e Câmara aceita `--year/--from/--to`; runbook canônico atualizado.
 - 2026-08-03T14:25Z — Ladder pós-review verde: 18 unitários, 32 integrações PostgreSQL 16, três typechecks/builds, nove YAMLs e diff check.
+- 2026-08-03T14:27Z — `49d9a56` publicado na main; CI 30822401095 passou, API/web Veloz ficaram LIVE e health DB/Redis respondeu ok.
+- 2026-08-03T14:26Z — Senado real concluiu SUCCESS em 1m21s: 81 parlamentares, 17 projetos, 0 votos, 0 falhas; leases legislativos antigos foram fechados.
+- 2026-08-03T14:39Z — Primeiro rerun de sites melhorou de 12/15 para 13/15; Planalto/Bahia passaram, e o log revelou corpo ausente no Paraná + domínio Aldo sem commit.
+- 2026-08-03T14:48Z — TDD corrigiu retry de body e launch concorrente; smoke real abriu Aldo/Paraná com um browser; `fcc013f` publicado e CI 30824161154 passou.
+- 2026-08-03T14:49Z — Segundo rerun de sites chegou a 14/15 e 144 propostas DRAFT; apenas o domínio estacionado de Aldo continuou inacessível no runner e o job permaneceu corretamente vermelho.
+- 2026-08-03T15:04Z — TSE canônico concluiu SUCCESS: 7 recursos, 3.600 registros, 106 criações, 3.494 atualizações, 0 rejeições/revisões/publicações e 3.600 ocultos.
+- 2026-08-03T15:20Z — TSE suplementar concluiu SUCCESS em 15m34s: 6 recursos, 26.762 linhas e 6 SourceDocuments; candidaturas e complemento ficaram verdes no mesmo workflow.
+- 2026-08-03T15:35Z — O run Câmara anterior foi interrompido com 70/512 mandatos após 71 minutos: a listagem incremental de sessões estava correta, mas detalhes e upserts individuais de cada projeto ainda impediam o schedule de terminar.
+- 2026-08-03T15:36Z — Novo tracer TDD falhou ao observar `/proposicoes/{id}` no caminho diário e passou após trocar detalhes por resumos paginados e persistência em lote, preservando status mais rico; `1ad997d` foi publicado na main.
+- 2026-08-03T15:37Z — CI 30828161319 passou unitários, integração PostgreSQL 16, typecheck e build; o novo run Câmara tocou 88 mandatos em 2m38s, mais de 30 vezes a taxa anterior.
+- 2026-08-03T15:53Z — A Câmara otimizada percorreu 511/512 mandatos em 16m50s, mas encerrou FAILED corretamente porque o PostgreSQL fechou uma conexão durante `person.findUnique` de um deputado.
+- 2026-08-03T15:56Z — O erro transitório foi reproduzido com Prisma Client estendido; RED virou GREEN ao repetir o deputado idempotente até três vezes. `f32503d` foi publicado e o workflow 30829864895 iniciado.
+- 2026-08-03T15:58Z — CI 30829858572 passou 20 unitários, 34 integrações PostgreSQL 16, typecheck e build; Senado do rerun final concluiu SUCCESS.
+- 2026-08-03T16:14Z — Workflow 30829864895 ficou verde: Câmara 512/512, 24.564 projetos/autorias, 0 votos/falhas em 16m32s; Senado 81/81, 24 projetos, 0 votos/falhas em 1m26s.
+- 2026-08-03T16:15Z — Snapshot final: 4.089 Person, 593 Mandate, 22.278 LegislativeBill, 0 reviews abertos e 62 candidatos públicos; API/DB/Redis ok, web 200 e sete workflows ativos.

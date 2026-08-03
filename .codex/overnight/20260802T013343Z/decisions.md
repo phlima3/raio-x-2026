@@ -103,3 +103,12 @@
 - Uma sessão de votação compartilhada indisponível após retries invalida o run inteiro e persiste `FAILED`; não é permitido concluir com histórico parcial silencioso.
 - Quando um voto oficial normalizado já ocupa a chave do mandato, a linha legada compatível preserva `candidateId`/rollback e recebe `personId`; o registro normalizado continua sendo o vínculo canônico ao mandato.
 - Novos limites, lease, backfill e timeouts pertencem ao runbook canônico `docs/OFFICIAL_DATA_PIPELINE.md`, não apenas ao diário da execução overnight.
+
+## 2026-08-03 — Projetos Câmara no caminho diário
+- A listagem paginada `/proposicoes` é suficiente para identidade, título, ementa e data; o schedule não consulta `/proposicoes/{id}` uma vez por projeto.
+- Projetos e autorias são criados em lote e resumos alterados são atualizados em uma transação; status mais rico já armazenado não é rebaixado para `SUBMITTED`.
+- Motivo: a execução real demonstrou 70/512 mandatos em 71 minutos com detalhes unitários; o tracer otimizado passou a processar mais de 30 mandatos por minuto sem reduzir paginação nem tolerar sucesso parcial.
+- O processamento completo de um deputado é a unidade de retry: uma conexão
+  transitória pode ser repetida três vezes com segurança porque Person,
+  Mandate, votos, projetos e autorias usam operações idempotentes. Esgotamento
+  continua contabilizando falha e invalida o `DataSyncRun`.

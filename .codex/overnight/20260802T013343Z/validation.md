@@ -336,3 +336,75 @@
 - Result: PASS.
 - Evidence: 10 arquivos/18 unitários; 11 arquivos/32 integrações PostgreSQL 16; typecheck e build de API/scraper/web; Next gerou 7 páginas; nove YAMLs e diff válidos.
 - Follow-up: commit do review, auditoria do relatório e push para main.
+
+### 2026-08-03T14:39Z primeiro rerun real de sites
+- Command: workflow `sync-sites.yml` run 30822554190; inspeção integral do log falho.
+- Result: FAIL observável, com progresso material.
+- Evidence: 13/15 sites e 102 propostas DRAFT; Planalto e Bahia passaram. Aldo esgotou dois `commit` de 30 s; Paraná tinha resposta, mas `document.body` ainda nulo após DOM timeout; log revelou dois launches simultâneos do Chromium.
+- Follow-up: TDD para body/single-flight e nova execução.
+
+### 2026-08-03T14:48Z TDD RED→GREEN — body e lifecycle Playwright
+- Command: `site-navigation.test.ts`, `playwright-singleflight.test.ts`; typecheck/build do scraper; smoke Chromium real concorrente.
+- Result: RED nos dois bugs → PASS (2 arquivos/4 testes + typecheck/build + smoke).
+- Evidence: navegação repete quando body não anexa; chamadas concorrentes compartilham um launch; contexto público tolera certificado inválido; Aldo e Paraná abriram 200 localmente com 180/1.920 caracteres e um único browser.
+- Follow-up: publicar `fcc013f` e rerodar sites.
+
+### 2026-08-03T14:49Z segundo rerun real de sites
+- Command: workflow `sync-sites.yml` run 30824196391; logs completos.
+- Result: PARTIAL/FAIL por bloqueio externo único.
+- Evidence: 14/15 sites, 144 propostas DRAFT; Paraná passou; somente `aldorebelo.com.br` não entregou `commit` ao runner após 60 s totais. O domínio observado fora do runner está estacionado para venda, sem conteúdo de campanha.
+- Follow-up: manter schedule ativo e falha explícita até uma URL oficial verificável substituir o domínio morto.
+
+### 2026-08-03T15:20Z rerun real TSE completo
+- Command: workflow `sync-tse.yml` run 30822547813; logs dos dois jobs e consulta read-only de produção.
+- Result: PASS.
+- Evidence: canônico SUCCESS em 38m51s com 7 recursos/3.600 parseados/0 rejeitados/106 criados/3.494 atualizados/3.600 ocultos; suplemento SUCCESS em 15m34s com 6 recursos/26.762 linhas/6 documentos. A API pública permaneceu em 62 perfis e nenhum registro oficial foi publicado indevidamente.
+- Follow-up: observar sete schedules diários antes de qualquer remoção legada.
+
+### 2026-08-03T15:25Z ladder local após browser fix
+- Command: `pnpm test:unit`; `pnpm test:integration` contra PostgreSQL 16; `pnpm typecheck`; `pnpm build`.
+- Result: PASS.
+- Evidence: 11 arquivos/20 unitários; 11 arquivos/32 integrações; API/scraper/web passaram typecheck e build; Next gerou 7 páginas.
+- Follow-up: fechar o último gargalo observado na Câmara.
+
+### 2026-08-03T15:36Z TDD RED→GREEN — persistência de projetos Câmara
+- Command: integração focada `camara-sync.integration.test.ts`; typecheck/build do scraper; `git diff --check`.
+- Result: RED (chamada HTTP de detalhe por projeto) → PASS (5/5 integrações + typecheck/build/diff).
+- Evidence: o caminho diário usa a lista paginada oficial, não chama `/proposicoes/{id}`, cria projetos/autorias em lote, atualiza resumos alterados e preserva status mais rico já armazenado; a segunda execução permanece idempotente.
+- Follow-up: medir o throughput no runner real.
+
+### 2026-08-03T15:37Z CI e tracer operacional Câmara
+- Command: CI 30828161319; workflow legislativo 30828187612; consulta read-only de `Mandate.lastSyncedAt`.
+- Result: PASS na CI; sync real em andamento e saudável.
+- Evidence: CI executou 11 arquivos/20 unitários, 11 arquivos/33 integrações PostgreSQL 16, typecheck e build; a Câmara otimizada tocou 88 mandatos em 2m38s, contra 70 em 71 minutos no run anterior.
+- Follow-up: registrar métricas finais quando o DataSyncRun concluir.
+
+### 2026-08-03T15:53Z primeiro run Câmara otimizado
+- Command: workflow legislativo 30828187612; log integral falho e consulta read-only de mandatos.
+- Result: FAIL observável após progresso completo de throughput.
+- Evidence: 511/512 mandatos em 16m50s; um único `prisma.person.findUnique` recebeu `Server has closed the connection`, o deputado foi contabilizado como falha e `DataSyncRun`/Action terminaram não zero conforme o contrato.
+- Follow-up: cobrir retry idempotente de desconexão transitória sem engolir falha persistente.
+
+### 2026-08-03T15:56Z TDD RED→GREEN — desconexão por deputado Câmara
+- Command: integração focada `camara-sync.integration.test.ts` com Prisma Client estendido; typecheck/build do scraper; `git diff --check`.
+- Result: RED (`1 of 1 legislators failed`) → PASS (6/6 integrações + typecheck/build/diff).
+- Evidence: uma desconexão única repete o processamento idempotente do deputado e conclui; três tentativas esgotadas continuam incrementando falha e propagando exit não zero; HTTP 4xx não ganha retry indevido.
+- Follow-up: CI e rerun real 30829864895.
+
+### 2026-08-03T15:58Z CI após retry transitório
+- Command: CI 30829858572.
+- Result: PASS.
+- Evidence: 11 arquivos/20 unitários, 11 arquivos/34 integrações PostgreSQL 16, typecheck e build dos três pacotes; Next gerou 7 páginas.
+- Follow-up: concluir o rerun legislativo 30829864895.
+
+### 2026-08-03T16:14Z rerun legislativo final
+- Command: workflow 30829864895; logs dos jobs; consulta read-only de produção.
+- Result: PASS.
+- Evidence: Câmara SUCCESS em 16m32s com 512/512, 24.564 projetos/autorias, 0 votos e 0 falhas; Senado SUCCESS em 1m26s com 81/81, 24 projetos, 0 votos e 0 falhas. Banco: 512+81 mandatos, 17.961+4.317 projetos únicos e 0 ReviewItem aberto.
+- Follow-up: observar o schedule diário e o lease das duas linhas antigas deixadas por cancelamento.
+
+### 2026-08-03T16:15Z smoke final de produção
+- Command: API pública de lista/stats/health; home; Veloz builds; `gh workflow list --all`.
+- Result: PASS.
+- Evidence: 62 candidatos públicos (8 presidente, 7 governador, 47 senador); 3.600 candidaturas TSE permaneceram ocultas; health API/DB/Redis ok; web 200; API/web de `f32503d` LIVE; sete workflows ativos.
+- Follow-up: nenhum para o pipeline canônico; bloqueio de Aldo permanece explicitamente fora do caminho oficial.
