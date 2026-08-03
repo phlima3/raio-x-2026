@@ -150,4 +150,38 @@ describe('runTseSupplementalSync', () => {
     expect(assets.totalValue.toString()).toBe('150000.75')
     expect((assets.assets as unknown[])).toHaveLength(2)
   })
+
+  it('repairs archive links when canonical candidacy arrives after supplemental data', async () => {
+    const client = makeClient()
+    await runTseSupplementalSync({ prisma, client })
+    expect(await prisma.officialDatasetRecord.count({
+      where: { candidateId: { not: null } },
+    })).toBe(0)
+
+    const candidate = await prisma.candidate.create({
+      data: {
+        id: 'candidate-123',
+        tseId: '123',
+        slug: 'candidata-px-sp-governador-2026',
+        name: 'Candidata Oficial',
+        party: 'PX',
+        state: 'SP',
+        position: Position.GOVERNADOR,
+        partyHistory: [],
+        electionYear: 2026,
+        isOfficial: true,
+        isPublished: true,
+        dataSource: DataSource.TSE,
+      },
+    })
+    const second = await runTseSupplementalSync({ prisma, client })
+
+    expect(await prisma.officialDatasetRecord.count()).toBe(6)
+    expect(await prisma.officialDatasetRecord.count({
+      where: { candidateId: candidate.id },
+    })).toBe(4)
+    expect(await prisma.officialDatasetRecord.count({
+      where: { syncRunId: second.runId },
+    })).toBe(6)
+  })
 })

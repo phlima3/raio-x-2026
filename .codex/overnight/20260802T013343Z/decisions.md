@@ -86,3 +86,9 @@
 - A Câmara carrega sessões/votos compartilhados uma única vez por execução e distribui os votos por parlamentar; projetos ficam limitados ao ano corrente.
 - Um voto legado que colidiria com um registro oficial já normalizado não é apagado nem forçado ao mandato: ambos permanecem acessíveis pelos respectivos read models durante expand-and-migrate.
 - No Senado, matérias e votos são persistidos sequencialmente por senador para respeitar o pool de três conexões, mantendo o lote externo de senadores limitado pela concorrência configurada.
+
+## 2026-08-03 — Throughput e lease das sincronizações oficiais
+- O TSE canônico e os seis datasets complementares mantêm ordem causal, mas usam jobs GitHub distintos e timeouts independentes; complemento só inicia após sucesso do canônico.
+- Linhas imutáveis do arquivo oficial usam hash do payload e `createMany(skipDuplicates)`; reprocessamento atualiza proveniência por lote e repara vínculo ausente com Candidate sem duplicar registros.
+- Materializações preservam a semântica anterior (último status/cassação, primeira URL válida) com grupos determinísticos e transações curtas, evitando milhares de round-trips unitários pelo túnel.
+- `DataSyncRun=RUNNING` da mesma fonte/tipo há mais de seis horas é lease abandonado: o próximo run o fecha como `FAILED`; execução recente permanece intocada.

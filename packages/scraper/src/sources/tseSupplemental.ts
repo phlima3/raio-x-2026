@@ -31,6 +31,7 @@ const SUPPLEMENTAL_KINDS = new Set<TseResourceKind>([
   TseResourceKind.CASSATIONS,
   TseResourceKind.SOCIAL_MEDIA,
 ])
+const DATABASE_BATCH_SIZE = 250
 
 export interface RunTseSupplementalSyncOptions {
   prisma: PrismaClient
@@ -90,6 +91,23 @@ function decimalValue(value: string | null): Prisma.Decimal {
   }
 }
 
+function chunks<T>(values: T[], size = DATABASE_BATCH_SIZE): T[][] {
+  const result: T[][] = []
+  for (let offset = 0; offset < values.length; offset += size) {
+    result.push(values.slice(offset, offset + size))
+  }
+  return result
+}
+
+async function runTransactionsInBatches<T>(
+  prisma: PrismaClient,
+  operations: Array<Prisma.PrismaPromise<T>>,
+): Promise<void> {
+  for (const batch of chunks(operations, 100)) {
+    await prisma.$transaction(batch)
+  }
+}
+
 async function materializeResource(
   prisma: PrismaClient,
   kind: TseResourceKind,
@@ -98,95 +116,158 @@ async function materializeResource(
   year: number,
 ): Promise<void> {
   if (kind === TseResourceKind.CANDIDATE_COMPLEMENT) {
+    const latestStatusByCandidate = new Map<
+      string,
+      { status: string; officialStatus: OfficialCandidacyStatus }
+    >()
     for (const row of rows) {
       const tseId = row.SQ_CANDIDATO
       const status = row.DS_SITUACAO_CANDIDATO_TOT
         ?? row.DS_SITUACAO_CANDIDATO_PLEITO
         ?? row.DS_SITUACAO_JULGAMENTO
       if (!tseId || !status) continue
-      const officialStatus = normalizedStatus(status)
-      await prisma.candidate.updateMany({
-        where: { tseId },
+      latestStatusByCandidate.set(tseId, { status, officialStatus: normalizedStatus(status) })
+    }
+
+    const candidatesByStatus = new Map<
+      string,
+      { status: string; officialStatus: OfficialCandidacyStatus; tseIds: string[] }
+    >()
+    for (const [tseId, value] of latestStatusByCandidate) {
+      const key = `${value.officialStatus}\u0000${value.status}`
+      const group = candidatesByStatus.get(key) ?? { ...value, tseIds: [] }
+      group.tseIds.push(tseId)
+      candidatesByStatus.set(key, group)
+    }
+
+    const operations = [...candidatesByStatus.values()].flatMap((group) =>
+      chunks(group.tseIds).map((tseIds) => prisma.candidate.updateMany({
+        where: { tseId: { in: tseIds } },
         data: {
-          officialStatusRaw: status,
-          officialStatus,
-          ...(officialStatus === OfficialCandidacyStatus.CANCELLED
-            || officialStatus === OfficialCandidacyStatus.INELIGIBLE
+          officialStatusRaw: group.status,
+          officialStatus: group.officialStatus,
+          ...(group.officialStatus === OfficialCandidacyStatus.CANCELLED
+            || group.officialStatus === OfficialCandidacyStatus.INELIGIBLE
             ? { isPublished: false }
             : {}),
         },
-      })
-    }
+      })),
+    )
+    await runTransactionsInBatches(prisma, operations)
   }
 
   if (kind === TseResourceKind.ASSETS) {
     const grouped = new Map<string, Array<Record<string, string | null>>>()
+    const tseIds = new Set<string>()
     for (const row of rows) {
       if (!row.SQ_CANDIDATO) continue
+      tseIds.add(row.SQ_CANDIDATO)
       const key = `${row.SQ_CANDIDATO}:${electionYear(row) ?? year}`
       grouped.set(key, [...(grouped.get(key) ?? []), row])
     }
+    const candidateIds = new Map(
+      (await prisma.candidate.findMany({
+        where: { tseId: { in: [...tseIds] } },
+        select: { id: true, tseId: true },
+      })).flatMap((candidate) => candidate.tseId ? [[candidate.tseId, candidate.id]] : []),
+    )
+    const operations = []
     for (const [key, assets] of grouped) {
       const [tseId, rowYear] = key.split(':')
-      const candidate = await prisma.candidate.findUnique({ where: { tseId }, select: { id: true } })
-      if (!candidate) continue
+      const candidateId = candidateIds.get(tseId)
+      if (!candidateId) continue
       const totalValue = assets.reduce(
         (total, asset) => total.plus(decimalValue(asset.VR_BEM_CANDIDATO)),
         new Prisma.Decimal(0),
       )
-      await prisma.assetDeclaration.upsert({
-        where: { candidateId_year: { candidateId: candidate.id, year: Number(rowYear) } },
+      operations.push(prisma.assetDeclaration.upsert({
+        where: { candidateId_year: { candidateId, year: Number(rowYear) } },
         update: { totalValue, sourceUrl, assets: assets as Prisma.InputJsonArray },
         create: {
-          candidateId: candidate.id,
+          candidateId,
           year: Number(rowYear),
           totalValue,
           sourceUrl,
           assets: assets as Prisma.InputJsonArray,
         },
-      })
+      }))
     }
+    await runTransactionsInBatches(prisma, operations)
   }
 
   if (kind === TseResourceKind.COALITIONS) {
+    const coalitions = new Map<
+      string,
+      { electionYear: number; position: Position; state: string; party: string; name: string }
+    >()
     for (const row of rows) {
       const position = positionFromTse(row.DS_CARGO)
       const coalitionName = row.NM_COLIGACAO
       if (!position || !coalitionName || !row.SG_UF || !row.SG_PARTIDO) continue
-      await prisma.candidate.updateMany({
-        where: {
-          electionYear: electionYear(row) ?? year,
-          position,
-          state: row.SG_UF,
-          party: row.SG_PARTIDO,
-        },
-        data: { coalitionName },
-      })
+      const coalition = {
+        electionYear: electionYear(row) ?? year,
+        position,
+        state: row.SG_UF,
+        party: row.SG_PARTIDO,
+        name: coalitionName,
+      }
+      coalitions.set(
+        `${coalition.electionYear}\u0000${position}\u0000${coalition.state}\u0000${coalition.party}`,
+        coalition,
+      )
     }
+    const operations = [...coalitions.values()].map((coalition) =>
+      prisma.candidate.updateMany({
+        where: {
+          electionYear: coalition.electionYear,
+          position: coalition.position,
+          state: coalition.state,
+          party: coalition.party,
+        },
+        data: { coalitionName: coalition.name },
+      }),
+    )
+    await runTransactionsInBatches(prisma, operations)
   }
 
   if (kind === TseResourceKind.CASSATIONS) {
+    const latestReasonByCandidate = new Map<string, string>()
     for (const row of rows) {
       if (!row.SQ_CANDIDATO) continue
-      await prisma.candidate.updateMany({
-        where: { tseId: row.SQ_CANDIDATO },
+      latestReasonByCandidate.set(row.SQ_CANDIDATO, row.DS_MOTIVO ?? 'CASSAÇÃO')
+    }
+    const candidatesByReason = new Map<string, string[]>()
+    for (const [tseId, reason] of latestReasonByCandidate) {
+      candidatesByReason.set(reason, [...(candidatesByReason.get(reason) ?? []), tseId])
+    }
+    const operations = [...candidatesByReason].flatMap(([reason, tseIds]) =>
+      chunks(tseIds).map((candidateTseIds) => prisma.candidate.updateMany({
+        where: { tseId: { in: candidateTseIds } },
         data: {
           officialStatus: OfficialCandidacyStatus.CANCELLED,
-          officialStatusRaw: row.DS_MOTIVO ?? 'CASSAÇÃO',
+          officialStatusRaw: reason,
           isPublished: false,
         },
-      })
-    }
+      })),
+    )
+    await runTransactionsInBatches(prisma, operations)
   }
 
   if (kind === TseResourceKind.SOCIAL_MEDIA) {
+    const firstUrlByCandidate = new Map<string, string>()
     for (const row of rows) {
       if (!row.SQ_CANDIDATO || !row.DS_URL || !/^https?:\/\//i.test(row.DS_URL)) continue
-      await prisma.candidate.updateMany({
-        where: { tseId: row.SQ_CANDIDATO, siteUrl: null },
-        data: { siteUrl: row.DS_URL },
-      })
+      if (!firstUrlByCandidate.has(row.SQ_CANDIDATO)) {
+        firstUrlByCandidate.set(row.SQ_CANDIDATO, row.DS_URL)
+      }
     }
+    const operations = [...firstUrlByCandidate].map(([tseId, siteUrl]) =>
+      prisma.candidate.updateMany({
+        where: { tseId, siteUrl: null },
+        data: { siteUrl },
+      }),
+    )
+    await runTransactionsInBatches(prisma, operations)
   }
 }
 
@@ -209,6 +290,14 @@ export async function runTseSupplementalSync(
       )
       let recordCount = 0
       let createdDocuments = 0
+      const candidateIds = options.dryRun
+        ? new Map<string, string>()
+        : new Map(
+            (await options.prisma.candidate.findMany({
+              where: { tseId: { not: null } },
+              select: { id: true, tseId: true },
+            })).flatMap((candidate) => candidate.tseId ? [[candidate.tseId, candidate.id]] : []),
+          )
 
       for (const resource of resources) {
         const downloaded = await client.download(resource)
@@ -255,42 +344,71 @@ export async function runTseSupplementalSync(
         })
         createdDocuments++
 
-        const candidateIds = new Map(
-          (await options.prisma.candidate.findMany({
-            where: { tseId: { not: null } },
-            select: { id: true, tseId: true },
-          })).flatMap((candidate) => candidate.tseId ? [[candidate.tseId, candidate.id]] : []),
-        )
         for (let offset = 0; offset < parsed.rows.length; offset += batchSize) {
           const batch = parsed.rows.slice(offset, offset + batchSize)
-          await options.prisma.$transaction(batch.map((row) =>
-            options.prisma.officialDatasetRecord.upsert({
-              where: {
-                source_datasetKind_externalId: {
+          const records = batch.map((row) => ({
+            source: DataSource.TSE,
+            datasetKind: resource.kind,
+            externalId: stableExternalId(resource.kind, row),
+            electionYear: electionYear(row),
+            payload: row as Prisma.InputJsonObject,
+            candidateId: row.SQ_CANDIDATO ? candidateIds.get(row.SQ_CANDIDATO) ?? null : null,
+            sourceDocumentId: sourceDocument.id,
+            syncRunId: runId,
+          }))
+          await options.prisma.officialDatasetRecord.createMany({
+            data: records,
+            skipDuplicates: true,
+          })
+          const externalIds = records.map((record) => record.externalId)
+          await options.prisma.officialDatasetRecord.updateMany({
+            where: {
+              source: DataSource.TSE,
+              datasetKind: resource.kind,
+              externalId: { in: externalIds },
+            },
+            data: { sourceDocumentId: sourceDocument.id, syncRunId: runId },
+          })
+
+          // If supplemental data arrived before canonical candidacies, repair
+          // only archive rows that still have no Candidate link.
+          const unlinked = await options.prisma.officialDatasetRecord.findMany({
+            where: {
+              source: DataSource.TSE,
+              datasetKind: resource.kind,
+              externalId: { in: externalIds },
+              candidateId: null,
+            },
+            select: { externalId: true },
+          })
+          const candidateIdByExternalId = new Map(
+            records.flatMap((record) => record.candidateId
+              ? [[record.externalId, record.candidateId] as const]
+              : []),
+          )
+          const externalIdsByCandidate = new Map<string, string[]>()
+          for (const record of unlinked) {
+            const candidateId = candidateIdByExternalId.get(record.externalId)
+            if (!candidateId) continue
+            externalIdsByCandidate.set(candidateId, [
+              ...(externalIdsByCandidate.get(candidateId) ?? []),
+              record.externalId,
+            ])
+          }
+          await runTransactionsInBatches(
+            options.prisma,
+            [...externalIdsByCandidate].map(([candidateId, ids]) =>
+              options.prisma.officialDatasetRecord.updateMany({
+                where: {
                   source: DataSource.TSE,
                   datasetKind: resource.kind,
-                  externalId: stableExternalId(resource.kind, row),
+                  externalId: { in: ids },
+                  candidateId: null,
                 },
-              },
-              update: {
-                electionYear: electionYear(row),
-                payload: row as Prisma.InputJsonObject,
-                candidateId: row.SQ_CANDIDATO ? candidateIds.get(row.SQ_CANDIDATO) ?? null : null,
-                sourceDocumentId: sourceDocument.id,
-                syncRunId: runId,
-              },
-              create: {
-                source: DataSource.TSE,
-                datasetKind: resource.kind,
-                externalId: stableExternalId(resource.kind, row),
-                electionYear: electionYear(row),
-                payload: row as Prisma.InputJsonObject,
-                candidateId: row.SQ_CANDIDATO ? candidateIds.get(row.SQ_CANDIDATO) ?? null : null,
-                sourceDocumentId: sourceDocument.id,
-                syncRunId: runId,
-              },
-            }),
-          ))
+                data: { candidateId },
+              }),
+            ),
+          )
         }
         await materializeResource(options.prisma, resource.kind, parsed.rows, resource.url, year)
       }

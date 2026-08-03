@@ -3,8 +3,8 @@
 ## Current status
 - Phase: Operational follow-up
 - State: active
-- Last completed action: janela incremental e persistência legislativa foram estabilizadas; 11 testes focados e typecheck passam.
-- Next action: otimizar e separar o TSE suplementar para que candidato canônico e complementos não compartilhem o mesmo timeout.
+- Last completed action: TSE suplementar foi loteado, recebeu timeout próprio e runs abandonados agora expiram de forma observável.
+- Next action: reproduzir e tornar resilientes os três timeouts reais do enriquecimento por sites sem mascarar falha de fonte.
 - Last known good commit: 58896fa
 - Working tree status: limpo; mudanças seguintes serão somente do hotfix incremental e do estado persistente ignorado.
 
@@ -54,3 +54,6 @@
 - 2026-08-03T13:57Z — A colisão `P2002` real foi reproduzida e corrigida sem apagar o voto legado nem sobrescrever o voto normalizado.
 - 2026-08-03T13:58Z — Câmara, Senado e persistência legislativa passaram 11 testes PostgreSQL; gravações de matérias/votos do Senado deixaram de disputar o pool em paralelo por senador.
 - 2026-08-03T13:59Z — Fonte oficial do Senado recuperada: lista atual e endpoint moderno de processos responderam HTTP 200; o antigo bloqueio 503 foi removido e a reexecução ficou liberada após publicação do hotfix.
+- 2026-08-03T14:04Z — TSE suplementar passou a usar `createMany/skipDuplicates`, atualizações agrupadas e transações em lotes; idempotência e reparo de vínculo tardio passaram em PostgreSQL.
+- 2026-08-03T14:06Z — Lease de seis horas para `DataSyncRun` foi implementado RED→GREEN: um novo run fecha antecessores realmente abandonados, mas não toca execução recente.
+- 2026-08-03T14:07Z — Workflow TSE foi separado em candidatura canônica (90 min) e complemento dependente (120 min); YAML validado.

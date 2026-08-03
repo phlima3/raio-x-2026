@@ -42,4 +42,41 @@ describe('runDataSourceSync with PostgreSQL', () => {
     }))
     expect(run.finishedAt).toBeInstanceOf(Date)
   })
+
+  it('marks an abandoned run failed when the same source starts again', async () => {
+    const abandoned = await prisma.dataSyncRun.create({
+      data: {
+        source: DataSource.TSE,
+        kind: 'supplemental',
+        startedAt: new Date('2026-08-02T00:00:00.000Z'),
+      },
+    })
+    const recent = await prisma.dataSyncRun.create({
+      data: {
+        source: DataSource.TSE,
+        kind: 'supplemental',
+        startedAt: new Date(),
+      },
+    })
+
+    await runDataSourceSync({
+      source: DataSource.TSE,
+      kind: 'supplemental',
+      store: createPrismaSyncRunStore(prisma),
+      execute: async () => ({ metrics: { records: 0 } }),
+    })
+
+    expect(await prisma.dataSyncRun.findUniqueOrThrow({ where: { id: abandoned.id } }))
+      .toEqual(expect.objectContaining({
+        status: SyncRunStatus.FAILED,
+        error: 'Abandoned after exceeding the 6-hour sync-run lease',
+        finishedAt: expect.any(Date),
+      }))
+    expect(await prisma.dataSyncRun.findUniqueOrThrow({ where: { id: recent.id } }))
+      .toEqual(expect.objectContaining({
+        status: SyncRunStatus.RUNNING,
+        error: null,
+        finishedAt: null,
+      }))
+  })
 })

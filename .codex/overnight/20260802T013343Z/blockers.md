@@ -8,4 +8,4 @@
 - O ambiente local usa Node 22.12.0 enquanto CI declara Node 20; resultados serão registrados e a CI continua validando Node 20.
 - O painel de revisão, OCR e publicação de deputados estão deliberadamente fora do escopo.
 - `pnpm lint` não tinha baseline funcional: API não declara/configura ESLint e Next abre setup interativo. A falha foi registrada; typecheck e builds estão verdes.
-- Execuções canceladas pelo timeout do GitHub deixaram `DataSyncRun` antigos em `RUNNING`; as causas de duração estão sendo corrigidas antes da reexecução e a eventual normalização desses registros será aditiva, sem SQL manual em produção.
+- Execuções canceladas pelo timeout do GitHub deixaram `DataSyncRun` antigos em `RUNNING`; o lease implementado os fechará como `FAILED` no próximo início da mesma fonte/tipo, sem SQL manual em produção.

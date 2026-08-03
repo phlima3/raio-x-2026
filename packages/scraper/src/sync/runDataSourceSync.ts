@@ -6,6 +6,8 @@ import {
 } from '@prisma/client'
 
 export type SyncMetrics = Record<string, number | string | boolean | null>
+const SYNC_RUN_LEASE_MS = 6 * 60 * 60 * 1000
+const ABANDONED_RUN_ERROR = 'Abandoned after exceeding the 6-hour sync-run lease'
 
 export interface StartSyncRunInput {
   source: DataSource
@@ -86,6 +88,20 @@ type SyncRunPrisma = Pick<PrismaClient, 'dataSyncRun'>
 export function createPrismaSyncRunStore(db: SyncRunPrisma): SyncRunStore {
   return {
     async start(input) {
+      const now = new Date()
+      await db.dataSyncRun.updateMany({
+        where: {
+          source: input.source,
+          kind: input.kind,
+          status: SyncRunStatus.RUNNING,
+          startedAt: { lt: new Date(now.getTime() - SYNC_RUN_LEASE_MS) },
+        },
+        data: {
+          status: SyncRunStatus.FAILED,
+          finishedAt: now,
+          error: ABANDONED_RUN_ERROR,
+        },
+      })
       return db.dataSyncRun.create({
         data: {
           source: input.source,

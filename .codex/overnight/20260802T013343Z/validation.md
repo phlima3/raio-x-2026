@@ -282,3 +282,21 @@
 - Result: PASS.
 - Evidence: ambos os endpoints oficiais responderam HTTP 200 em menos de 0,3 s; o HTTP 503 anterior era transitório.
 - Follow-up: reexecutar o workflow legislativo somente após publicar o hotfix incremental.
+
+### 2026-08-03T14:04Z refactor coberto — persistência TSE suplementar em lotes
+- Command: `tse-supplemental.integration.test.ts`; typecheck do scraper.
+- Result: PASS (2/2 testes + typecheck).
+- Evidence: duas execuções mantêm seis documentos/seis registros, removem CPF, materializam status/coligação/site/bens e atualizam todos os `syncRunId`; complemento anterior ao candidato é relinkado no reprocessamento.
+- Follow-up: separar timeouts do workflow e validar YAML.
+
+### 2026-08-03T14:06Z TDD RED→GREEN — lease de execução abandonada
+- Command: `sync-runner.integration.test.ts`, `sync-runner.test.ts`; typecheck do scraper.
+- Result: RED (run antigo permanecia `RUNNING`) → PASS (2 integrações + 1 unitário + typecheck).
+- Evidence: um run da mesma fonte/tipo com mais de seis horas recebe `FAILED`, `finishedAt` e erro explícito; um run recente não é alterado.
+- Follow-up: reexecuções reais fecharão automaticamente as linhas deixadas pelos timeouts anteriores.
+
+### 2026-08-03T14:07Z workflow TSE separado
+- Command: `pnpm dlx yaml-lint .github/workflows/sync-tse.yml`; `git diff --check`.
+- Result: PASS.
+- Evidence: `candidacies` tem 90 minutos; `supplemental` depende dele e possui 120 minutos/túnel próprios, mantendo concurrency único do workflow.
+- Follow-up: checkpoint local e resiliência do enriquecimento por sites.
