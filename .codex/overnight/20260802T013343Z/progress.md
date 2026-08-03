@@ -1,12 +1,12 @@
 # Progress
 
 ## Current status
-- Phase: Complete
-- State: complete
-- Last completed action: caso real de ZIP TSE rotulado como PDF corrigido em RED→GREEN; relatório e ladder final consolidados.
-- Next action: handoff ao usuário; nenhuma ação técnica pendente no worktree.
-- Last known good commit: ca5180b
-- Working tree status: limpo após o checkpoint documental que contém este registro; nenhuma mudança preexistente do usuário foi encontrada.
+- Phase: Operational follow-up
+- State: active
+- Last completed action: janela incremental e persistência legislativa foram estabilizadas; 11 testes focados e typecheck passam.
+- Next action: otimizar e separar o TSE suplementar para que candidato canônico e complementos não compartilhem o mesmo timeout.
+- Last known good commit: 58896fa
+- Working tree status: limpo; mudanças seguintes serão somente do hotfix incremental e do estado persistente ignorado.
 
 ## Timeline
 - 2026-08-02T01:33:43Z — Criado run `20260802T013343Z` via `bootstrap_run.py`.
@@ -44,3 +44,13 @@
 - 2026-08-02T03:45Z — Reauditoria reproduziu um ZIP oficial rotulado `Formato PDF`; teste falhou ao enviar o arquivo inteiro ao extrator e passou após priorizar assinatura binária.
 - 2026-08-02T03:47Z — Ladder pós-fix passou com 13 unitários, 26 integrações PostgreSQL 16, três typechecks e três builds; fix isolado em `ca5180b`.
 - 2026-08-02T03:48Z — Reauditoria independente focada confirmou `RESOLVIDO`: ZIP rotulado PDF é aberto e somente o PDF interno chega ao extrator.
+- 2026-08-02T15:17Z — Commit `58896fa` publicou túnel autenticado para todos os workflows de produção; CI, API/web Veloz e documentos oficiais ficaram verdes.
+- 2026-08-02T15:21Z — TSE e Câmara iniciaram em produção; Senado persistiu FAILED e saiu não zero porque todo o serviço oficial respondeu HTTP 503.
+- 2026-08-02T15:36Z — Câmara foi cancelada após evidenciar que o comando diário repetia o histórico integral para cada deputado; fase operacional reaberta para correção incremental test-first.
+- 2026-08-03T13:44Z — Retomada confirmou: canônico TSE concluiu em 49m09s, complemento foi morto pelo timeout de 60m; o schedule seguinte repetiu o cancelamento; Legislativo também cancelou e sites falhou. Documentos continuou verde.
+- 2026-08-03T13:51Z — Tracer bullet da Câmara falhou como esperado: duas leituras completas de sessões para dois deputados e nenhuma janela temporal padrão.
+- 2026-08-03T13:52Z — Câmara GREEN: uma consulta de sessões por run, lookback de sete dias, projetos do ano corrente e typecheck verde.
+- 2026-08-03T13:53Z — Senado RED→GREEN: default deixou de reprocessar desde 2023 e usa a mesma janela móvel de sete dias.
+- 2026-08-03T13:57Z — A colisão `P2002` real foi reproduzida e corrigida sem apagar o voto legado nem sobrescrever o voto normalizado.
+- 2026-08-03T13:58Z — Câmara, Senado e persistência legislativa passaram 11 testes PostgreSQL; gravações de matérias/votos do Senado deixaram de disputar o pool em paralelo por senador.
+- 2026-08-03T13:59Z — Fonte oficial do Senado recuperada: lista atual e endpoint moderno de processos responderam HTTP 200; o antigo bloqueio 503 foi removido e a reexecução ficou liberada após publicação do hotfix.

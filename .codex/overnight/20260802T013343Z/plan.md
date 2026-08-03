@@ -90,3 +90,17 @@
 - Dependencies: todas as fases.
 - Risk: medium.
 - Rollback: instruções exatas no relatório; nenhum push/deploy.
+
+## Phase 9 — Operational follow-up (authorized rollout)
+- [x] Corrigir acesso do GitHub Actions ao PostgreSQL privado da Veloz por túnel autenticado.
+- [x] Validar CI, documentos oficiais e deploy automático no commit publicado.
+- [x] Tornar a execução diária da Câmara incremental em vez de repetir o histórico integral por deputado.
+- [ ] Separar TSE canônico e complementares em jobs sequenciais com timeouts independentes.
+- [ ] Diagnosticar e corrigir a falha real do enriquecimento de sites sem ampliar publicação.
+- [ ] Reexecutar TSE e Legislativo e registrar métricas reais de produção.
+- [ ] Reexecutar Senado após confirmar a recuperação HTTP 200 do serviço oficial.
+- [ ] Atualizar validação e relatório final com commits, runs e bloqueios externos.
+- Deliverable: schedules ativos e execuções verificadas no ambiente real.
+- Validation: teste focado RED→GREEN, ladder local, CI e runs manuais das fontes.
+- Risk: high (jobs autorizados escrevem apenas por upsert idempotente em produção).
+- Rollback: pausar workflows, voltar `CANDIDATE_READ_MODEL=legacy` e reverter o último commit sem remover schema/dados aditivos.

@@ -209,4 +209,66 @@ describe('legislative persistence', () => {
         origin: ProposalOrigin.LEGACY,
       }))
   })
+
+  it('keeps a legacy vote separate when the normalized mandate already has the same official vote', async () => {
+    const person = await prisma.person.create({
+      data: { name: 'Senadora com Duplicata', normalizedName: 'SENADORA COM DUPLICATA' },
+    })
+    const candidate = await prisma.candidate.create({
+      data: {
+        id: 'legacy-senator-duplicate',
+        name: 'Senadora com Duplicata',
+        party: 'PX',
+        state: 'SP',
+        position: Position.SENADOR,
+        partyHistory: [],
+        personId: person.id,
+      },
+    })
+    const input = {
+      source: DataSource.SENADO,
+      house: MandateHouse.SENADO,
+      externalId: 'senado-duplicate',
+      legislatureId: '57',
+      name: 'Senadora com Duplicata',
+      socialName: 'Senadora com Duplicata',
+      party: 'PX',
+      state: 'SP',
+      role: 'SENADOR',
+      sourceUrl: 'https://senado.example/duplicate',
+      syncedAt: new Date('2026-08-03T00:00:00Z'),
+    }
+    const ids = await upsertLegislatorMandate(prisma, input)
+    const normalized = await prisma.votingRecord.create({
+      data: {
+        externalId: 'same-official-vote',
+        source: 'senado',
+        proposalName: 'Voto já normalizado',
+        voteType: VoteType.YES,
+        votedAt: new Date('2026-07-30T12:00:00Z'),
+        personId: person.id,
+        mandateId: ids.mandateId,
+      },
+    })
+    const legacy = await prisma.votingRecord.create({
+      data: {
+        externalId: 'same-official-vote',
+        source: 'senado',
+        proposalName: 'Voto legado compatível',
+        voteType: VoteType.YES,
+        votedAt: new Date('2026-07-30T12:00:00Z'),
+        candidateId: candidate.id,
+      },
+    })
+
+    await expect(upsertLegislatorMandate(prisma, input)).resolves.toEqual(ids)
+    await expect(prisma.votingRecord.findUniqueOrThrow({ where: { id: normalized.id } }))
+      .resolves.toEqual(expect.objectContaining({ mandateId: ids.mandateId }))
+    await expect(prisma.votingRecord.findUniqueOrThrow({ where: { id: legacy.id } }))
+      .resolves.toEqual(expect.objectContaining({
+        candidateId: candidate.id,
+        mandateId: null,
+      }))
+    await expect(prisma.votingRecord.count()).resolves.toBe(2)
+  })
 })

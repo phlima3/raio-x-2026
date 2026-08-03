@@ -223,6 +223,21 @@ async function withRetry<T>(
   throw lastError
 }
 
+const DAILY_LOOKBACK_DAYS = 7
+
+function isoUtcDate(value: Date): string {
+  return value.toISOString().slice(0, 10)
+}
+
+function rollingVotingWindow(syncDate: Date): VotacoesFilters {
+  const from = new Date(syncDate)
+  from.setUTCDate(from.getUTCDate() - DAILY_LOOKBACK_DAYS)
+  return {
+    dateFrom: isoUtcDate(from),
+    dateTo: isoUtcDate(syncDate),
+  }
+}
+
 export async function collectCamaraPages<T>(
   client: CamaraHttpPort,
   initialUrl: string,
@@ -406,6 +421,54 @@ export async function getVotacoesByDeputado(
   return results
 }
 
+async function getVotacoesByDeputados(
+  filters: VotacoesFilters,
+  client: CamaraHttpPort,
+): Promise<Map<number, CamaraVotacaoDeputado[]>> {
+  const { dateFrom, dateTo } = filters
+  logger.info('[camara] Loading shared voting sessions', filters)
+  const sessions = await collectCamaraPages<CamaraVotacaoSession>(client, '/votacoes', {
+    itens: 100,
+    ordem: 'DESC',
+    ordenarPor: 'dataHoraRegistro',
+    ...(dateFrom && { dataInicio: dateFrom }),
+    ...(dateTo && { dataFim: dateTo }),
+  })
+  const byDeputy = new Map<number, CamaraVotacaoDeputado[]>()
+
+  for (const session of sessions) {
+    try {
+      const votes = await collectCamaraPages<CamaraVotoDeputado>(
+        client,
+        `/votacoes/${session.id}/votos`,
+        { itens: 100 },
+      )
+      for (const vote of votes) {
+        const deputyId = vote.deputado_?.id
+        if (!deputyId) continue
+        const current = byDeputy.get(deputyId) ?? []
+        current.push({
+          sessionId: session.id,
+          data: session.data,
+          dataHoraRegistro: vote.dataRegistroVoto ?? session.dataHoraRegistro,
+          siglaOrgao: session.siglaOrgao,
+          proposicaoObjeto: session.proposicaoObjeto,
+          uriProposicaoObjeto: session.uriProposicaoObjeto,
+          descricao: session.descricao,
+          tipoVoto: vote.tipoVoto,
+        })
+        byDeputy.set(deputyId, current)
+      }
+      await sleep(150)
+    } catch {
+      // Non-critical: one unavailable session must not discard the other sessions.
+    }
+  }
+
+  logger.info(`[camara] Loaded ${sessions.length} shared voting sessions`)
+  return byDeputy
+}
+
 /**
  * Returns up to 100 bills authored by a deputy (most recent first).
  * The list endpoint already includes dataApresentacao — no detail fetch needed.
@@ -413,11 +476,13 @@ export async function getVotacoesByDeputado(
 export async function getProposicoesByDeputado(
   id: number,
   client: CamaraHttpPort = http,
+  year?: number,
 ): Promise<CamaraProposicaoSummary[]> {
-  logger.info(`[camara] getProposicoesByDeputado ${id}`)
+  logger.info(`[camara] getProposicoesByDeputado ${id}`, year ? { year } : {})
 
   return collectCamaraPages<CamaraProposicaoSummary>(client, '/proposicoes', {
     idDeputadoAutor: id,
+    ...(year && { ano: year }),
     itens: 100,
     ordem: 'DESC',
     ordenarPor: 'id',
@@ -584,6 +649,7 @@ export interface RunCamaraSyncOptions {
   filters?: DeputadoFilters
   votingFilters?: VotacoesFilters
   pauseMs?: number
+  syncDate?: Date
 }
 
 export async function runCamaraSync(
@@ -591,7 +657,9 @@ export async function runCamaraSync(
 ): Promise<CompletedSyncRun> {
   const client = options.client ?? http
   const filters = options.filters ?? {}
-  const votingFilters = options.votingFilters ?? {}
+  const syncDate = options.syncDate ?? new Date()
+  const votingFilters = options.votingFilters ?? rollingVotingWindow(syncDate)
+  const proposalYear = syncDate.getUTCFullYear()
   const pauseMs = options.pauseMs ?? 500
 
   return runDataSourceSync({
@@ -601,6 +669,7 @@ export async function runCamaraSync(
     store: createPrismaSyncRunStore(options.prisma),
     execute: async () => {
       const deputados = await getDeputados(filters, client)
+      const votesByDeputy = await getVotacoesByDeputados(votingFilters, client)
       const concurrency = Math.max(1, Number(process.env.SCRAPER_CONCURRENCY) || 3)
       let synced = 0
       let failed = 0
@@ -613,10 +682,8 @@ export async function runCamaraSync(
           try {
             const detail = await getDeputadoById(deputy.id, client)
             const ids = await saveDeputado(options.prisma, detail)
-            const [votacoes, proposicoes] = await Promise.all([
-              getVotacoesByDeputado(deputy.id, votingFilters, client),
-              getProposicoesByDeputado(deputy.id, client),
-            ])
+            const votacoes = votesByDeputy.get(deputy.id) ?? []
+            const proposicoes = await getProposicoesByDeputado(deputy.id, client, proposalYear)
             const [savedVotes, savedBills] = await Promise.all([
               saveVotacoes(options.prisma, ids, votacoes),
               saveProposicoes(options.prisma, client, ids.mandateId, proposicoes),
@@ -652,7 +719,7 @@ export async function runCamaraSync(
 
 export async function syncCamara(
   filters: DeputadoFilters = {},
-  votingFilters: VotacoesFilters = {},
+  votingFilters?: VotacoesFilters,
 ): Promise<CompletedSyncRun> {
   const prisma = new PrismaClient()
   try {

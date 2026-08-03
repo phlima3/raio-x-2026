@@ -164,22 +164,64 @@ export async function upsertLegislatorMandate(
   // responses, while attaching historical rows to the normalized identity.
   // The source sync creates the mandate before inserting current votes, so
   // this also prevents the same official vote being inserted a second time.
-  await prisma.votingRecord.updateMany({
-    where: {
-      source: input.source.toLowerCase(),
-      mandateId: null,
-      candidate: { personId: person.id },
-      ...(input.startDate || input.endDate
-        ? {
-            votedAt: {
-              ...(input.startDate ? { gte: input.startDate } : {}),
-              ...(input.endDate ? { lte: input.endDate } : {}),
-            },
-          }
-        : {}),
-    },
-    data: { personId: person.id, mandateId: mandate.id },
+  const legacyVoteWhere = {
+    source: input.source.toLowerCase(),
+    mandateId: null,
+    candidate: { personId: person.id },
+    ...(input.startDate || input.endDate
+      ? {
+          votedAt: {
+            ...(input.startDate ? { gte: input.startDate } : {}),
+            ...(input.endDate ? { lte: input.endDate } : {}),
+          },
+        }
+      : {}),
+  }
+  const legacyVotes = await prisma.votingRecord.findMany({
+    where: legacyVoteWhere,
+    orderBy: { id: 'asc' },
+    select: { id: true, externalId: true },
   })
+  const officialVoteIds = [
+    ...new Set(
+      legacyVotes
+        .map((vote) => vote.externalId)
+        .filter((externalId): externalId is string => externalId !== null),
+    ),
+  ]
+  const alreadyNormalized =
+    officialVoteIds.length === 0
+      ? []
+      : await prisma.votingRecord.findMany({
+          where: {
+            source: input.source.toLowerCase(),
+            mandateId: mandate.id,
+            externalId: { in: officialVoteIds },
+          },
+          select: { externalId: true },
+        })
+  const claimedOfficialVoteIds = new Set(
+    alreadyNormalized
+      .map((vote) => vote.externalId)
+      .filter((externalId): externalId is string => externalId !== null),
+  )
+  const migratableVoteIds = legacyVotes.flatMap((vote) => {
+    // PostgreSQL permits multiple nulls in this unique key. For a real
+    // official ID, keep the compatible legacy row untouched when its
+    // normalized counterpart already exists instead of deleting or merging it.
+    if (vote.externalId !== null && claimedOfficialVoteIds.has(vote.externalId)) {
+      return []
+    }
+    if (vote.externalId !== null) claimedOfficialVoteIds.add(vote.externalId)
+    return [vote.id]
+  })
+
+  if (migratableVoteIds.length > 0) {
+    await prisma.votingRecord.updateMany({
+      where: { id: { in: migratableVoteIds } },
+      data: { personId: person.id, mandateId: mandate.id },
+    })
+  }
 
   const legacyProposals = await prisma.proposal.findMany({
     where: {

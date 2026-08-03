@@ -80,3 +80,9 @@
 - Assinaturas binárias têm precedência sobre o campo `format` do CKAN: `%PDF-` é PDF direto e `PK` é ZIP.
 - Motivo: recurso oficial histórico pode declarar `Formato PDF` e entregar `application/zip`; usar somente o rótulo enviaria o arquivo compactado ao pdfjs.
 - O rótulo continua sendo fallback para respostas sem assinatura reconhecível, preservando compatibilidade com fixtures e endpoints intermediários.
+
+## 2026-08-03 — Sincronização legislativa diária incremental
+- O caminho diário usa uma janela móvel inclusiva de sete dias; datas explícitas continuam disponíveis para backfill histórico.
+- A Câmara carrega sessões/votos compartilhados uma única vez por execução e distribui os votos por parlamentar; projetos ficam limitados ao ano corrente.
+- Um voto legado que colidiria com um registro oficial já normalizado não é apagado nem forçado ao mandato: ambos permanecem acessíveis pelos respectivos read models durante expand-and-migrate.
+- No Senado, matérias e votos são persistidos sequencialmente por senador para respeitar o pool de três conexões, mantendo o lote externo de senadores limitado pela concorrência configurada.

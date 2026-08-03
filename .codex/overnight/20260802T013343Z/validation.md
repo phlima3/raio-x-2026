@@ -246,3 +246,39 @@
 - Result: PASS (`RESOLVIDO`).
 - Evidence: a revisão confirmou precedência de `%PDF-`/`PK` e teste que entrega somente o PDF interno ao extrator quando `format=PDF` mascara um ZIP.
 - Follow-up: checkpoint documental e confirmação de worktree limpo.
+
+### 2026-08-03T13:51Z TDD RED — janela incremental da Câmara
+- Command: `pnpm exec vitest run --config vitest.integration.config.mts packages/scraper/test/camara-sync.integration.test.ts` com PostgreSQL 16 em `localhost:5433`.
+- Result: FAIL esperado.
+- Evidence: o módulo público `runCamaraSync` consultou `/votacoes` duas vezes para dois deputados, sem aplicar a janela 2026-07-27..2026-08-03; a asserção esperava uma única leitura compartilhada.
+- Follow-up: carregar sessões/votos uma vez por run, aplicar lookback padrão de sete dias e limitar projetos ao ano da sincronização.
+
+### 2026-08-03T13:52Z TDD GREEN — janela incremental da Câmara
+- Command: teste de integração focado da Câmara; `pnpm --filter @raiox/scraper exec tsc --noEmit`.
+- Result: PASS.
+- Evidence: 3/3 testes; dois deputados compartilham uma única leitura de sessão/votos, a requisição usa 2026-07-27..2026-08-03 e projetos recebem `ano=2026`; typecheck do scraper passa.
+- Follow-up: aplicar o mesmo default incremental ao Senado e reproduzir o conflito real de votos legados.
+
+### 2026-08-03T13:53Z TDD RED→GREEN — janela incremental do Senado
+- Command: teste focado `senado-sync.integration.test.ts`; typecheck do scraper.
+- Result: RED (`dataInicioApresentacao=2023-01-01`) → PASS (2/2 testes + typecheck).
+- Evidence: sem datas explícitas, processos e votações agora usam 2026-07-27..2026-08-03; `--from/--to` continuam permitindo backfill explícito e a data do run também rege mandato/sincronização.
+- Follow-up: reproduzir e corrigir a colisão única de voto legado observada no schedule real.
+
+### 2026-08-03T13:57Z TDD RED→GREEN — conflito entre voto legado e normalizado
+- Command: `pnpm exec vitest run --config vitest.integration.config.mts packages/scraper/test/legislative-persistence.integration.test.ts` contra PostgreSQL 16.
+- Result: RED (`P2002` em `[source, externalId, mandateId]`, igual à produção) → PASS (6/6 testes).
+- Evidence: quando o mandato já possui o voto oficial, o normalizado permanece vinculado ao mandato e a linha legada permanece disponível pelo Candidate sem merge destrutivo; novos votos inequívocos continuam migrando.
+- Follow-up: validar o conjunto Câmara/Senado e reduzir concorrência de persistência no pool pequeno de produção.
+
+### 2026-08-03T13:58Z validação legislativa consolidada
+- Command: três integrações focadas (`legislative-persistence`, `camara-sync`, `senado-sync`) no PostgreSQL 16; `pnpm --filter @raiox/scraper exec tsc --noEmit`.
+- Result: PASS.
+- Evidence: 3 arquivos/11 testes e typecheck do scraper; a persistência de matérias e votos do Senado agora é sequencial por parlamentar, mantendo paralelismo apenas entre o pequeno lote de parlamentares.
+- Follow-up: checkpoint local e otimização idempotente do TSE suplementar.
+
+### 2026-08-03T13:59Z recuperação da fonte Senado
+- Command: HTTP GET read-only na lista atual e em `/processo` com filtros 2026-07-27..2026-08-03.
+- Result: PASS.
+- Evidence: ambos os endpoints oficiais responderam HTTP 200 em menos de 0,3 s; o HTTP 503 anterior era transitório.
+- Follow-up: reexecutar o workflow legislativo somente após publicar o hotfix incremental.

@@ -22,7 +22,7 @@ async function clearData() {
 }
 
 function makeClient(): SenadoHttpPort {
-  const get = vi.fn(async (url: string) => {
+  const get = vi.fn(async (url: string, _config?: { params?: Record<string, unknown> }) => {
     if (url === '/senador/lista/atual') {
       return {
         data: {
@@ -159,5 +159,31 @@ describe('runSenadoSync', () => {
     expect(await prisma.candidate.count()).toBe(0)
     expect((client.get as ReturnType<typeof vi.fn>).mock.calls.filter(([url]) => url === '/processo?pagina=2')).toHaveLength(2)
     expect((client.get as ReturnType<typeof vi.fn>).mock.calls.filter(([url]) => url === '/votacao?pagina=2')).toHaveLength(2)
+  })
+
+  it('uses a seven-day rolling window when the caller omits explicit dates', async () => {
+    const client = makeClient()
+    const options = {
+      prisma,
+      client,
+      pauseMs: 0,
+      syncDate: new Date('2026-08-03T12:00:00Z'),
+    }
+
+    const result = await runSenadoSync(options)
+
+    expect(result.status).toBe(SyncRunStatus.SUCCESS)
+    const processCall = (client.get as ReturnType<typeof vi.fn>).mock.calls
+      .find(([url]) => url === '/processo')
+    expect(processCall?.[1]?.params).toMatchObject({
+      dataInicioApresentacao: '2026-07-27',
+      dataFimApresentacao: '2026-08-03',
+    })
+    const voteCall = (client.get as ReturnType<typeof vi.fn>).mock.calls
+      .find(([url]) => url === '/votacao')
+    expect(voteCall?.[1]?.params).toMatchObject({
+      dataInicio: '2026-07-27',
+      dataFim: '2026-08-03',
+    })
   })
 })

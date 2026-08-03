@@ -169,6 +169,7 @@ interface SenadoPage<T> {
 }
 
 const DEFAULT_BASE_URL = 'https://legis.senado.leg.br/dadosabertos'
+const DAILY_LOOKBACK_DAYS = 7
 
 const sleep = (ms: number): Promise<void> =>
   ms > 0 ? new Promise((resolve) => setTimeout(resolve, ms)) : Promise.resolve()
@@ -184,6 +185,12 @@ function normalizeIsoDate(value: string | undefined): string | undefined {
     return `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}`
   }
   return value
+}
+
+function rollingDateFrom(syncDate: Date): string {
+  const from = new Date(syncDate)
+  from.setUTCDate(from.getUTCDate() - DAILY_LOOKBACK_DAYS)
+  return from.toISOString().slice(0, 10)
 }
 
 function parseDate(value: string | undefined): Date | null {
@@ -620,15 +627,17 @@ export interface RunSenadoSyncOptions {
   dateFrom?: string
   dateTo?: string
   pauseMs?: number
+  syncDate?: Date
 }
 
 export async function runSenadoSync(
   options: RunSenadoSyncOptions,
 ): Promise<CompletedSyncRun> {
   const client = options.client ?? http
-  const dateFrom = normalizeIsoDate(options.dateFrom ?? '2023-01-01')
+  const syncDate = options.syncDate ?? new Date()
+  const dateFrom = normalizeIsoDate(options.dateFrom ?? rollingDateFrom(syncDate))
   const dateTo = normalizeIsoDate(
-    options.dateTo ?? new Date().toISOString().slice(0, 10),
+    options.dateTo ?? syncDate.toISOString().slice(0, 10),
   )
   const pauseMs = options.pauseMs ?? 200
 
@@ -651,18 +660,19 @@ export async function runSenadoSync(
           try {
             const [detail, mandate] = await Promise.all([
               getSenadoreById(senator.codigo, client),
-              getMandatoAtual(senator.codigo, client),
+              getMandatoAtual(senator.codigo, client, syncDate),
             ])
-            const ids = await saveSenador(options.prisma, detail, mandate, new Date())
+            const ids = await saveSenador(options.prisma, detail, mandate, syncDate)
             const filters = { dataInicio: dateFrom, dataFim: dateTo }
             const [materias, votacoes] = await Promise.all([
               getMateriasBySenador(senator.codigo, filters, client),
               getVotacoesBySenador(senator.codigo, filters, client),
             ])
-            const [savedBills, savedVotes] = await Promise.all([
-              saveMaterias(options.prisma, ids.mandateId, materias),
-              saveVotacoes(options.prisma, ids, votacoes),
-            ])
+            // Each persistence path opens several Prisma operations. Keeping
+            // them sequential per senator avoids exhausting the small
+            // production connection pool while senators still run in batches.
+            const savedBills = await saveMaterias(options.prisma, ids.mandateId, materias)
+            const savedVotes = await saveVotacoes(options.prisma, ids, votacoes)
             bills += savedBills
             votes += savedVotes
             synced++
@@ -693,8 +703,8 @@ export async function runSenadoSync(
 }
 
 export async function syncSenado(
-  dateFrom = '2023-01-01',
-  dateTo = new Date().toISOString().slice(0, 10),
+  dateFrom?: string,
+  dateTo?: string,
 ): Promise<CompletedSyncRun> {
   const prisma = new PrismaClient()
   try {
