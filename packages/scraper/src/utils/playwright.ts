@@ -6,21 +6,31 @@ import { logger } from './logger'
 // TODO: Implement screenshot capture for debugging failed scrapes
 
 let browser: Browser | null = null
+let browserPromise: Promise<Browser> | null = null
 
 export async function getBrowser(): Promise<Browser> {
-  if (!browser || !browser.isConnected()) {
-    browser = await chromium.launch({
+  if (browser?.isConnected()) return browser
+  if (!browserPromise) {
+    browserPromise = chromium.launch({
       headless: process.env.SCRAPER_HEADLESS !== 'false',
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    }).then((launched) => {
+      browser = launched
+      logger.info('Playwright browser launched')
+      return launched
+    }).finally(() => {
+      browserPromise = null
     })
-    logger.info('Playwright browser launched')
   }
-  return browser
+  return browserPromise
 }
 
 export async function createContext(): Promise<BrowserContext> {
   const b = await getBrowser()
   return b.newContext({
+    // Candidate sites are public/untrusted enrichment only; accepting a stale
+    // certificate never grants access to authenticated or privileged content.
+    ignoreHTTPSErrors: true,
     userAgent:
       'Mozilla/5.0 (compatible; RaioX2026Bot/1.0; +https://raiox2026.com.br/bot)',
     locale: 'pt-BR',
@@ -40,6 +50,13 @@ export async function newPage(): Promise<Page> {
 }
 
 export async function closeBrowser(): Promise<void> {
+  if (browserPromise) {
+    try {
+      await browserPromise
+    } catch {
+      // A failed launch has no browser process to close.
+    }
+  }
   if (browser) {
     await browser.close()
     browser = null

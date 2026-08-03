@@ -2,7 +2,7 @@ import type { Page, Response } from 'playwright'
 
 import { logger } from './logger'
 
-type NavigationPage = Pick<Page, 'goto' | 'waitForLoadState'>
+type NavigationPage = Pick<Page, 'goto' | 'waitForLoadState' | 'waitForSelector'>
 
 export interface SiteNavigationOptions {
   attempts?: number
@@ -52,10 +52,14 @@ export async function navigateForContent(
         await page.waitForLoadState('domcontentloaded', { timeout: contentTimeoutMs })
       } catch (error) {
         logger.warn(
-          `[sites] DOMContentLoaded did not settle for ${url}; using committed HTML`,
+          `[sites] DOMContentLoaded did not settle for ${url}; waiting for committed body`,
           error,
         )
       }
+      await page.waitForSelector('body', {
+        state: 'attached',
+        timeout: contentTimeoutMs,
+      })
       return response
     } catch (error) {
       if (error instanceof HttpStatusError && error.status < 500) throw error

@@ -12,7 +12,8 @@ describe('navigateForContent', () => {
     const page = {
       goto: vi.fn().mockResolvedValue(response(200)),
       waitForLoadState: vi.fn().mockRejectedValue(new Error('Timeout 15000ms exceeded')),
-    } as unknown as Pick<Page, 'goto' | 'waitForLoadState'>
+      waitForSelector: vi.fn().mockResolvedValue({}),
+    } as unknown as Pick<Page, 'goto' | 'waitForLoadState' | 'waitForSelector'>
 
     await expect(navigateForContent(page, 'https://www.gov.br/planalto')).resolves.toBeDefined()
     expect(page.goto).toHaveBeenCalledWith('https://www.gov.br/planalto', {
@@ -27,7 +28,8 @@ describe('navigateForContent', () => {
         .mockRejectedValueOnce(new Error('net::ERR_CONNECTION_RESET'))
         .mockResolvedValueOnce(response(200)),
       waitForLoadState: vi.fn().mockResolvedValue(undefined),
-    } as unknown as Pick<Page, 'goto' | 'waitForLoadState'>
+      waitForSelector: vi.fn().mockResolvedValue({}),
+    } as unknown as Pick<Page, 'goto' | 'waitForLoadState' | 'waitForSelector'>
 
     await expect(navigateForContent(retryingPage, 'https://www.ba.gov.br', {
       retryDelayMs: 0,
@@ -37,9 +39,29 @@ describe('navigateForContent', () => {
     const missingPage = {
       goto: vi.fn().mockResolvedValue(response(404)),
       waitForLoadState: vi.fn(),
-    } as unknown as Pick<Page, 'goto' | 'waitForLoadState'>
+      waitForSelector: vi.fn(),
+    } as unknown as Pick<Page, 'goto' | 'waitForLoadState' | 'waitForSelector'>
     await expect(navigateForContent(missingPage, 'https://candidate.example/missing'))
       .rejects.toThrow('HTTP 404')
     expect(missingPage.goto).toHaveBeenCalledTimes(1)
+  })
+
+  it('retries the committed navigation when no body becomes available', async () => {
+    const page = {
+      goto: vi.fn().mockResolvedValue(response(200)),
+      waitForLoadState: vi.fn().mockRejectedValue(new Error('DOMContentLoaded timeout')),
+      waitForSelector: vi.fn()
+        .mockRejectedValueOnce(new Error('body not attached'))
+        .mockResolvedValueOnce({}),
+    } as unknown as Pick<Page, 'goto' | 'waitForLoadState' | 'waitForSelector'>
+
+    await expect(navigateForContent(page, 'https://www.parana.pr.gov.br', {
+      retryDelayMs: 0,
+    })).resolves.toBeDefined()
+    expect(page.goto).toHaveBeenCalledTimes(2)
+    expect(page.waitForSelector).toHaveBeenCalledWith('body', {
+      state: 'attached',
+      timeout: 15_000,
+    })
   })
 })
