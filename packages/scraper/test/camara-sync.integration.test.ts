@@ -71,6 +71,93 @@ describe('runCamaraSync', () => {
     expect(await prisma.candidate.count()).toBe(0)
   })
 
+  it('persists proposal summaries without per-bill detail requests and preserves richer status', async () => {
+    let summary = 'Ementa original'
+    const get = vi.fn(async (url: string) => {
+      if (url === '/deputados') {
+        return { data: { dados: [{ id: 10, nome: 'Deputada Teste' }], links: [] } }
+      }
+      if (url === '/deputados/10') {
+        return {
+          data: {
+            dados: {
+              id: 10,
+              uri: 'https://dadosabertos.camara.leg.br/api/v2/deputados/10',
+              nomeCivil: 'Deputada Teste da Silva',
+              ultimoStatus: {
+                nome: 'Deputada Teste',
+                nomeEleitoral: 'Deputada Teste',
+                siglaPartido: 'PX',
+                siglaUf: 'SP',
+                idLegislatura: 57,
+                situacao: 'Exercício',
+              },
+            },
+            links: [],
+          },
+        }
+      }
+      if (url === '/votacoes') return { data: { dados: [], links: [] } }
+      if (url === '/proposicoes') {
+        return {
+          data: {
+            dados: [{
+              id: 501,
+              uri: 'https://dadosabertos.camara.leg.br/api/v2/proposicoes/501',
+              siglaTipo: 'PL',
+              codTipo: 139,
+              numero: 1,
+              ano: 2026,
+              ementa: summary,
+              dataApresentacao: '2026-02-01T12:00:00Z',
+            }],
+            links: [],
+          },
+        }
+      }
+      if (url === '/proposicoes/501') {
+        return {
+          data: {
+            dados: {
+              id: 501,
+              siglaTipo: 'PL',
+              numero: 1,
+              ano: 2026,
+              ementa: summary,
+              ementaDetalhada: `${summary} detalhada`,
+              statusProposicao: { descricaoSituacao: 'Rejeitada' },
+            },
+            links: [],
+          },
+        }
+      }
+      throw new Error(`Unexpected Câmara URL: ${url}`)
+    })
+    const options = {
+      prisma,
+      client: { get } as CamaraHttpPort,
+      pauseMs: 0,
+      syncDate: new Date('2026-08-03T12:00:00Z'),
+    }
+
+    await runCamaraSync(options)
+    expect(get.mock.calls.some(([url]) => url === '/proposicoes/501')).toBe(false)
+
+    await prisma.legislativeBill.update({
+      where: { source_externalId: { source: 'CAMARA', externalId: '501' } },
+      data: { status: 'APPROVED' },
+    })
+    summary = 'Ementa oficial atualizada'
+    await runCamaraSync(options)
+
+    expect(await prisma.legislativeBill.count()).toBe(1)
+    expect(await prisma.legislativeBillAuthor.count()).toBe(1)
+    expect(await prisma.legislativeBill.findUnique({
+      where: { source_externalId: { source: 'CAMARA', externalId: '501' } },
+      select: { description: true, status: true },
+    })).toEqual({ description: summary, status: 'APPROVED' })
+  })
+
   it('uses a rolling window and loads each voting session once for all deputies', async () => {
     const deputies = [
       { id: 10, nome: 'Deputada Um' },
