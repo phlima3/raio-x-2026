@@ -205,11 +205,13 @@ export async function upsertLegislatorMandate(
       .map((vote) => vote.externalId)
       .filter((externalId): externalId is string => externalId !== null),
   )
+  const identityOnlyVoteIds: string[] = []
   const migratableVoteIds = legacyVotes.flatMap((vote) => {
     // PostgreSQL permits multiple nulls in this unique key. For a real
     // official ID, keep the compatible legacy row untouched when its
     // normalized counterpart already exists instead of deleting or merging it.
     if (vote.externalId !== null && claimedOfficialVoteIds.has(vote.externalId)) {
+      identityOnlyVoteIds.push(vote.id)
       return []
     }
     if (vote.externalId !== null) claimedOfficialVoteIds.add(vote.externalId)
@@ -220,6 +222,12 @@ export async function upsertLegislatorMandate(
     await prisma.votingRecord.updateMany({
       where: { id: { in: migratableVoteIds } },
       data: { personId: person.id, mandateId: mandate.id },
+    })
+  }
+  if (identityOnlyVoteIds.length > 0) {
+    await prisma.votingRecord.updateMany({
+      where: { id: { in: identityOnlyVoteIds } },
+      data: { personId: person.id },
     })
   }
 

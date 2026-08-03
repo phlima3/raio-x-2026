@@ -97,3 +97,9 @@
 - `page.goto` considera a resposta comprometida (`waitUntil=commit`) e dá ao DOM uma janela adicional limitada; páginas que mantêm recursos de terceiros pendentes não travam mais por 30 segundos apesar de já terem HTML útil.
 - Falha de transporte/HTTP 5xx recebe uma repetição curta; HTTP 4xx e a segunda falha continuam propagando, preservando `DataSyncRun=FAILED` e exit não zero.
 - Timeout apenas de `DOMContentLoaded` permite avaliar o HTML já comprometido; falha posterior de avaliação/LLM/persistência continua falhando o job.
+
+## 2026-08-03 — Disposição dos achados do review operacional
+- Câmara diária permanece incremental, mas `--year=AAAA` cobre votos e projetos do ano inteiro; `--from/--to` oferece janela customizada para recomposição controlada.
+- Uma sessão de votação compartilhada indisponível após retries invalida o run inteiro e persiste `FAILED`; não é permitido concluir com histórico parcial silencioso.
+- Quando um voto oficial normalizado já ocupa a chave do mandato, a linha legada compatível preserva `candidateId`/rollback e recebe `personId`; o registro normalizado continua sendo o vínculo canônico ao mandato.
+- Novos limites, lease, backfill e timeouts pertencem ao runbook canônico `docs/OFFICIAL_DATA_PIPELINE.md`, não apenas ao diário da execução overnight.

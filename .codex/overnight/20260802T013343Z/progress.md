@@ -3,8 +3,8 @@
 ## Current status
 - Phase: Operational follow-up
 - State: active
-- Last completed action: navegação dos sites foi corrigida e validada nos três URLs que falharam nas Actions.
-- Next action: executar ladder completa, aplicar a skill de review e publicar os três checkpoints na main.
+- Last completed action: achados da revisão Standards/Spec foram corrigidos em TDD, incluindo backfill explícito da Câmara e falha parcial de sessões.
+- Next action: repetir a ladder completa pós-review, fechar o relatório e publicar os checkpoints na main.
 - Last known good commit: 58896fa
 - Working tree status: limpo; mudanças seguintes serão somente do hotfix incremental e do estado persistente ignorado.
 
@@ -59,3 +59,7 @@
 - 2026-08-03T14:07Z — Workflow TSE foi separado em candidatura canônica (90 min) e complemento dependente (120 min); YAML validado.
 - 2026-08-03T14:10Z — Navegação de sites foi reproduzida RED e corrigida para aguardar `commit`, limitar a espera de DOM e repetir falha transitória sem engolir HTTP/erro final.
 - 2026-08-03T14:13Z — Chromium real com o mesmo contexto do job abriu Planalto, Aldo e Bahia em 1,2 s/0,9 s/1,8 s, todos HTTP 200 e com HTML avaliável; o domínio de Aldo é atualmente uma página estacionada e produz somente enriquecimento IA oculto/no-op.
+- 2026-08-03T14:17Z — Ladder pré-review verde: Prisma válido/14 migrations, 16 unitários, 31 integrações PostgreSQL 16, três typechecks, três builds e nove YAMLs.
+- 2026-08-03T14:19Z — Review em dois eixos: Standards sem violação objetiva e duas dívidas documentais; Spec confirmou escopo, mas apontou falha parcial da Câmara, identidade do voto conflitante e ausência de CLI de backfill.
+- 2026-08-03T14:23Z — Achados corrigidos RED→GREEN: sessão esgotada falha DataSyncRun, voto legado conflitante recebe Person, e Câmara aceita `--year/--from/--to`; runbook canônico atualizado.
+- 2026-08-03T14:25Z — Ladder pós-review verde: 18 unitários, 32 integrações PostgreSQL 16, três typechecks/builds, nove YAMLs e diff check.

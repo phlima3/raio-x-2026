@@ -267,6 +267,7 @@ describe('legislative persistence', () => {
     await expect(prisma.votingRecord.findUniqueOrThrow({ where: { id: legacy.id } }))
       .resolves.toEqual(expect.objectContaining({
         candidateId: candidate.id,
+        personId: ids.personId,
         mandateId: null,
       }))
     await expect(prisma.votingRecord.count()).resolves.toBe(2)

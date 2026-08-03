@@ -312,3 +312,27 @@
 - Result: PASS com limitação de conteúdo.
 - Evidence: Planalto 200 em 1,2 s (2.870 caracteres), Aldo 200 em 0,9 s (página estacionada, 180 caracteres), Bahia 200 em 1,8 s (HTML governamental); os três deixaram de depender do evento que expirava na Action.
 - Follow-up: ladder completa e reexecução remota após push.
+
+### 2026-08-03T14:17Z ladder completa pré-review
+- Command: Prisma generate/validate/migrate status; `pnpm test:unit`; `pnpm test:integration`; `pnpm typecheck`; `pnpm build`; yaml-lint em nove arquivos; `git diff --check`.
+- Result: PASS após aplicar no banco de testes a migration aditiva pendente `20260802031000_add_vice_prefeito_position`.
+- Evidence: schema válido/14 migrations; 9 arquivos/16 unitários; 11 arquivos/31 integrações PostgreSQL 16; API/scraper/web passaram typecheck e build; Next gerou 7 páginas; nove YAMLs válidos.
+- Follow-up: review em dois eixos contra `58896fa`.
+
+### 2026-08-03T14:19Z review skill — Standards e Spec
+- Command: `git diff 58896fa...HEAD`; revisões paralelas e independentes conforme `review/SKILL.md`.
+- Result: Standards 0 violações objetivas/2 dívidas; Spec 1 alto/2 importantes, além das ações operacionais ainda intencionalmente pendentes até push.
+- Evidence: comentário Câmara e runbook desatualizados; falha de sessão engolida; voto legado conflitante sem Person; CLI Câmara sem backfill histórico.
+- Follow-up: corrigir todos os achados implementáveis antes do push e concluir runs/relatório depois dele.
+
+### 2026-08-03T14:23Z TDD RED→GREEN — achados de review legislativo
+- Command: `camara-cli.test.ts`; integrações `camara-sync` + `legislative-persistence`; typecheck do scraper.
+- Result: RED nos três comportamentos → PASS (2 unitários + 10 integrações + typecheck).
+- Evidence: `--year=2023` produz janela anual e ano de projetos; sessão compartilhada indisponível persiste FAILED/não zero; linha legada conflitante recebe `personId` sem perder `candidateId` nem colidir no mandato.
+- Follow-up: ladder completa pós-review.
+
+### 2026-08-03T14:25Z ladder completa pós-review
+- Command: `pnpm test:unit`; `pnpm test:integration`; `pnpm typecheck`; `pnpm build`; yaml-lint em nove arquivos; `git diff --check`.
+- Result: PASS.
+- Evidence: 10 arquivos/18 unitários; 11 arquivos/32 integrações PostgreSQL 16; typecheck e build de API/scraper/web; Next gerou 7 páginas; nove YAMLs e diff válidos.
+- Follow-up: commit do review, auditoria do relatório e push para main.

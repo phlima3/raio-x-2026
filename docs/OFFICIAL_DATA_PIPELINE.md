@@ -83,6 +83,15 @@ pnpm --filter @raiox/scraper run sync:documents
 pnpm --filter @raiox/scraper run sync:camara
 pnpm --filter @raiox/scraper run sync:senado
 
+# Backfill histórico explícito (o caminho diário usa lookback móvel de 7 dias)
+2023..2026 | ForEach-Object {
+  pnpm --filter @raiox/scraper run sync:camara -- --year=$_
+}
+pnpm --filter @raiox/scraper run sync:senado -- --from=2023-01-01 --to=2026-12-31
+
+# Janela customizada da Câmara; --year seleciona o ano dos projetos
+pnpm --filter @raiox/scraper run sync:camara -- --from=2024-01-15 --to=2024-06-30 --year=2024
+
 # Expand-and-migrate e fila de revisão
 pnpm --filter @raiox/scraper run backfill:persons
 pnpm --filter @raiox/scraper run review:report
@@ -109,6 +118,18 @@ tenta adivinhar IDs de um endpoint DivulgaCand não documentado.
 Cada fonte tem job independente. Erro persiste `DataSyncRun=FAILED` antes de o
 comando terminar com código diferente de zero. A instalação do workspace e o
 `prisma generate` são únicos, sem cópia manual de `.prisma/client`.
+
+No caminho diário, Câmara e Senado consultam uma janela móvel inclusiva de sete
+dias para absorver correções tardias sem repetir todo o histórico. A Câmara lê
+cada sessão/voto compartilhado uma vez por run; qualquer página/sessão que siga
+indisponível após retries falha a fonte, em vez de produzir sucesso parcial.
+Backfills exigem as flags explícitas mostradas acima.
+
+No workflow TSE, `candidacies` possui timeout de 90 minutos. O job
+`supplemental` inicia somente após seu sucesso, abre túnel próprio e possui 120
+minutos. Persistência complementar ocorre em lotes idempotentes. Ao iniciar um
+run, uma execução anterior da mesma fonte/tipo que permaneça `RUNNING` por mais
+de seis horas é encerrada como `FAILED`; runs recentes não são alterados.
 
 ### Acesso do GitHub Actions ao PostgreSQL da Veloz
 
@@ -203,7 +224,7 @@ GROUP BY "extractionStatus";
 ## Limites atuais
 
 - OCR, publicação de deputados e novo painel de revisão estão fora do escopo.
-- O catálogo TSE observado em 2 de agosto de 2026 tinha 3.465 candidaturas, sem
+- O catálogo TSE revalidado em 3 de agosto de 2026 tinha 3.494 candidaturas, sem
   presidente/vice-presidente, e 25.493 linhas nos seis recursos suplementares.
 - Não havia recurso de programa de governo no catálogo naquele momento; o job
   diário permanece habilitado para detectar sua disponibilização.

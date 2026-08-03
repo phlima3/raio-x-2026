@@ -169,4 +169,64 @@ describe('runCamaraSync', () => {
     expect(failed?.status).toBe(SyncRunStatus.FAILED)
     expect(failed?.error).toContain('Câmara unavailable')
   })
+
+  it('fails the source run when a shared voting session remains unavailable', async () => {
+    const get = vi.fn(async (url: string) => {
+      if (url === '/deputados') {
+        return { data: { dados: [{ id: 10, nome: 'Deputada Teste' }], links: [] } }
+      }
+      if (url === '/votacoes') {
+        return {
+          data: {
+            dados: [{
+              id: 'unavailable-session',
+              data: '2026-08-02',
+              dataHoraRegistro: '2026-08-02T12:00:00Z',
+              siglaOrgao: 'PLEN',
+              proposicaoObjeto: 'PL 1/2026',
+              uriProposicaoObjeto: null,
+              descricao: 'Votação nominal',
+            }],
+            links: [],
+          },
+        }
+      }
+      if (url === '/votacoes/unavailable-session/votos') {
+        throw new Error('session votes unavailable')
+      }
+      if (url === '/deputados/10') {
+        return {
+          data: {
+            dados: {
+              id: 10,
+              uri: 'https://dadosabertos.camara.leg.br/api/v2/deputados/10',
+              nomeCivil: 'Deputada Teste da Silva',
+              ultimoStatus: {
+                nome: 'Deputada Teste',
+                nomeEleitoral: 'Deputada Teste',
+                siglaPartido: 'PX',
+                siglaUf: 'SP',
+                idLegislatura: 57,
+                situacao: 'Exercício',
+              },
+            },
+            links: [],
+          },
+        }
+      }
+      if (url === '/proposicoes') return { data: { dados: [], links: [] } }
+      throw new Error(`Unexpected Câmara URL: ${url}`)
+    })
+
+    await expect(runCamaraSync({
+      prisma,
+      client: { get } as CamaraHttpPort,
+      pauseMs: 0,
+      syncDate: new Date('2026-08-03T12:00:00Z'),
+    })).rejects.toThrow('1 of 1 voting sessions failed')
+
+    const failed = await prisma.dataSyncRun.findFirst({ orderBy: { startedAt: 'desc' } })
+    expect(failed?.status).toBe(SyncRunStatus.FAILED)
+    expect(failed?.error).toContain('voting sessions failed')
+  })
 })

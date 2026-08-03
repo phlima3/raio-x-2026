@@ -435,6 +435,7 @@ async function getVotacoesByDeputados(
     ...(dateTo && { dataFim: dateTo }),
   })
   const byDeputy = new Map<number, CamaraVotacaoDeputado[]>()
+  let failedSessions = 0
 
   for (const session of sessions) {
     try {
@@ -460,11 +461,18 @@ async function getVotacoesByDeputados(
         byDeputy.set(deputyId, current)
       }
       await sleep(150)
-    } catch {
-      // Non-critical: one unavailable session must not discard the other sessions.
+    } catch (error) {
+      failedSessions++
+      logger.error(
+        `[camara] Failed voting session ${session.id}`,
+        error instanceof Error ? error.message : error,
+      )
     }
   }
 
+  if (failedSessions > 0) {
+    throw new Error(`[camara] ${failedSessions} of ${sessions.length} voting sessions failed`)
+  }
   logger.info(`[camara] Loaded ${sessions.length} shared voting sessions`)
   return byDeputy
 }
@@ -636,18 +644,19 @@ async function saveProposicoes(
 // ── Sync orchestrator ─────────────────────────────────────────────────────────
 
 /**
- * Full sync: lists deputies, upserts candidates, and persists their
- * voting records and proposals in parallel batches.
+ * Lists deputies, upserts Person/Mandate, and persists their normalized
+ * voting records and legislative bills in bounded parallel batches.
  *
  * @param filters - Deputy filters (partido, UF, etc.)
- * @param votacoesFilters - Date window for vote fetching. For daily syncs,
- *   pass `{ dateFrom: yesterday }` to avoid scanning the full session history.
+ * @param votingFilters - Optional explicit backfill window. Daily syncs use a
+ *   seven-day rolling lookback when it is omitted.
  */
 export interface RunCamaraSyncOptions {
   prisma: PrismaClient
   client?: CamaraHttpPort
   filters?: DeputadoFilters
   votingFilters?: VotacoesFilters
+  proposalYear?: number
   pauseMs?: number
   syncDate?: Date
 }
@@ -659,7 +668,7 @@ export async function runCamaraSync(
   const filters = options.filters ?? {}
   const syncDate = options.syncDate ?? new Date()
   const votingFilters = options.votingFilters ?? rollingVotingWindow(syncDate)
-  const proposalYear = syncDate.getUTCFullYear()
+  const proposalYear = options.proposalYear ?? syncDate.getUTCFullYear()
   const pauseMs = options.pauseMs ?? 500
 
   return runDataSourceSync({
@@ -720,11 +729,12 @@ export async function runCamaraSync(
 export async function syncCamara(
   filters: DeputadoFilters = {},
   votingFilters?: VotacoesFilters,
+  proposalYear?: number,
 ): Promise<CompletedSyncRun> {
   const prisma = new PrismaClient()
   try {
     logger.info('[camara] Starting official legislative sync', votingFilters)
-    const result = await runCamaraSync({ prisma, filters, votingFilters })
+    const result = await runCamaraSync({ prisma, filters, votingFilters, proposalYear })
     logger.info('[camara] Official legislative sync complete', result)
     return result
   } finally {
@@ -732,10 +742,43 @@ export async function syncCamara(
   }
 }
 
+export interface CamaraCliOptions {
+  votingFilters?: VotacoesFilters
+  proposalYear?: number
+}
+
+function cliValue(args: string[], name: string): string | undefined {
+  return args.find((argument) => argument.startsWith(`--${name}=`))?.split('=').slice(1).join('=')
+}
+
+function validIsoDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+  const parsed = new Date(`${value}T00:00:00.000Z`)
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value
+}
+
+export function parseCamaraCliArgs(args: string[]): CamaraCliOptions {
+  const from = cliValue(args, 'from')
+  const to = cliValue(args, 'to')
+  const yearValue = cliValue(args, 'year')
+  if (from && !validIsoDate(from)) throw new Error(`Invalid --from date: ${from}`)
+  if (to && !validIsoDate(to)) throw new Error(`Invalid --to date: ${to}`)
+  if (yearValue && !/^\d{4}$/.test(yearValue)) throw new Error(`Invalid --year: ${yearValue}`)
+
+  const proposalYear = yearValue ? Number(yearValue) : undefined
+  const dateFrom = from ?? (proposalYear ? `${proposalYear}-01-01` : undefined)
+  const dateTo = to ?? (proposalYear ? `${proposalYear}-12-31` : undefined)
+  return {
+    ...(proposalYear ? { proposalYear } : {}),
+    ...(dateFrom || dateTo ? { votingFilters: { dateFrom, dateTo } } : {}),
+  }
+}
+
 // ── Direct execution ──────────────────────────────────────────────────────────
 // Used by: pnpm run sync:camara
 if (require.main === module) {
-  syncCamara()
+  const cli = parseCamaraCliArgs(process.argv.slice(2))
+  syncCamara({}, cli.votingFilters, cli.proposalYear)
     .catch((err) => {
       logger.error('[camara] Fatal error', err)
       process.exit(1)
