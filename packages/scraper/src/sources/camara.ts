@@ -689,14 +689,16 @@ export async function runCamaraSync(
         const batch = deputados.slice(index, index + concurrency)
         await Promise.all(batch.map(async (deputy) => {
           try {
-            const detail = await getDeputadoById(deputy.id, client)
-            const ids = await saveDeputado(options.prisma, detail)
-            const votacoes = votesByDeputy.get(deputy.id) ?? []
-            const proposicoes = await getProposicoesByDeputado(deputy.id, client, proposalYear)
-            const [savedVotes, savedBills] = await Promise.all([
-              saveVotacoes(options.prisma, ids, votacoes),
-              saveProposicoes(options.prisma, ids.mandateId, proposicoes),
-            ])
+            const [savedVotes, savedBills] = await withRetry(async () => {
+              const detail = await getDeputadoById(deputy.id, client)
+              const ids = await saveDeputado(options.prisma, detail)
+              const votacoes = votesByDeputy.get(deputy.id) ?? []
+              const proposicoes = await getProposicoesByDeputado(deputy.id, client, proposalYear)
+              return Promise.all([
+                saveVotacoes(options.prisma, ids, votacoes),
+                saveProposicoes(options.prisma, ids.mandateId, proposicoes),
+              ])
+            }, 3, 500)
             votes += savedVotes
             bills += savedBills
             synced++

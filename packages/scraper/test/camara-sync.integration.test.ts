@@ -71,6 +71,63 @@ describe('runCamaraSync', () => {
     expect(await prisma.candidate.count()).toBe(0)
   })
 
+  it('retries an idempotent deputy sync after a transient database disconnect', async () => {
+    let disconnected = false
+    const flakyPrisma = prisma.$extends({
+      query: {
+        person: {
+          async findUnique({ args, query }) {
+            if (!disconnected) {
+              disconnected = true
+              throw new Error('Server has closed the connection.')
+            }
+            return query(args)
+          },
+        },
+      },
+    })
+    const get = vi.fn(async (url: string) => {
+      if (url === '/deputados') {
+        return { data: { dados: [{ id: 10, nome: 'Deputada Teste' }], links: [] } }
+      }
+      if (url === '/deputados/10') {
+        return {
+          data: {
+            dados: {
+              id: 10,
+              uri: 'https://dadosabertos.camara.leg.br/api/v2/deputados/10',
+              nomeCivil: 'Deputada Teste da Silva',
+              ultimoStatus: {
+                nome: 'Deputada Teste',
+                nomeEleitoral: 'Deputada Teste',
+                siglaPartido: 'PX',
+                siglaUf: 'SP',
+                idLegislatura: 57,
+                situacao: 'Exercício',
+              },
+            },
+            links: [],
+          },
+        }
+      }
+      if (url === '/votacoes' || url === '/proposicoes') {
+        return { data: { dados: [], links: [] } }
+      }
+      throw new Error(`Unexpected Câmara URL: ${url}`)
+    })
+
+    const result = await runCamaraSync({
+      prisma: flakyPrisma as unknown as PrismaClient,
+      client: { get } as CamaraHttpPort,
+      pauseMs: 0,
+    })
+
+    expect(result.status).toBe(SyncRunStatus.SUCCESS)
+    expect(disconnected).toBe(true)
+    expect(await prisma.person.count()).toBe(1)
+    expect(await prisma.mandate.count()).toBe(1)
+  })
+
   it('persists proposal summaries without per-bill detail requests and preserves richer status', async () => {
     let summary = 'Ementa original'
     const get = vi.fn(async (url: string) => {
