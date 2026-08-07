@@ -238,7 +238,7 @@ veloz env set SCRAPER_HEADLESS=true --service api
 
 # Variáveis do Frontend: privada em runtime e pública no browser/build
 veloz env set API_URL_INTERNAL=http://api:3001 --service web
-veloz env set NEXT_PUBLIC_API_URL=https://api-raiox2026.onveloz.com --service web
+veloz env set NEXT_PUBLIC_API_URL=https://api.raio-x-2026.com.br --service web
 ```
 
 > `DATABASE_URL` e `REDIS_URL` são injetados automaticamente — não setar manualmente.
