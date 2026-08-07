@@ -160,6 +160,7 @@ pnpm run sync:all                # todos os jobs
 - `api` → CNAME `cname.onveloz.com`
 
 ### Variáveis de ambiente — Veloz (serviço web)
+- `API_URL_INTERNAL` = `http://api:3001`
 - `NEXT_PUBLIC_API_URL` = `https://api.raio-x-2026.com.br`
 
 ### Variáveis de ambiente — Veloz (serviço API)
