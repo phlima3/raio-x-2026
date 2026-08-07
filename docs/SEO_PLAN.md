@@ -1,6 +1,6 @@
 # Plano de SEO — RAIO-X 2026
 
-**Status:** implementação e API/schema em produção; frontend, revisão editorial e integrações externas pendentes
+**Status:** implementação, API/schema e frontend em produção; revisão editorial e integrações externas pendentes
 **Período:** 7 de agosto a 4 de outubro de 2026
 **Objetivo:** fazer as páginas qualificadas de candidatos serem descobertas, indexadas e encontradas em buscas orgânicas relacionadas aos nomes, propostas e histórico dos candidatos.
 

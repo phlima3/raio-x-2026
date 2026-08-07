@@ -62,7 +62,7 @@
 
 ### Itens externos não declarados como concluídos
 
-- deploy do frontend e auditoria pública completa das páginas SEO;
+- auditoria pública completa das páginas SEO após aprovação editorial;
 - redirect/TLS na borda e DNS;
 - propriedade e sitemap no Google Search Console;
 - decisão de privacidade e credenciais de analytics;
@@ -79,6 +79,9 @@
   de 2026, com `finished_at`, sem rollback e sem migration falha;
 - API implantada no Veloz pelo deployment `dep_1Bbh_hQ7hntn` e validada em
   `https://api.raio-x-2026.com.br`;
+- frontend implantado no Veloz pelo deployment `dep_YcT9iDTl_98q` e validado em
+  `https://raio-x-2026.com.br`; build e runtime usam, respectivamente, a origem
+  pública da API e o serviço privado `api:3001`;
 - API: 19 testes de domínio aprovados e build TypeScript aprovado;
 - Web: 16 testes aprovados, typecheck e lint sem avisos ou erros;
 - Scraper: 18 testes aprovados e build TypeScript aprovado;
