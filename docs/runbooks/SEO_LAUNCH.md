@@ -6,10 +6,12 @@
 
 ## 1. Ordem de implantação
 
-1. Criar backup verificável do PostgreSQL.
+1. Confirmar que o PostgreSQL possui snapshot/PITR restaurável imediatamente anterior ao
+   deploy; se o provedor não oferecer isso, criar um backup verificável.
 2. Implantar a API com a migration `20260807090000_add_seo_editorial_fields`. Ela apaga
    somente `ConsistencyScore`, um dado derivado, para impedir que scores calculados com a
-   política pública anterior continuem expostos; confirme o backup e planeje a recomputação.
+   política pública anterior continuem expostos. O SQL usa `BEGIN`/`COMMIT`: qualquer erro
+   antes do commit desfaz a migration inteira. Planeje a recomputação dos scores.
 3. Confirmar `GET /health` e `GET /api/candidates/seo-report` com HTTP 200.
 4. Implantar o scraper com `REVALIDATION_SECRET`, `WEB_REVALIDATION_URL` e acesso aos ZIPs oficiais do TSE.
 5. Implantar o frontend com a mesma `REVALIDATION_SECRET` e as URLs corretas da API.
@@ -108,6 +110,9 @@ até que o detalhe judicial explicite cancelamento, indeferimento, renúncia ou 
 
 ## 5. Rollback
 
+- A transação protege contra aplicação parcial. Depois do `COMMIT`, use uma migration
+  corretiva para mudanças de schema; snapshot/PITR fica reservado para erro lógico ou
+  perda de dados que não possa ser corrigida com segurança.
 - O rollback do frontend não exige remover a migration; os novos campos são opcionais.
 - Nunca reverta a migration apagando colunas com dados editoriais. Restaure a versão do
   app e mantenha o schema aditivo até uma janela de manutenção aprovada.

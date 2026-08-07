@@ -74,7 +74,8 @@
 ### Evidências de QA do artefato
 
 - Prisma Client regenerado após a migration;
-- schema Prisma validado e migration aditiva revisada; aplicação real aguarda o deploy;
+- schema Prisma validado e migration aditiva encapsulada em `BEGIN`/`COMMIT`; aplicação
+  real aguarda o deploy;
 - API: 18 testes de domínio aprovados e build TypeScript aprovado;
 - Web: 16 testes aprovados, typecheck e lint sem avisos ou erros;
 - Scraper: 18 testes aprovados e build TypeScript aprovado;

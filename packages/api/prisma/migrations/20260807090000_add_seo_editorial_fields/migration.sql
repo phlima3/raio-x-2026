@@ -1,5 +1,8 @@
 -- Campos auditáveis para status eleitoral, crédito de imagem e quality gate SEO.
 -- Todos começam nulos de propósito: nenhum perfil é aprovado editorialmente por migração.
+-- A transação explícita impede que uma falha deixe apenas parte da mudança aplicada.
+BEGIN;
+
 ALTER TABLE "Candidate"
   ADD COLUMN IF NOT EXISTS "personKey" TEXT,
   ADD COLUMN IF NOT EXISTS "runningMateName" TEXT,
@@ -38,3 +41,5 @@ CREATE INDEX IF NOT EXISTS "Candidate_personKey_idx" ON "Candidate"("personKey")
 -- Scores são derivados. Recalcule-os após aplicar a nova política que exclui
 -- rascunhos e propostas sem fonte HTTPS da análise pública.
 DELETE FROM "ConsistencyScore";
+
+COMMIT;
