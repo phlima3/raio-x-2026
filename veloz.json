@@ -69,6 +69,11 @@
         "port": 3000
       },
       "env": {
+        "API_URL_INTERNAL": {
+          "description": "URL privada da API usada pelo Next.js em runtime",
+          "required": true,
+          "example": "http://api:3001"
+        },
         "NEXT_PUBLIC_API_URL": {
           "description": "URL pública da API para o frontend",
           "required": true,

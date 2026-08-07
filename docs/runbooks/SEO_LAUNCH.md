@@ -25,7 +25,7 @@ report e devem falhar quando ele estiver indisponível, evitando publicar um con
 
 | Serviço | Variável | Exemplo sem segredo |
 | --- | --- | --- |
-| Web | `API_URL_INTERNAL` | `https://api.raio-x-2026.com.br` |
+| Web | `API_URL_INTERNAL` | `http://api:3001` |
 | Web | `NEXT_PUBLIC_API_URL` | `https://api.raio-x-2026.com.br` |
 | Web/scraper | `REVALIDATION_SECRET` | valor aleatório longo e idêntico |
 | Scraper | `WEB_REVALIDATION_URL` | `https://raio-x-2026.com.br/api/revalidate` |
@@ -35,6 +35,10 @@ report e devem falhar quando ele estiver indisponível, evitando publicar um con
 | API | `FRONTEND_URL` | `https://raio-x-2026.com.br` |
 
 O segredo não deve aparecer em logs, commits ou screenshots.
+
+O runtime do web usa o hostname privado `api:3001`. Durante `next build`, o script
+`packages/web/build.sh` substitui essa origem apenas no processo de build pela URL pública,
+pois o DNS privado ainda não existe nessa etapa.
 
 ## 3. Hostname e TLS
 

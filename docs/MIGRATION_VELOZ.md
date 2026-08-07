@@ -235,7 +235,8 @@ veloz env set RATE_LIMIT_WINDOW_MS=60000 --service api
 veloz env set SCRAPER_CONCURRENCY=2 --service api
 veloz env set SCRAPER_HEADLESS=true --service api
 
-# Variável do Frontend (usar o domínio da API no Veloz)
+# Variáveis do Frontend: privada em runtime e pública no browser/build
+veloz env set API_URL_INTERNAL=http://api:3001 --service web
 veloz env set NEXT_PUBLIC_API_URL=https://api-raiox2026.onveloz.com --service web
 ```
 
