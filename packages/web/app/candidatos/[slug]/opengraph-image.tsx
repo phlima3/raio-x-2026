@@ -11,7 +11,7 @@ export default async function CandidateOpenGraphImage({
   params,
 }: {
   params: { slug: string }
-}) {
+}): Promise<ImageResponse> {
   const candidate = await fetchCandidate(params.slug)
     .then((response) => response.data)
     .catch(() => null)

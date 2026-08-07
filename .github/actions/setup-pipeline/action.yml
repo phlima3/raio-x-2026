@@ -1,0 +1,17 @@
+name: Setup official data pipeline
+description: Install the pnpm workspace once and generate the shared Prisma client
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: pnpm
+        cache-dependency-path: pnpm-lock.yaml
+    - name: Install workspace dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
+    - name: Generate shared Prisma client
+      shell: bash
+      run: pnpm db:generate

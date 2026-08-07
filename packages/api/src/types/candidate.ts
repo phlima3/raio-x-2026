@@ -6,11 +6,15 @@ export const PositionSchema = z.enum([
   'PRESIDENTE',
   'VICE_PRESIDENTE',
   'SENADOR',
+  'PRIMEIRO_SUPLENTE',
+  'SEGUNDO_SUPLENTE',
   'DEPUTADO_FEDERAL',
   'DEPUTADO_ESTADUAL',
+  'DEPUTADO_DISTRITAL',
   'GOVERNADOR',
   'VICE_GOVERNADOR',
   'PREFEITO',
+  'VICE_PREFEITO',
   'VEREADOR',
 ])
 
@@ -55,6 +59,10 @@ export interface CandidateSummary {
   position: Position
   photoUrl: string | null
   ballotNumber: number | null
+  isOfficial?: boolean
+  officialStatus?: string | null
+  dataSource?: string
+  lastSyncedAt?: Date | null
 }
 
 export interface CandidateDetail extends CandidateSummary {

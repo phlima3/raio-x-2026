@@ -31,7 +31,12 @@ export function validateWebVital(value: unknown): WebVitalPayload | null {
   if (metric.delta != null && (typeof metric.delta !== 'number' || !Number.isFinite(metric.delta))) {
     return null
   }
-  if (metric.navigationType != null && typeof metric.navigationType !== 'string') return null
+  if (
+    metric.navigationType != null &&
+    (typeof metric.navigationType !== 'string' || metric.navigationType.length > 64)
+  ) {
+    return null
+  }
   if (
     metric.path != null &&
     (typeof metric.path !== 'string' || !metric.path.startsWith('/') || metric.path.length > 300)

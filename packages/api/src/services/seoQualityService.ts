@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, type Position } from '@prisma/client'
 import {
   chooseCanonicalCandidate,
   groupCandidateRecords,
@@ -8,9 +8,14 @@ import {
   evaluateCandidateIndexability,
   findCollidingCanonicalSlugs,
   SEO_BLOCKER_MESSAGES,
+  type SeoBlockerCode,
+  type SeoWarningCode,
+  type SubstantiveModule,
 } from '../domain/seoQuality'
 import { TTL, withCache } from './cacheService'
+import { publicCandidateWhere } from './candidateService'
 import { buildCandidateSearchIntent } from '../domain/searchIntent'
+import type { CandidateSearchIntent } from '../domain/searchIntent'
 import {
   PUBLIC_PROPOSAL_LIMIT,
   PUBLIC_PROPOSAL_ORDER_BY,
@@ -31,11 +36,35 @@ import {
 
 const prisma = new PrismaClient()
 
-export async function getCandidateSeoReport() {
+export interface CandidateSeoReportItem {
+  id: string
+  slug: string
+  aliases: string[]
+  duplicateCandidateIds: string[]
+  name: string
+  party: string
+  state: string
+  position: Position
+  electionYear: number
+  candidacyStatus: string | null
+  candidacyStatusVerifiedAt: string | null
+  materialUpdatedAt: string | null
+  reviewedAt: string | null
+  updatedAt: string
+  topics: string[]
+  searchIntent: CandidateSearchIntent
+  indexable: boolean
+  blockers: SeoBlockerCode[]
+  warnings: SeoWarningCode[]
+  substantiveModules: SubstantiveModule[]
+  blockerMessages: string[]
+}
+
+export async function getCandidateSeoReport(): Promise<CandidateSeoReportItem[]> {
   return withCache('candidates:seo-report', TTL.CANDIDATE_LIST, async () => {
     const [candidates, globalIdentityRecords] = await Promise.all([
       prisma.candidate.findMany({
-        where: { electionYear: 2026 },
+        where: { electionYear: 2026, ...publicCandidateWhere() },
         include: {
           proposals: {
             where: PUBLIC_PROPOSAL_WHERE,
@@ -79,6 +108,7 @@ export async function getCandidateSeoReport() {
         },
       }),
       prisma.candidate.findMany({
+        where: publicCandidateWhere(),
         select: {
           id: true,
           name: true,
@@ -94,6 +124,7 @@ export async function getCandidateSeoReport() {
           candidacyStatusVerifiedAt: true,
           materialUpdatedAt: true,
           updatedAt: true,
+          isOfficial: true,
         },
       }),
     ])

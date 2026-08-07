@@ -32,14 +32,16 @@ export function generateMetadata({ searchParams }: Props): Metadata {
 export default async function CompararPage({ searchParams }: Props) {
   const { a, b, topic } = searchParams
 
-  const [presidentsRes, governorsRes] = await Promise.allSettled([
+  const [presidentsRes, governorsRes, senatorsRes] = await Promise.allSettled([
     fetchCandidates({ position: 'PRESIDENTE', limit: '20' }),
     fetchCandidates({ position: 'GOVERNADOR', limit: '50' }),
+    fetchCandidates({ position: 'SENADOR', limit: '100' }),
   ])
 
   const presidents = presidentsRes.status === 'fulfilled' ? presidentsRes.value.data : []
   const governors = governorsRes.status === 'fulfilled' ? governorsRes.value.data : []
-  const allCandidates = [...presidents, ...governors]
+  const senators = senatorsRes.status === 'fulfilled' ? senatorsRes.value.data : []
+  const allCandidates = [...presidents, ...governors, ...senators]
 
   const bothSelected = Boolean(a && b)
 
@@ -161,7 +163,7 @@ function CandidatePicker({ candidates, selectedA, selectedB }: CandidatePickerPr
           Nenhum candidato encontrado no banco de dados.
         </p>
         <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft">
-          Execute <code className="font-mono text-ember">pnpm db:seed</code> para popular os dados
+          Aguarde a próxima sincronização oficial ou consulte o runbook de operação
         </p>
       </div>
     )

@@ -12,7 +12,7 @@ test('resolves persistence only through an explicitly curated personKey', () => 
   assert.ok(personKey)
 
   const resolved = findCuratedCandidate('Lula', [
-    { id: 'legacy-name-only', personKey: null },
+    { id: 'legacy-name-only', name: 'Luiz Inácio Lula da Silva', personKey: null },
     { id: 'curated', personKey },
   ])
   assert.equal(resolved?.id, 'curated')

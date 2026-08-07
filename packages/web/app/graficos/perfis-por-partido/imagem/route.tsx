@@ -3,7 +3,7 @@ import { fetchCandidateStats } from '@/lib/api'
 
 export const revalidate = 3600
 
-export async function GET() {
+export async function GET(): Promise<ImageResponse> {
   const response = await fetchCandidateStats()
   const entries = Object.entries(response.data.byParty)
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'pt-BR'))

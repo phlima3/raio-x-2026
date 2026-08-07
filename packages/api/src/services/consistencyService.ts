@@ -15,6 +15,7 @@ import {
   PUBLIC_VOTING_RECORD_ORDER_BY,
   PUBLIC_VOTING_RECORD_WHERE,
 } from '../domain/publicationPolicy'
+import { getCandidateReadModel, publicCandidateWhere } from './candidateService'
 
 const prisma = new PrismaClient()
 
@@ -65,8 +66,8 @@ export async function getConsistencyScores(candidateId: string): Promise<Consist
 }
 
 export async function computeConsistencyScores(candidateId: string): Promise<ConsistencyScoreResult[]> {
-  const candidate = await prisma.candidate.findUnique({
-    where: { id: candidateId },
+  const candidate = await prisma.candidate.findFirst({
+    where: { id: candidateId, ...publicCandidateWhere() },
     include: {
       proposals: {
         where: PUBLIC_PROPOSAL_WHERE,
@@ -84,6 +85,22 @@ export async function computeConsistencyScores(candidateId: string): Promise<Con
   })
 
   if (!candidate) throw new Error(`Candidato não encontrado: ${candidateId}`)
+
+  const votingRecords = getCandidateReadModel() === 'normalized' && candidate.personId
+    ? await prisma.votingRecord.findMany({
+      where: {
+          ...PUBLIC_VOTING_RECORD_WHERE,
+          OR: [
+            { candidateId },
+            { personId: candidate.personId },
+            { mandate: { personId: candidate.personId } },
+          ],
+        },
+        select: { proposalName: true, voteType: true, votedAt: true },
+        orderBy: PUBLIC_VOTING_RECORD_ORDER_BY,
+        take: PUBLIC_VOTING_RECORD_LIMIT,
+      })
+    : candidate.votingRecords
 
   // Group proposals by theme (using category field)
   const byTheme: Record<string, string[]> = {}
@@ -106,7 +123,7 @@ export async function computeConsistencyScores(candidateId: string): Promise<Con
     const chunkResults = await Promise.all(
       chunk.map(async (theme) => {
         const themeProposals = byTheme[theme] ?? []
-        const relevantVotes = filterVotesByTheme(candidate.votingRecords, theme)
+        const relevantVotes = filterVotesByTheme(votingRecords, theme)
         const votesForLLM = relevantVotes.map((v) => ({
           proposalName: v.proposalName,
           voteType: v.voteType,

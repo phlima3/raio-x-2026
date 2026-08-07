@@ -1,6 +1,11 @@
-import { PrismaClient, Prisma } from '@prisma/client'
-import { CandidateFilters } from '../types/candidate'
-import { withCache, cacheKey, TTL } from './cacheService'
+import {
+  Position,
+  Prisma,
+  PrismaClient,
+  type Candidate,
+  type Person,
+} from '@prisma/client'
+
 import {
   chooseCanonicalCandidate,
   groupCandidateRecords,
@@ -8,48 +13,118 @@ import {
   parseCandidateSlug,
 } from '../domain/candidateIdentity'
 import {
-  PUBLIC_PROPOSAL_LIMIT,
-  PUBLIC_PROPOSAL_ORDER_BY,
-  PUBLIC_PROPOSAL_WHERE,
   PUBLIC_ASSET_DECLARATION_LIMIT,
   PUBLIC_ASSET_DECLARATION_ORDER_BY,
   PUBLIC_ASSET_DECLARATION_WHERE,
   PUBLIC_CAMPAIGN_FINANCING_LIMIT,
   PUBLIC_CAMPAIGN_FINANCING_ORDER_BY,
   PUBLIC_CAMPAIGN_FINANCING_WHERE,
+  PUBLIC_PROPOSAL_LIMIT,
+  PUBLIC_PROPOSAL_ORDER_BY,
+  PUBLIC_PROPOSAL_WHERE,
   PUBLIC_VOTING_RECORD_LIMIT,
   PUBLIC_VOTING_RECORD_ORDER_BY,
   PUBLIC_VOTING_RECORD_WHERE,
 } from '../domain/publicationPolicy'
+import type { CandidateFilters } from '../types/candidate'
+import { cacheKey, TTL, withCache } from './cacheService'
 
 const prisma = new PrismaClient()
 
-// ── Slug helpers ──────────────────────────────────────────────────────────────
+export type CandidateReadModel = 'legacy' | 'normalized'
+
+const PUBLIC_POSITIONS: Position[] = [
+  Position.PRESIDENTE,
+  Position.GOVERNADOR,
+  Position.SENADOR,
+]
+
+export function getCandidateReadModel(): CandidateReadModel {
+  return process.env.CANDIDATE_READ_MODEL === 'normalized' ? 'normalized' : 'legacy'
+}
+
+export function publicCandidateWhere(): Prisma.CandidateWhereInput {
+  return {
+    isPublished: true,
+    position: { in: PUBLIC_POSITIONS },
+  }
+}
 
 export function makeSlug(name: string, party: string, state: string): string {
   return makeCandidateSlug(name, party, state)
 }
 
-// ── List candidates ───────────────────────────────────────────────────────────
+function identityFields<T extends { name: string; socialName: string | null; person?: Person | null }>(
+  candidate: T,
+  readModel: CandidateReadModel,
+): Omit<T, 'person'> {
+  const { person, ...rest } = candidate
+  if (readModel !== 'normalized' || !person) return rest
+  return {
+    ...rest,
+    name: person.name,
+    socialName: person.socialName ?? candidate.socialName,
+  }
+}
 
-type CandidateListRow = {
-  id: string
-  name: string
-  socialName: string | null
-  party: string
-  state: string
-  position: string
-  photoUrl: string | null
-  ballotNumber: number | null
-  isIncumbent: boolean
-  electionYear: number
-  personKey: string | null
-  tseId: string | null
+function publicDetailFields<T extends Candidate & { person: Person | null }>(
+  candidate: T,
+  readModel: CandidateReadModel,
+) {
+  const {
+    person,
+    personId: _personId,
+    electionId: _electionId,
+    officialStatusRaw: _officialStatusRaw,
+    isPublished: _isPublished,
+    sourceUrl: _sourceUrl,
+    syncRunId: _syncRunId,
+    ...publicFields
+  } = candidate
+  if (readModel !== 'normalized' || !person) return publicFields
+  return {
+    ...publicFields,
+    name: person.name,
+    socialName: person.socialName ?? candidate.socialName,
+  }
+}
+
+type CandidateListRow = Pick<
+  Candidate,
+  | 'id'
+  | 'name'
+  | 'socialName'
+  | 'party'
+  | 'state'
+  | 'position'
+  | 'photoUrl'
+  | 'ballotNumber'
+  | 'isIncumbent'
+  | 'electionYear'
+  | 'isOfficial'
+  | 'officialStatus'
+  | 'dataSource'
+  | 'lastSyncedAt'
+  | 'personKey'
+  | 'tseId'
+  | 'candidacyStatus'
+  | 'materialUpdatedAt'
+  | 'updatedAt'
+> & {
   slug: string
-  candidacyStatus: string | null
-  materialUpdatedAt: Date | null
-  updatedAt: Date
   firstProposalTitle: string | null
+}
+
+interface CandidateListResult {
+  data: CandidateListRow[]
+  meta: { total: number; page: number; limit: number; totalPages: number }
+}
+
+interface CandidateStats {
+  total: number
+  byPosition: Record<string, number>
+  byParty: Record<string, number>
+  byState: Record<string, number>
 }
 
 function canonicalCandidateCte(): Prisma.Sql {
@@ -68,13 +143,14 @@ function canonicalCandidateCte(): Prisma.Sql {
           PARTITION BY
             CASE
               WHEN NULLIF(btrim(c."personKey"), '') IS NOT NULL
-                THEN 'person:' || lower(btrim(c."personKey"))
+                THEN 'person-key:' || lower(btrim(c."personKey"))
               WHEN c."tseId" IS NOT NULL THEN 'tse:' || c."tseId"
               ELSE 'record:' || c.id
             END,
             c."electionYear"
           ORDER BY
             CASE
+              WHEN c."isOfficial" THEN 4
               WHEN c."tseId" IS NOT NULL THEN 3
               WHEN lower(COALESCE(c."candidacyStatusSourceUrl", '')) LIKE 'https://%.tse.jus.br/%'
                 OR lower(COALESCE(c."candidacyStatusSourceUrl", '')) LIKE 'https://tse.jus.br/%'
@@ -118,6 +194,8 @@ function canonicalCandidateCte(): Prisma.Sql {
             c.id ASC
         ) AS "identityRank"
       FROM "Candidate" c
+      WHERE c."isPublished" = true
+        AND c.position IN ('PRESIDENTE', 'GOVERNADOR', 'SENADOR')
     ),
     canonical AS (
       SELECT * FROM ranked WHERE "identityRank" = 1
@@ -130,18 +208,22 @@ function canonicalCandidateCte(): Prisma.Sql {
   `
 }
 
-export async function listCandidates(filters: CandidateFilters) {
+export async function listCandidates(filters: CandidateFilters): Promise<CandidateListResult> {
   const { party, state, position, electionYear, search, page, limit } = filters
   const skip = (page - 1) * limit
-  const key = cacheKey.candidateList(JSON.stringify(filters))
+  const readModel = getCandidateReadModel()
+  const key = cacheKey.candidateList(`${readModel}:${JSON.stringify(filters)}`)
 
   return withCache(key, TTL.CANDIDATE_LIST, async () => {
-    // Canonicalization, collision blocking, filters and pagination all execute
-    // in PostgreSQL. This keeps a homepage request for eight profiles from
-    // hydrating the full election catalog and applies filters only after the
-    // positive identity key has selected the canonical row.
     const cte = canonicalCandidateCte()
+    const identityName = readModel === 'normalized'
+      ? Prisma.sql`COALESCE(person.name, c.name)`
+      : Prisma.sql`c.name`
+    const identitySocialName = readModel === 'normalized'
+      ? Prisma.sql`COALESCE(person."socialName", c."socialName", '')`
+      : Prisma.sql`COALESCE(c."socialName", '')`
     const conditions: Prisma.Sql[] = [Prisma.sql`sc."slugCount" = 1`]
+
     if (electionYear) conditions.push(Prisma.sql`c."electionYear" = ${electionYear}`)
     if (party) conditions.push(Prisma.sql`c.party = ${party}`)
     if (state) conditions.push(Prisma.sql`c.state = ${state}`)
@@ -149,8 +231,8 @@ export async function listCandidates(filters: CandidateFilters) {
     if (search) {
       const pattern = `%${search}%`
       conditions.push(Prisma.sql`(
-        immutable_unaccent(lower(c.name)) LIKE immutable_unaccent(lower(${pattern}))
-        OR immutable_unaccent(lower(COALESCE(c."socialName", ''))) LIKE immutable_unaccent(lower(${pattern}))
+        immutable_unaccent(lower(${identityName})) LIKE immutable_unaccent(lower(${pattern}))
+        OR immutable_unaccent(lower(${identitySocialName})) LIKE immutable_unaccent(lower(${pattern}))
         OR immutable_unaccent(lower(c.party)) LIKE immutable_unaccent(lower(${pattern}))
         OR lower(c.state) LIKE lower(${pattern})
       )`)
@@ -161,24 +243,29 @@ export async function listCandidates(filters: CandidateFilters) {
       prisma.$queryRaw<CandidateListRow[]>`
         ${cte}
         SELECT
-          c.id, c.name, c."socialName", c.party, c.state, c.position,
-          c."photoUrl", c."ballotNumber", c."isIncumbent", c."electionYear",
+          c.id, ${identityName} AS name,
+          NULLIF(${identitySocialName}, '') AS "socialName",
+          c.party, c.state, c.position, c."photoUrl", c."ballotNumber",
+          c."isIncumbent", c."electionYear", c."isOfficial",
+          c."officialStatus", c."dataSource", c."lastSyncedAt",
           c."personKey", c."tseId", c."effectiveSlug" AS slug,
           c."candidacyStatus", c."materialUpdatedAt", c."updatedAt",
           proposal.title AS "firstProposalTitle"
         FROM canonical c
         JOIN slug_counts sc ON sc."effectiveSlug" = c."effectiveSlug"
+        LEFT JOIN "Person" person ON person.id = c."personId"
         LEFT JOIN LATERAL (
           SELECT p.title
           FROM "Proposal" p
           WHERE p."candidateId" = c.id
+            AND p."isPublished" = true
             AND p.url LIKE 'https://%'
             AND p.status <> 'DRAFT'::"ProposalStatus"
           ORDER BY p."proposedAt" DESC NULLS LAST, p."updatedAt" DESC
           LIMIT 1
         ) proposal ON true
         WHERE ${whereClause}
-        ORDER BY c.position::text ASC, c.state ASC, c.name ASC
+        ORDER BY c.position::text ASC, c.state ASC, name ASC
         LIMIT ${limit} OFFSET ${skip}
       `,
       prisma.$queryRaw<Array<{ total: number }>>`
@@ -186,6 +273,7 @@ export async function listCandidates(filters: CandidateFilters) {
         SELECT count(*)::integer AS total
         FROM canonical c
         JOIN slug_counts sc ON sc."effectiveSlug" = c."effectiveSlug"
+        LEFT JOIN "Person" person ON person.id = c."personId"
         WHERE ${whereClause}
       `,
     ])
@@ -198,175 +286,196 @@ export async function listCandidates(filters: CandidateFilters) {
   })
 }
 
-// ── Get candidate by slug ─────────────────────────────────────────────────────
+const detailInclude = {
+  person: true,
+  proposals: {
+    where: PUBLIC_PROPOSAL_WHERE,
+    orderBy: PUBLIC_PROPOSAL_ORDER_BY,
+    take: PUBLIC_PROPOSAL_LIMIT,
+  },
+  votingRecords: {
+    where: PUBLIC_VOTING_RECORD_WHERE,
+    orderBy: PUBLIC_VOTING_RECORD_ORDER_BY,
+    take: PUBLIC_VOTING_RECORD_LIMIT,
+  },
+  assetDeclarations: {
+    where: PUBLIC_ASSET_DECLARATION_WHERE,
+    orderBy: PUBLIC_ASSET_DECLARATION_ORDER_BY,
+    take: PUBLIC_ASSET_DECLARATION_LIMIT,
+  },
+  campaignFinancings: {
+    where: PUBLIC_CAMPAIGN_FINANCING_WHERE,
+    orderBy: PUBLIC_CAMPAIGN_FINANCING_ORDER_BY,
+    take: PUBLIC_CAMPAIGN_FINANCING_LIMIT,
+  },
+} satisfies Prisma.CandidateInclude
 
-export async function getCandidateBySlug(slug: string) {
-  return withCache(cacheKey.candidateDetail(slug), TTL.CANDIDATE_DETAIL, async () => {
-    const include = {
-      proposals: {
-        where: PUBLIC_PROPOSAL_WHERE,
-        orderBy: PUBLIC_PROPOSAL_ORDER_BY,
-        take: PUBLIC_PROPOSAL_LIMIT,
-      },
-      votingRecords: {
-        where: PUBLIC_VOTING_RECORD_WHERE,
-        orderBy: PUBLIC_VOTING_RECORD_ORDER_BY,
-        take: PUBLIC_VOTING_RECORD_LIMIT,
-      },
-      assetDeclarations: {
-        where: PUBLIC_ASSET_DECLARATION_WHERE,
-        orderBy: PUBLIC_ASSET_DECLARATION_ORDER_BY,
-        take: PUBLIC_ASSET_DECLARATION_LIMIT,
-      },
-      campaignFinancings: {
-        where: PUBLIC_CAMPAIGN_FINANCING_WHERE,
-        orderBy: PUBLIC_CAMPAIGN_FINANCING_ORDER_BY,
-        take: PUBLIC_CAMPAIGN_FINANCING_LIMIT,
-      },
-    } satisfies Prisma.CandidateInclude
-
-    type DetailedCandidate = Prisma.CandidateGetPayload<{ include: typeof include }>
-
-    const canonicalize = async (seed: DetailedCandidate) => {
-      const siblings = await prisma.candidate.findMany({
-        where: seed.personKey?.trim()
-          ? {
-              personKey: { equals: seed.personKey, mode: 'insensitive' },
-              electionYear: seed.electionYear,
-            }
-          : seed.tseId
-            ? { tseId: seed.tseId, electionYear: seed.electionYear }
-            : { id: seed.id },
-        include,
-      })
-      const identityMatches = groupCandidateRecords(siblings).find((group) =>
-        group.some((candidate) => candidate.id === seed.id),
-      ) ?? []
-      return chooseCanonicalCandidate(identityMatches.length > 0 ? identityMatches : [seed])
-    }
-
-    // Multiple legacy office rows can share an effective profile slug. Resolve
-    // them deterministically instead of relying on database insertion order.
-    const directMatches = await prisma.candidate.findMany({
-      where: { slug },
-      include,
-    })
-    if (directMatches.length > 0) {
-      const identityGroups = groupCandidateRecords(directMatches)
-      // A shared slug cannot safely identify two people. An explicit unique
-      // alias or corrected canonical slug must be curated before either profile
-      // is served at this path.
-      if (identityGroups.length !== 1) return null
-      const canonical = await canonicalize(chooseCanonicalCandidate(identityGroups[0]))
-      return {
-        ...canonical,
-        slug: canonical.slug ?? makeSlug(canonical.name, canonical.party, canonical.state),
-      }
-    }
-
-    const alias = await prisma.candidateSlugAlias.findUnique({
-      where: { slug },
-      include: { candidate: { include } },
-    })
-    if (alias) {
-      const canonical = await canonicalize(alias.candidate)
-      return {
-        ...canonical,
-        slug: canonical.slug ?? makeSlug(canonical.name, canonical.party, canonical.state),
-      }
-    }
-
-    // Fallback: filter by state then match slug in JS (handles accented names like "Flávio")
-    const parsed = parseCandidateSlug(slug)
-    if (!parsed) return null
-    const candidates = await prisma.candidate.findMany({
-      where: { state: { equals: parsed.state } },
-      include,
-    })
-
-    const matches = candidates.filter(
-      (candidate) => makeSlug(candidate.name, candidate.party, candidate.state) === slug,
-    )
-    if (matches.length === 0) return null
-    const identityGroups = groupCandidateRecords(matches)
-    if (identityGroups.length !== 1) return null
-    const canonical = await canonicalize(chooseCanonicalCandidate(identityGroups[0]))
-    return {
-      ...canonical,
-      slug: canonical.slug ?? makeSlug(canonical.name, canonical.party, canonical.state),
-    }
-  })
+type DetailedCandidate = Prisma.CandidateGetPayload<{ include: typeof detailInclude }>
+type PresentedCandidate = Omit<
+  DetailedCandidate,
+  | 'person'
+  | 'personId'
+  | 'electionId'
+  | 'officialStatusRaw'
+  | 'isPublished'
+  | 'sourceUrl'
+  | 'syncRunId'
+> & {
+  slug: string
+  votingRecords: DetailedCandidate['votingRecords']
 }
 
-// ── Get candidate by ID ───────────────────────────────────────────────────────
+async function presentCandidate(
+  candidate: DetailedCandidate,
+  slug: string,
+  readModel: CandidateReadModel,
+): Promise<PresentedCandidate> {
+  let votingRecords = candidate.votingRecords
+  if (readModel === 'normalized' && candidate.personId) {
+    votingRecords = await prisma.votingRecord.findMany({
+      where: {
+        ...PUBLIC_VOTING_RECORD_WHERE,
+        OR: [
+          { candidateId: candidate.id },
+          { personId: candidate.personId },
+          { mandate: { personId: candidate.personId } },
+        ],
+      },
+      orderBy: PUBLIC_VOTING_RECORD_ORDER_BY,
+      take: PUBLIC_VOTING_RECORD_LIMIT,
+    })
+  }
+  return { ...publicDetailFields(candidate, readModel), slug, votingRecords }
+}
 
-export async function getCandidateById(id: string) {
-  const candidate = await prisma.candidate.findUnique({
-    where: { id },
-    include: {
-      proposals: {
-        where: PUBLIC_PROPOSAL_WHERE,
-        orderBy: PUBLIC_PROPOSAL_ORDER_BY,
-        take: PUBLIC_PROPOSAL_LIMIT,
-      },
-      votingRecords: {
-        where: PUBLIC_VOTING_RECORD_WHERE,
-        orderBy: PUBLIC_VOTING_RECORD_ORDER_BY,
-        take: PUBLIC_VOTING_RECORD_LIMIT,
-      },
-      assetDeclarations: {
-        where: PUBLIC_ASSET_DECLARATION_WHERE,
-        orderBy: PUBLIC_ASSET_DECLARATION_ORDER_BY,
-        take: PUBLIC_ASSET_DECLARATION_LIMIT,
-      },
-      campaignFinancings: {
-        where: PUBLIC_CAMPAIGN_FINANCING_WHERE,
-        orderBy: PUBLIC_CAMPAIGN_FINANCING_ORDER_BY,
-        take: PUBLIC_CAMPAIGN_FINANCING_LIMIT,
-      },
+async function canonicalize(seed: DetailedCandidate): Promise<DetailedCandidate> {
+  const identityWhere: Prisma.CandidateWhereInput = seed.personKey?.trim()
+    ? {
+        personKey: { equals: seed.personKey, mode: 'insensitive' },
+        electionYear: seed.electionYear,
+      }
+    : seed.tseId
+      ? { tseId: seed.tseId, electionYear: seed.electionYear }
+      : { id: seed.id }
+  const siblings = await prisma.candidate.findMany({
+    where: { AND: [publicCandidateWhere(), identityWhere] },
+    include: detailInclude,
+  })
+  const identityMatches = groupCandidateRecords(siblings).find((group) =>
+    group.some((candidate) => candidate.id === seed.id),
+  ) ?? []
+  return chooseCanonicalCandidate(identityMatches.length > 0 ? identityMatches : [seed])
+}
+
+async function presentCanonicalCandidate(
+  seed: DetailedCandidate,
+  readModel: CandidateReadModel,
+): Promise<PresentedCandidate> {
+  const canonical = await canonicalize(seed)
+  const canonicalIdentity = identityFields(canonical, readModel)
+  const canonicalSlug = canonical.slug
+    ?? makeSlug(canonicalIdentity.name, canonicalIdentity.party, canonicalIdentity.state)
+  return presentCandidate(canonical, canonicalSlug, readModel)
+}
+
+export async function getCandidateBySlug(slug: string): Promise<PresentedCandidate | null> {
+  const readModel = getCandidateReadModel()
+  return withCache(
+    cacheKey.candidateDetail(`${readModel}:${slug}`),
+    TTL.CANDIDATE_DETAIL,
+    async () => {
+      const directMatches = await prisma.candidate.findMany({
+        where: { slug, ...publicCandidateWhere() },
+        include: detailInclude,
+      })
+      if (directMatches.length > 0) {
+        const identityGroups = groupCandidateRecords(directMatches)
+        if (identityGroups.length !== 1) return null
+        return presentCanonicalCandidate(
+          chooseCanonicalCandidate(identityGroups[0]),
+          readModel,
+        )
+      }
+
+      const alias = await prisma.candidateSlugAlias.findFirst({
+        where: {
+          slug,
+          candidate: publicCandidateWhere(),
+        },
+        include: { candidate: { include: detailInclude } },
+      })
+      if (alias) return presentCanonicalCandidate(alias.candidate, readModel)
+
+      const parsed = parseCandidateSlug(slug)
+      if (!parsed) return null
+      const candidates = await prisma.candidate.findMany({
+        where: {
+          ...publicCandidateWhere(),
+          state: { equals: parsed.state },
+        },
+        include: detailInclude,
+      })
+      const matches = candidates.filter(
+        (candidate) => makeSlug(candidate.name, candidate.party, candidate.state) === slug,
+      )
+      if (matches.length === 0) return null
+      const identityGroups = groupCandidateRecords(matches)
+      if (identityGroups.length !== 1) return null
+      return presentCanonicalCandidate(
+        chooseCanonicalCandidate(identityGroups[0]),
+        readModel,
+      )
     },
+  )
+}
+
+export async function getCandidateById(id: string): Promise<PresentedCandidate | null> {
+  const readModel = getCandidateReadModel()
+  const candidate = await prisma.candidate.findFirst({
+    where: { id, ...publicCandidateWhere() },
+    include: detailInclude,
   })
   if (!candidate) return null
-  return {
-    ...candidate,
-    slug: candidate.slug ?? makeSlug(candidate.name, candidate.party, candidate.state),
-  }
+  return presentCanonicalCandidate(candidate, readModel)
 }
 
-// ── Stats ─────────────────────────────────────────────────────────────────────
-
-export async function getCandidateStats() {
-  return withCache(cacheKey.stats(), TTL.STATS, async () => {
+export async function getCandidateStats(): Promise<CandidateStats> {
+  const readModel = getCandidateReadModel()
+  return withCache(cacheKey.stats(readModel), TTL.STATS, async () => {
     const cte = canonicalCandidateCte()
     const [totals, positions, parties, states] = await Promise.all([
       prisma.$queryRaw<Array<{ total: number }>>`
         ${cte}
         SELECT count(*)::integer AS total
-        FROM canonical
-        WHERE "electionYear" = 2026
+        FROM canonical c
+        JOIN slug_counts sc ON sc."effectiveSlug" = c."effectiveSlug"
+        WHERE c."electionYear" = 2026 AND sc."slugCount" = 1
       `,
       prisma.$queryRaw<Array<{ value: string; count: number }>>`
         ${cte}
-        SELECT position::text AS value, count(*)::integer AS count
-        FROM canonical
-        WHERE "electionYear" = 2026
-        GROUP BY position
+        SELECT c.position::text AS value, count(*)::integer AS count
+        FROM canonical c
+        JOIN slug_counts sc ON sc."effectiveSlug" = c."effectiveSlug"
+        WHERE c."electionYear" = 2026 AND sc."slugCount" = 1
+        GROUP BY c.position
         ORDER BY count DESC, value ASC
       `,
       prisma.$queryRaw<Array<{ value: string; count: number }>>`
         ${cte}
-        SELECT party AS value, count(*)::integer AS count
-        FROM canonical
-        WHERE "electionYear" = 2026
-        GROUP BY party
+        SELECT c.party AS value, count(*)::integer AS count
+        FROM canonical c
+        JOIN slug_counts sc ON sc."effectiveSlug" = c."effectiveSlug"
+        WHERE c."electionYear" = 2026 AND sc."slugCount" = 1
+        GROUP BY c.party
         ORDER BY count DESC, value ASC
       `,
       prisma.$queryRaw<Array<{ value: string; count: number }>>`
         ${cte}
-        SELECT state AS value, count(*)::integer AS count
-        FROM canonical
-        WHERE "electionYear" = 2026
-        GROUP BY state
+        SELECT c.state AS value, count(*)::integer AS count
+        FROM canonical c
+        JOIN slug_counts sc ON sc."effectiveSlug" = c."effectiveSlug"
+        WHERE c."electionYear" = 2026 AND sc."slugCount" = 1
+        GROUP BY c.state
         ORDER BY count DESC, value ASC
       `,
     ])

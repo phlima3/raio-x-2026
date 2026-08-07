@@ -84,13 +84,14 @@ NEXT_PUBLIC_API_URL=https://api-production-bf20.up.railway.app
 ### 5.1 — API (`packages/api`)
 
 - **Runtime:** Node.js, TypeScript via `tsx` (não compila para `dist/`)
-- **Start script:** `prisma migrate deploy && tsx prisma/seed.ts && tsx src/index.ts`
+- **Start script:** `prisma migrate deploy && tsx src/index.ts`
 - **Porta:** `process.env.API_PORT ?? 3001`
 - **Prisma:** schema em `packages/api/prisma/schema.prisma`
 - **`preStartCommand` necessário:** `npx prisma migrate deploy` (Veloz exige isso separado do start)
 
-O `start` script atual do `packages/api/package.json` já faz migrate + seed + start em sequência.
-No Veloz, separar em `preStartCommand: "npx prisma migrate deploy && npx tsx prisma/seed.ts"` e `command: "npx tsx src/index.ts"`.
+O `start` script atual do `packages/api/package.json` faz migrate + start.
+No Veloz, usar `preStartCommand: "npx prisma migrate deploy"` e
+`command: "npx tsx src/index.ts"`. Seed de produção é proibido.
 
 ### 5.2 — Web (`packages/web`)
 
@@ -114,7 +115,8 @@ No Veloz, separar em `preStartCommand: "npx prisma migrate deploy && npx tsx pri
 
 ### 5.5 — Scraper (`packages/scraper`)
 
-- **Não é um serviço HTTP** — roda via GitHub Actions (`.github/workflows/scraper.yml`)
+- **Não é um serviço HTTP** — roda pelos workflows por fonte em
+  `.github/workflows/sync-*.yml` e pelo workflow manual de manutenção
 - **Não precisa ser deployado na Veloz**
 - Continuará usando `PROD_DATABASE_URL` (secret do GitHub Actions) apontando para o banco público do Veloz
 
@@ -145,7 +147,7 @@ No Veloz, separar em `preStartCommand: "npx prisma migrate deploy && npx tsx pri
       },
       "runtime": {
         "command": "npx tsx src/index.ts",
-        "preStartCommand": "npx prisma migrate deploy && npx tsx prisma/seed.ts",
+        "preStartCommand": "npx prisma migrate deploy",
         "port": 3001
       },
       "databases": ["postgres", "redis"]
@@ -257,7 +259,10 @@ Após isso, atualizar DNS na Hostinger:
 
 ### Passo 6 — Atualizar GitHub Actions (scraper)
 
-No arquivo `.github/workflows/scraper.yml`, o secret `PROD_DATABASE_URL` deve ser atualizado no painel do GitHub (`Settings → Secrets`) com a URL pública do PostgreSQL do Veloz.
+O secret compartilhado `PROD_DATABASE_URL` deve ser atualizado no painel do
+GitHub (`Settings → Secrets`) para os workflows `sync-tse.yml`,
+`sync-legislative.yml`, `sync-documents.yml`, `sync-sites.yml`, `sync-news.yml`
+e `manual-data-jobs.yml`.
 
 ```bash
 # Obter a URL pública do banco Veloz
@@ -284,12 +289,12 @@ Em `packages/api/src/index.ts`, o array `corsOrigins` já inclui `process.env.FR
 | Ponto | Detalhe |
 |-------|---------|
 | `output: standalone` no Next.js | **Não usar** — o `next.config.mjs` atual não usa, ok. |
-| `prisma generate` no build | Já está no `postinstall` do `packages/scraper`. Para a API, garantir que o build command inclua `prisma generate`. |
+| `prisma generate` no build | A action local `setup-pipeline` instala na raiz e executa `pnpm db:generate`; não procurar o client em `packages/api/node_modules`. |
 | `preStartCommand` para migrations | Separar do `start` script — Veloz executa `preStartCommand` antes do processo principal. |
 | Extensão `unaccent` do PostgreSQL | Criada via migration SQL (`20260326030000_add_unaccent`). Verificar se o PostgreSQL do Veloz permite extensões de terceiros. |
 | `trust proxy` no Express | `app.set('trust proxy', 1)` já está em `src/index.ts` — necessário pois Veloz também usa proxy reverso. |
 | Porta da API | Configurada via `process.env.API_PORT ?? 3001`. Garantir que o Veloz expõe a porta correta. |
-| Seed no startup | O `start` script da API roda `tsx prisma/seed.ts` em cada deploy. Comportamento correto — seed é idempotente. |
+| Seed no startup | Não executar. O seed é um bootstrap explícito de desenvolvimento. |
 | `DATABASE_PUBLIC_URL` para scraper | Após migração, atualizar o secret `PROD_DATABASE_URL` no GitHub Actions com a URL pública do banco Veloz. |
 
 ---
@@ -297,8 +302,8 @@ Em `packages/api/src/index.ts`, o array `corsOrigins` já inclui `process.env.FR
 ## 9. Arquivos a NÃO modificar
 
 - `packages/web/next.config.mjs` — não adicionar `output: "standalone"`
-- `packages/api/prisma/schema.prisma` — não alterar
-- `.github/workflows/scraper.yml` — apenas atualizar o secret no GitHub, não o arquivo
+- `packages/api/prisma/schema.prisma` — alterar somente junto de migration aditiva
+- `.github/workflows/sync-*.yml` — os secrets são configurados no painel, nunca no arquivo
 
 ---
 

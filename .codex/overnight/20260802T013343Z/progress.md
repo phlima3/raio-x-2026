@@ -1,0 +1,80 @@
+# Progress
+
+## Current status
+- Phase: Complete
+- State: complete with one external enrichment blocker documented
+- Last completed action: TSE, Câmara e Senado concluíram runs reais verdes; CI/deploy/health e fachada pública foram revalidados.
+- Next action: observar schedules e substituir a URL de Aldo somente quando houver fonte oficial verificável.
+- Last known good commit: f32503d
+- Working tree status: documentação final pronta para commit.
+
+## Timeline
+- 2026-08-02T01:33:43Z — Criado run `20260802T013343Z` via `bootstrap_run.py`.
+- 2026-08-02T01:36Z — Lidos integralmente README, CLAUDE e documentos indicados; não existe `AGENTS.md` local.
+- 2026-08-02T01:42Z — Mapeados três pacotes, Prisma, migrations, jobs, workflows, API, busca, comparação, sitemap e frontend.
+- 2026-08-02T01:47Z — Confirmadas 12 falhas agendadas consecutivas; run 30687041481 falha ao procurar `packages/api/node_modules` após generate em `node_modules/.pnpm`.
+- 2026-08-02T01:50Z — Plano ajustado às evidências: jobs legislativos hoje criam candidatos, paginação é parcial, TSE é TODO e seed roda no pre-start.
+- 2026-08-02T01:54Z — `pnpm install --frozen-lockfile`, generate, typechecks e build passaram; não havia testes no repositório.
+- 2026-08-02T01:58Z — Primeiro tracer bullet falhou por módulo ausente e passou após implementar parser CSV.
+- 2026-08-02T02:01Z — Parser ampliado para Latin-1/nulos/UF/colunas novas; ZIP ganhou erro tipado; 5/5 testes passam.
+- 2026-08-02T02:07Z — Schema Prisma e migration SQL aditivos criados e aplicados em PostgreSQL 16; nenhuma tabela ou coluna legada é removida.
+- 2026-08-02T02:10Z — Backfill idempotente, runner `DataSyncRun` e persistência Person/Mandate passaram em integração real.
+- 2026-08-02T02:13Z — Cliente CKAN, importador/reconciliador TSE e política de publicação passaram; dry-run oficial contou 3.465 registros e zero rejeições.
+- 2026-08-02T02:16Z — Fachada `legacy|normalized` e filtros públicos passaram via Supertest mantendo IDs/slugs.
+- 2026-08-02T02:18Z — Câmara passou a paginar `rel=next`, persistir mandatos/votos/projetos normalizados e falhar o job se qualquer parlamentar falhar.
+- 2026-08-02T02:21Z — Suite conjunta estabilizada: 5 arquivos/8 testes unitários e 6 arquivos/12 testes PostgreSQL passaram; conexão reproduzível usa porta 5433 do compose.
+- 2026-08-02T02:30Z — Senado migrou para `/processo` e `/votacao`, mandato oficial e persistência normalizada; `populate:senado` não faz mais fuzzy-link em Candidate.
+- 2026-08-02T02:32Z — Câmara recebeu runner injetável observado e lifecycle seguro de Prisma; falha remota persiste FAILED e propaga exit não zero.
+- 2026-08-02T02:33Z — Suite completa intermediária: 6 arquivos/11 unitários e 8 arquivos/15 integrações PostgreSQL passaram.
+- 2026-08-02T02:37Z — PDF digital e vazio validados com pdfjs-dist; SourceDocument deduplica por hash e classifica NEEDS_OCR sem falhar.
+- 2026-08-02T02:40Z — Extrações IA de sites/notícias/Gemini passam a DRAFT oculto; migration de dados preserva propostas editoriais.
+- 2026-08-02T02:44Z — Datasets complementares ganham arquivo imutável e OfficialDatasetRecord sanitizado; integração idempotente materializa status, bens, coligação e rede social.
+- 2026-08-02T02:45Z — Dry-run oficial suplementar contou 6 recursos/25.493 registros; documentos retornaram NOOP porque o catálogo atual não contém PDFs.
+- 2026-08-02T02:53Z — Suite intermediária completa: 7 arquivos/13 unitários e 10 arquivos/19 integrações PostgreSQL passaram.
+- 2026-08-02T03:10Z — Reconciliação identidade ficou bidirecional: Legislativo reutiliza Person TSE inequívoca e TSE reutiliza Person/Mandate inequívoca; homônimos nunca são mesclados e geram ReviewItem.
+- 2026-08-02T03:12Z — Workflows separados nas agendas pedidas, action única de instalação/generate, seed removido de ambos os pre-starts e relatório CLI de revisão concluídos.
+- 2026-08-02T03:16Z — Treze migrations aplicadas do zero em `raiox2026_fresh_20260802_test` no PostgreSQL 16; status atualizado.
+- 2026-08-02T03:17Z — Ladder completa passou: 13 unitários, 23 integrações, typecheck dos três pacotes e builds API/scraper/web.
+- 2026-08-02T03:18Z — Todos os YAMLs e `git diff --check` passaram; `review:report` executou. Lint legado não é executável por ausência preexistente de ESLint/config na API/web.
+- 2026-08-02T03:23Z — Skill `review` executou eixos Standards/Spec em paralelo: Standards sem achados; Spec identificou migração legislativa, propagação de erro, lifecycle IA, cargos e campos internos, além da disponibilidade documental/final report.
+- 2026-08-02T03:35Z — Votos/projetos legados agora migram ao mandato sem perder relações legadas; falha de persistência de site propaga; proposta revisada não é sobrescrita; `VICE_PREFEITO` completa cargos TSE; resposta pública omite campos internos.
+- 2026-08-02T03:38Z — Catálogo oficial 2026 segue sem recurso PDF; catálogo TSE 2024 confirma PDFs por UF no mesmo CKAN e fonte CAND/Candex/DivulgaCand, compatível com o adapter implementado.
+- 2026-08-02T03:40Z — Ladder pós-review passou: 7 arquivos/13 unitários, 11 arquivos/25 integrações, typecheck e builds dos três pacotes; YAML/diff/review CLI verdes.
+- 2026-08-02T03:44Z — `final-report.md` fechado com commits, evidências, limites externos, riscos e passos manuais de rollout/rollback; plano persistente integralmente concluído.
+- 2026-08-02T03:45Z — Reauditoria reproduziu um ZIP oficial rotulado `Formato PDF`; teste falhou ao enviar o arquivo inteiro ao extrator e passou após priorizar assinatura binária.
+- 2026-08-02T03:47Z — Ladder pós-fix passou com 13 unitários, 26 integrações PostgreSQL 16, três typechecks e três builds; fix isolado em `ca5180b`.
+- 2026-08-02T03:48Z — Reauditoria independente focada confirmou `RESOLVIDO`: ZIP rotulado PDF é aberto e somente o PDF interno chega ao extrator.
+- 2026-08-02T15:17Z — Commit `58896fa` publicou túnel autenticado para todos os workflows de produção; CI, API/web Veloz e documentos oficiais ficaram verdes.
+- 2026-08-02T15:21Z — TSE e Câmara iniciaram em produção; Senado persistiu FAILED e saiu não zero porque todo o serviço oficial respondeu HTTP 503.
+- 2026-08-02T15:36Z — Câmara foi cancelada após evidenciar que o comando diário repetia o histórico integral para cada deputado; fase operacional reaberta para correção incremental test-first.
+- 2026-08-03T13:44Z — Retomada confirmou: canônico TSE concluiu em 49m09s, complemento foi morto pelo timeout de 60m; o schedule seguinte repetiu o cancelamento; Legislativo também cancelou e sites falhou. Documentos continuou verde.
+- 2026-08-03T13:51Z — Tracer bullet da Câmara falhou como esperado: duas leituras completas de sessões para dois deputados e nenhuma janela temporal padrão.
+- 2026-08-03T13:52Z — Câmara GREEN: uma consulta de sessões por run, lookback de sete dias, projetos do ano corrente e typecheck verde.
+- 2026-08-03T13:53Z — Senado RED→GREEN: default deixou de reprocessar desde 2023 e usa a mesma janela móvel de sete dias.
+- 2026-08-03T13:57Z — A colisão `P2002` real foi reproduzida e corrigida sem apagar o voto legado nem sobrescrever o voto normalizado.
+- 2026-08-03T13:58Z — Câmara, Senado e persistência legislativa passaram 11 testes PostgreSQL; gravações de matérias/votos do Senado deixaram de disputar o pool em paralelo por senador.
+- 2026-08-03T13:59Z — Fonte oficial do Senado recuperada: lista atual e endpoint moderno de processos responderam HTTP 200; o antigo bloqueio 503 foi removido e a reexecução ficou liberada após publicação do hotfix.
+- 2026-08-03T14:04Z — TSE suplementar passou a usar `createMany/skipDuplicates`, atualizações agrupadas e transações em lotes; idempotência e reparo de vínculo tardio passaram em PostgreSQL.
+- 2026-08-03T14:06Z — Lease de seis horas para `DataSyncRun` foi implementado RED→GREEN: um novo run fecha antecessores realmente abandonados, mas não toca execução recente.
+- 2026-08-03T14:07Z — Workflow TSE foi separado em candidatura canônica (90 min) e complemento dependente (120 min); YAML validado.
+- 2026-08-03T14:10Z — Navegação de sites foi reproduzida RED e corrigida para aguardar `commit`, limitar a espera de DOM e repetir falha transitória sem engolir HTTP/erro final.
+- 2026-08-03T14:13Z — Chromium real com o mesmo contexto do job abriu Planalto, Aldo e Bahia em 1,2 s/0,9 s/1,8 s, todos HTTP 200 e com HTML avaliável; o domínio de Aldo é atualmente uma página estacionada e produz somente enriquecimento IA oculto/no-op.
+- 2026-08-03T14:17Z — Ladder pré-review verde: Prisma válido/14 migrations, 16 unitários, 31 integrações PostgreSQL 16, três typechecks, três builds e nove YAMLs.
+- 2026-08-03T14:19Z — Review em dois eixos: Standards sem violação objetiva e duas dívidas documentais; Spec confirmou escopo, mas apontou falha parcial da Câmara, identidade do voto conflitante e ausência de CLI de backfill.
+- 2026-08-03T14:23Z — Achados corrigidos RED→GREEN: sessão esgotada falha DataSyncRun, voto legado conflitante recebe Person, e Câmara aceita `--year/--from/--to`; runbook canônico atualizado.
+- 2026-08-03T14:25Z — Ladder pós-review verde: 18 unitários, 32 integrações PostgreSQL 16, três typechecks/builds, nove YAMLs e diff check.
+- 2026-08-03T14:27Z — `49d9a56` publicado na main; CI 30822401095 passou, API/web Veloz ficaram LIVE e health DB/Redis respondeu ok.
+- 2026-08-03T14:26Z — Senado real concluiu SUCCESS em 1m21s: 81 parlamentares, 17 projetos, 0 votos, 0 falhas; leases legislativos antigos foram fechados.
+- 2026-08-03T14:39Z — Primeiro rerun de sites melhorou de 12/15 para 13/15; Planalto/Bahia passaram, e o log revelou corpo ausente no Paraná + domínio Aldo sem commit.
+- 2026-08-03T14:48Z — TDD corrigiu retry de body e launch concorrente; smoke real abriu Aldo/Paraná com um browser; `fcc013f` publicado e CI 30824161154 passou.
+- 2026-08-03T14:49Z — Segundo rerun de sites chegou a 14/15 e 144 propostas DRAFT; apenas o domínio estacionado de Aldo continuou inacessível no runner e o job permaneceu corretamente vermelho.
+- 2026-08-03T15:04Z — TSE canônico concluiu SUCCESS: 7 recursos, 3.600 registros, 106 criações, 3.494 atualizações, 0 rejeições/revisões/publicações e 3.600 ocultos.
+- 2026-08-03T15:20Z — TSE suplementar concluiu SUCCESS em 15m34s: 6 recursos, 26.762 linhas e 6 SourceDocuments; candidaturas e complemento ficaram verdes no mesmo workflow.
+- 2026-08-03T15:35Z — O run Câmara anterior foi interrompido com 70/512 mandatos após 71 minutos: a listagem incremental de sessões estava correta, mas detalhes e upserts individuais de cada projeto ainda impediam o schedule de terminar.
+- 2026-08-03T15:36Z — Novo tracer TDD falhou ao observar `/proposicoes/{id}` no caminho diário e passou após trocar detalhes por resumos paginados e persistência em lote, preservando status mais rico; `1ad997d` foi publicado na main.
+- 2026-08-03T15:37Z — CI 30828161319 passou unitários, integração PostgreSQL 16, typecheck e build; o novo run Câmara tocou 88 mandatos em 2m38s, mais de 30 vezes a taxa anterior.
+- 2026-08-03T15:53Z — A Câmara otimizada percorreu 511/512 mandatos em 16m50s, mas encerrou FAILED corretamente porque o PostgreSQL fechou uma conexão durante `person.findUnique` de um deputado.
+- 2026-08-03T15:56Z — O erro transitório foi reproduzido com Prisma Client estendido; RED virou GREEN ao repetir o deputado idempotente até três vezes. `f32503d` foi publicado e o workflow 30829864895 iniciado.
+- 2026-08-03T15:58Z — CI 30829858572 passou 20 unitários, 34 integrações PostgreSQL 16, typecheck e build; Senado do rerun final concluiu SUCCESS.
+- 2026-08-03T16:14Z — Workflow 30829864895 ficou verde: Câmara 512/512, 24.564 projetos/autorias, 0 votos/falhas em 16m32s; Senado 81/81, 24 projetos, 0 votos/falhas em 1m26s.
+- 2026-08-03T16:15Z — Snapshot final: 4.089 Person, 593 Mandate, 22.278 LegislativeBill, 0 reviews abertos e 62 candidatos públicos; API/DB/Redis ok, web 200 e sete workflows ativos.

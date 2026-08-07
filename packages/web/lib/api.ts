@@ -111,7 +111,11 @@ export async function fetchCandidateStats() {
   }>>('/api/candidates/stats')
 }
 
-export async function fetchCandidateSeoReport() {
+export async function fetchCandidateSeoReport(): Promise<{
+  success: boolean
+  data: CandidateSeoReportItem[]
+  meta: { total: number; indexable: number }
+}> {
   return apiFetch<{
     success: boolean
     data: CandidateSeoReportItem[]
@@ -119,7 +123,9 @@ export async function fetchCandidateSeoReport() {
   }>('/api/candidates/seo-report', 900)
 }
 
-export async function fetchCandidateSeoQualification(slug: string) {
+export async function fetchCandidateSeoQualification(
+  slug: string,
+): Promise<CandidateSeoReportItem | undefined> {
   const report = await fetchCandidateSeoReport()
   return report.data.find(
     (candidate) => candidate.slug === slug || candidate.aliases.includes(slug),

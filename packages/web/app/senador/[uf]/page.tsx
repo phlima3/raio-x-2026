@@ -7,6 +7,7 @@ import {
 } from '@/components/LandingPage'
 import { fetchCandidateSeoReport } from '@/lib/api'
 import { BRAZIL_STATES, filterQualifiedCandidates } from '@/lib/landing'
+import type { CandidateSeoReportItem } from '@/lib/types'
 
 interface Props { params: { uf: string } }
 
@@ -17,7 +18,13 @@ export function generateStaticParams() {
   return Object.keys(BRAZIL_STATES).map((uf) => ({ uf: uf.toLowerCase() }))
 }
 
-async function pageData(uf: string) {
+interface StatePageData {
+  code: string
+  stateName: string
+  candidates: CandidateSeoReportItem[]
+}
+
+async function pageData(uf: string): Promise<StatePageData | null> {
   const code = uf.toUpperCase()
   const stateName = BRAZIL_STATES[code]
   if (!stateName) return null
@@ -42,7 +49,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function SenatorPage({ params }: Props) {
+export default async function SenatorPage({ params }: Props): Promise<JSX.Element> {
   const data = await pageData(params.uf)
   if (!data) notFound()
   const title = `Candidatos ao Senado por ${data.stateName} em 2026`

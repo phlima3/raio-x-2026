@@ -14,7 +14,7 @@ interface ReportItem {
   warnings: string[]
 }
 
-async function main() {
+async function main(): Promise<void> {
   const response = await fetch(`${apiOrigin}/api/candidates/seo-report`)
   if (!response.ok) throw new Error(`Quality report respondeu HTTP ${response.status}`)
   const payload = (await response.json()) as { data: ReportItem[] }

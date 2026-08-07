@@ -13,11 +13,15 @@ enum Position {
   PRESIDENTE
   VICE_PRESIDENTE
   SENADOR
+  PRIMEIRO_SUPLENTE
+  SEGUNDO_SUPLENTE
   DEPUTADO_FEDERAL
   DEPUTADO_ESTADUAL
+  DEPUTADO_DISTRITAL
   GOVERNADOR
   VICE_GOVERNADOR
   PREFEITO
+  VICE_PREFEITO
   VEREADOR
 }
 
@@ -39,57 +43,162 @@ enum VoteType {
   OBSTRUCTION
 }
 
+enum DataSource {
+  EDITORIAL
+  TSE
+  CAMARA
+  SENADO
+  OFFICIAL_DOCUMENT
+  CANDIDATE_SITE
+  NEWS
+  MIGRATION
+}
+
+enum OfficialCandidacyStatus {
+  ELIGIBLE
+  INELIGIBLE
+  PENDING
+  CANCELLED
+  UNKNOWN
+}
+
+enum MandateHouse {
+  CAMARA
+  SENADO
+}
+
+enum SyncRunStatus {
+  RUNNING
+  SUCCESS
+  FAILED
+  NOOP
+  PARTIAL
+}
+
+enum ReviewItemKind {
+  IDENTITY_AMBIGUITY
+  CANDIDACY_CONFLICT
+  DUPLICATE_PERSON
+  SOURCE_DATA_ERROR
+}
+
+enum ReviewItemStatus {
+  OPEN
+  RESOLVED
+  IGNORED
+}
+
+enum SourceDocumentType {
+  CAMPAIGN_PROGRAM
+  CANDIDACY_ATTACHMENT
+  TSE_RESOURCE
+  OTHER
+}
+
+enum DocumentExtractionStatus {
+  PENDING
+  EXTRACTED
+  NEEDS_OCR
+  FAILED
+}
+
+enum ProposalOrigin {
+  EDITORIAL
+  OFFICIAL_DOCUMENT
+  AI_EXTRACTION
+  LEGACY
+}
+
 // ── Models ────────────────────────────────────────────────────────────────────
 
+model Person {
+  id             String     @id @default(cuid())
+  name           String
+  socialName     String?
+  normalizedName String
+  camaraId       String?    @unique
+  senadoId       String?    @unique
+  dataSource     DataSource @default(EDITORIAL)
+  sourceUrl      String?
+  lastSyncedAt   DateTime?
+
+  candidates    Candidate[]
+  mandates      Mandate[]
+  votingRecords VotingRecord[]
+  reviewItems   ReviewItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([normalizedName])
+}
+
 model Candidate {
-  id              String   @id @default(cuid())
-  personKey       String?  // Chave curada que une registros da mesma pessoa; nunca inferida só por nome
-  tseId           String?  @unique // ID no TSE
-  camaraId        String?  @unique // ID na API da Câmara dos Deputados
-  senadoId        String?  @unique // ID na API do Senado Federal
-  slug            String?  // URL persistente do perfil; duplicatas legadas são resolvidas no domínio
-  name            String
-  socialName      String?
-  party           String   // Sigla do partido (ex: PT, PL, MDB)
-  state           String   // UF (ex: SP, RJ, MG)
-  position        Position
-  coalitionName   String?
-  runningMateName String?  // Vice na chapa, quando aplicável
-  runningMateParty String?
+  id                   String   @id @default(cuid())
+  personKey            String? // Chave curada que une registros legados; nunca inferida só por nome
+  tseId                String?  @unique // ID no TSE
+  camaraId             String?  @unique // ID na API da Câmara dos Deputados
+  senadoId             String?  @unique // ID na API do Senado Federal
+  slug                 String? // URL persistente; colisões ficam bloqueadas até curadoria
+  name                 String
+  socialName           String?
+  party                String // Sigla do partido (ex: PT, PL, MDB)
+  state                String // UF (ex: SP, RJ, MG)
+  position             Position
+  coalitionName        String?
+  runningMateName      String?
+  runningMateParty     String?
   runningMateSourceUrl String?
-  photoUrl        String?
-  photoSourceUrl  String?  // Origem pública da foto para crédito/auditoria
-  photoLicense    String?  // Licença ou justificativa de uso editorial
-  bio             String?  @db.Text
-  bioSummary      String?  @db.Text // Gerado pelo Gemini
-  bioSourceUrl    String?  // Fonte principal da trajetória/biografia
-  siteUrl         String?
-  email           String?
+  photoUrl             String?
+  photoSourceUrl       String?
+  photoLicense         String?
+  bio                  String?  @db.Text
+  bioSummary           String?  @db.Text
+  bioSourceUrl         String?
+  siteUrl              String?
+  email                String?
 
   // Dados eleitorais
-  ballotNumber    Int?
-  electionYear    Int      @default(2026)
-  isIncumbent     Boolean  @default(false)
-  approvalRate    Int?     // Índice de aprovação 0–100
-  partyHistory    String[] // Partidos anteriores em ordem cronológica
-  candidacyStatus           String?   // vocabulário eleitoral documentado em docs/runbooks/EDITORIAL_QUALITY_GATE.md
-  candidacyStatusSourceUrl  String?   // Evidência TSE/TRE ou jornalística para a situação exibida
-  candidacyStatusVerifiedAt DateTime? // Momento em que a fonte foi verificada
+  ballotNumber              Int?
+  electionYear              Int       @default(2026)
+  isIncumbent               Boolean   @default(false)
+  approvalRate              Int?
+  partyHistory              String[]
+  candidacyStatus           String?
+  candidacyStatusSourceUrl  String?
+  candidacyStatusVerifiedAt DateTime?
 
-  // Controle editorial e datas materiais usadas pelo quality gate de indexação
-  materialUpdatedAt  DateTime?
-  reviewedAt         DateTime?
+  // Controle editorial e datas materiais usadas pelo quality gate de indexação.
+  materialUpdatedAt   DateTime?
+  reviewedAt          DateTime?
   editorialApprovedAt DateTime?
-  editorialAuthor    String?
-  editorialReviewer  String?
+  editorialAuthor     String?
+  editorialReviewer   String?
 
-  proposals          Proposal[]
-  votingRecords      VotingRecord[]
-  assetDeclarations  AssetDeclaration[]
-  campaignFinancings CampaignFinancing[]
-  consistencyScores  ConsistencyScore[]
-  newsItems          NewsItem[]
-  slugAliases        CandidateSlugAlias[]
+  // Fachada compatível de uma candidatura em uma eleição.
+  personId          String?
+  person            Person?                  @relation(fields: [personId], references: [id], onDelete: SetNull)
+  electionId        String?
+  isOfficial        Boolean                  @default(false)
+  officialStatus    OfficialCandidacyStatus?
+  officialStatusRaw String?
+  isPublished       Boolean                  @default(true)
+  dataSource        DataSource               @default(EDITORIAL)
+  sourceUrl         String?
+  lastSyncedAt      DateTime?
+  syncRunId         String?
+  syncRun           DataSyncRun?             @relation(fields: [syncRunId], references: [id], onDelete: SetNull)
+
+  proposals              Proposal[]
+  votingRecords          VotingRecord[]
+  assetDeclarations      AssetDeclaration[]
+  campaignFinancings     CampaignFinancing[]
+  consistencyScores      ConsistencyScore[]
+  newsItems              NewsItem[]
+  sourceDocuments        SourceDocument[]
+  officialDatasetRecords OfficialDatasetRecord[]
+  reviewItems            ReviewItem[]
+  slugAliases            CandidateSlugAlias[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -100,6 +209,10 @@ model Candidate {
   @@index([position])
   @@index([electionYear])
   @@index([slug])
+  @@index([personId])
+  @@index([isPublished, position, electionYear])
+  @@index([dataSource])
+  @@index([syncRunId])
 }
 
 model CandidateSlugAlias {
@@ -111,18 +224,88 @@ model CandidateSlugAlias {
   @@index([candidateId])
 }
 
+model Mandate {
+  id            String       @id @default(cuid())
+  source        DataSource
+  externalId    String
+  legislatureId String
+  house         MandateHouse
+  role          String
+  state         String
+  party         String
+  startDate     DateTime?
+  endDate       DateTime?
+  isCurrent     Boolean      @default(true)
+  sourceUrl     String?
+  lastSyncedAt  DateTime?
+
+  personId String
+  person   Person @relation(fields: [personId], references: [id], onDelete: Restrict)
+
+  votingRecords VotingRecord[]
+  authorships   LegislativeBillAuthor[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([source, externalId, legislatureId])
+  @@index([personId])
+  @@index([house, isCurrent])
+}
+
+model LegislativeBill {
+  id           String         @id @default(cuid())
+  source       DataSource
+  externalId   String
+  title        String
+  description  String?        @db.Text
+  summary      String?        @db.Text
+  status       ProposalStatus @default(SUBMITTED)
+  introducedAt DateTime?
+  url          String?
+  tags         String[]
+
+  authorships   LegislativeBillAuthor[]
+  votingRecords VotingRecord[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([source, externalId])
+  @@index([introducedAt])
+  @@index([status])
+}
+
+model LegislativeBillAuthor {
+  id                String          @id @default(cuid())
+  legislativeBillId String
+  legislativeBill   LegislativeBill @relation(fields: [legislativeBillId], references: [id], onDelete: Cascade)
+  mandateId         String
+  mandate           Mandate         @relation(fields: [mandateId], references: [id], onDelete: Cascade)
+  createdAt         DateTime        @default(now())
+
+  @@unique([legislativeBillId, mandateId])
+  @@index([mandateId])
+}
+
 model Proposal {
-  id            String         @id @default(cuid())
-  externalId    String?        @unique // ID na Câmara ou Senado
-  source        String         // "camara" | "senado" | "candidate_site"
-  title         String
-  description   String?        @db.Text
-  summary       String?        @db.Text // Gerado pelo Gemini
-  category      String?        // Saúde, Educação, Economia, etc.
-  tags          String[]
-  status        ProposalStatus @default(DRAFT)
-  proposedAt    DateTime?
-  url           String?        // URL original na fonte
+  id          String         @id @default(cuid())
+  externalId  String?        @unique // ID na Câmara ou Senado
+  source      String // "camara" | "senado" | "candidate_site"
+  title       String
+  description String?        @db.Text
+  summary     String?        @db.Text // Gerado pelo Gemini
+  category    String? // Saúde, Educação, Economia, etc.
+  tags        String[]
+  status      ProposalStatus @default(DRAFT)
+  proposedAt  DateTime?
+  url         String? // URL original na fonte
+  isPublished Boolean        @default(true)
+  origin      ProposalOrigin @default(EDITORIAL)
+  reviewedAt  DateTime?
+
+  sourceDocumentId String?
+  sourceDocument   SourceDocument? @relation(fields: [sourceDocumentId], references: [id], onDelete: SetNull)
 
   candidateId String
   candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
@@ -133,36 +316,163 @@ model Proposal {
   @@index([candidateId])
   @@index([category])
   @@index([status])
+  @@index([isPublished])
+  @@index([sourceDocumentId])
 }
 
 model VotingRecord {
   id           String   @id @default(cuid())
-  externalId   String?  // ID da votação na Câmara/Senado
-  source       String   // "camara" | "senado"
+  externalId   String? // ID da votação na Câmara/Senado
+  source       String // "camara" | "senado"
   proposalName String
   proposalUrl  String?
   voteType     VoteType
   votedAt      DateTime
-  session      String?  // Identificador da sessão
+  session      String? // Identificador da sessão
 
-  candidateId String
-  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  candidateId String?
+  candidate   Candidate? @relation(fields: [candidateId], references: [id], onDelete: SetNull)
+
+  personId String?
+  person   Person? @relation(fields: [personId], references: [id], onDelete: SetNull)
+
+  mandateId String?
+  mandate   Mandate? @relation(fields: [mandateId], references: [id], onDelete: SetNull)
+
+  legislativeBillId String?
+  legislativeBill   LegislativeBill? @relation(fields: [legislativeBillId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([source, externalId, mandateId])
+  @@index([candidateId])
+  @@index([votedAt])
+  @@index([voteType])
+  @@index([personId])
+  @@index([mandateId])
+  @@index([legislativeBillId])
+}
+
+model SourceDocument {
+  id               String                   @id @default(cuid())
+  source           DataSource
+  type             SourceDocumentType
+  sourceUrl        String
+  sha256           String                   @unique
+  contentType      String?
+  fetchedAt        DateTime                 @default(now())
+  text             String?                  @db.Text
+  extractionStatus DocumentExtractionStatus @default(PENDING)
+  extractionError  String?                  @db.Text
+  metadata         Json?
+
+  candidateId String?
+  candidate   Candidate? @relation(fields: [candidateId], references: [id], onDelete: SetNull)
+
+  syncRunId String?
+  syncRun   DataSyncRun? @relation(fields: [syncRunId], references: [id], onDelete: SetNull)
+
+  proposals      Proposal[]
+  datasetRecords OfficialDatasetRecord[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([candidateId])
-  @@index([votedAt])
-  @@index([voteType])
+  @@index([syncRunId])
+  @@index([extractionStatus])
+}
+
+model DataSyncRun {
+  id         String        @id @default(cuid())
+  source     DataSource
+  kind       String
+  status     SyncRunStatus @default(RUNNING)
+  startedAt  DateTime      @default(now())
+  finishedAt DateTime?
+  metrics    Json?
+  error      String?       @db.Text
+  sourceUrl  String?
+  checksum   String?
+  dryRun     Boolean       @default(false)
+
+  candidates             Candidate[]
+  sourceDocuments        SourceDocument[]
+  officialDatasetRecords OfficialDatasetRecord[]
+  reviewItems            ReviewItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([source, startedAt])
+  @@index([status])
+}
+
+model ReviewItem {
+  id               String           @id @default(cuid())
+  dedupeKey        String           @unique
+  kind             ReviewItemKind
+  status           ReviewItemStatus @default(OPEN)
+  source           DataSource
+  reason           String           @db.Text
+  officialRecordId String?
+  payload          Json?
+  resolvedAt       DateTime?
+  resolutionNote   String?          @db.Text
+
+  candidateId String?
+  candidate   Candidate? @relation(fields: [candidateId], references: [id], onDelete: SetNull)
+
+  personId String?
+  person   Person? @relation(fields: [personId], references: [id], onDelete: SetNull)
+
+  syncRunId String?
+  syncRun   DataSyncRun? @relation(fields: [syncRunId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, kind])
+  @@index([candidateId])
+  @@index([personId])
+  @@index([syncRunId])
+}
+
+model OfficialDatasetRecord {
+  id           String     @id @default(cuid())
+  source       DataSource
+  datasetKind  String
+  externalId   String
+  electionYear Int?
+  payload      Json
+
+  candidateId String?
+  candidate   Candidate? @relation(fields: [candidateId], references: [id], onDelete: SetNull)
+
+  sourceDocumentId String
+  sourceDocument   SourceDocument @relation(fields: [sourceDocumentId], references: [id], onDelete: Restrict)
+
+  syncRunId String?
+  syncRun   DataSyncRun? @relation(fields: [syncRunId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([source, datasetKind, externalId])
+  @@index([candidateId])
+  @@index([sourceDocumentId])
+  @@index([syncRunId])
+  @@index([datasetKind, electionYear])
 }
 
 model AssetDeclaration {
-  id           String   @id @default(cuid())
-  year         Int      // Ano da declaração
-  totalValue   Decimal  @db.Decimal(18, 2)
-  currency     String   @default("BRL")
-  sourceUrl    String?  // URL no TSE
-  assets       Json?    // Array de bens detalhados
+  id         String  @id @default(cuid())
+  year       Int // Ano da declaração
+  totalValue Decimal @db.Decimal(18, 2)
+  currency   String  @default("BRL")
+  sourceUrl  String? // URL no TSE
+  assets     Json? // Array de bens detalhados
 
   candidateId String
   candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
@@ -176,13 +486,13 @@ model AssetDeclaration {
 }
 
 model CampaignFinancing {
-  id              String   @id @default(cuid())
-  year            Int      // Ano eleitoral
-  totalReceived   Decimal  @db.Decimal(18, 2)
-  totalSpent      Decimal  @db.Decimal(18, 2)
-  currency        String   @default("BRL")
-  sourceUrl       String?  // URL no TSE
-  donors          Json?    // Top doadores resumidos
+  id            String  @id @default(cuid())
+  year          Int // Ano eleitoral
+  totalReceived Decimal @db.Decimal(18, 2)
+  totalSpent    Decimal @db.Decimal(18, 2)
+  currency      String  @default("BRL")
+  sourceUrl     String? // URL no TSE
+  donors        Json? // Top doadores resumidos
 
   candidateId String
   candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
@@ -197,11 +507,11 @@ model CampaignFinancing {
 
 model ConsistencyScore {
   id             String   @id @default(cuid())
-  theme          String   // Tema (ex: Saúde, Educação, Economia)
-  score          Int      // 0–100 (maior = mais consistente)
-  label          String   // "Alto" | "Médio" | "Baixo" | "Sem dados"
+  theme          String // Tema (ex: Saúde, Educação, Economia)
+  score          Int // 0–100 (maior = mais consistente)
+  label          String // "Alto" | "Médio" | "Baixo" | "Sem dados"
   explanation    String   @db.Text // Explicação gerada pelo LLM
-  contradictions Json?    // Array de { proposal, vote, description }
+  contradictions Json? // Array de { proposal, vote, description }
   proposalCount  Int      @default(0)
   voteCount      Int      @default(0)
   computedAt     DateTime @default(now())
@@ -222,7 +532,7 @@ model NewsItem {
   summary           String    @db.Text
   source            String?
   url               String?
-  topic             String    // economia | seguranca | meioambiente | educacao | saude
+  topic             String // economia | seguranca | meioambiente | educacao | saude
   publishedAt       DateTime?
   fetchedAt         DateTime  @default(now())
   hasContradiction  Boolean   @default(false)

@@ -37,7 +37,7 @@ const POSITION_LABELS: Record<string, string> = {
 
 export const revalidate = 3600
 
-export async function generateStaticParams() {
+export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
   const report = await fetchCandidateSeoReport()
   return report.data
     .filter((candidate) => candidate.indexable)
@@ -112,7 +112,7 @@ function initialsFor(name: string): string {
     .toUpperCase()
 }
 
-export default async function CandidatePage({ params }: Props) {
+export default async function CandidatePage({ params }: Props): Promise<JSX.Element> {
   let candidate
   try {
     const res = await fetchCandidate(params.slug)

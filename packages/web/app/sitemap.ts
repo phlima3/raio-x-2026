@@ -1,16 +1,23 @@
 import type { MetadataRoute } from 'next'
-import { fetchCandidateSeoReport } from '@/lib/api'
-import { buildCandidateSitemapEntries, canonicalUrl } from '@/lib/seo'
+
+import { EDITORIAL_COMPARISONS, isEditorialComparisonReady } from '@/lib/comparisons'
 import { EDITORIAL_PAGES } from '@/lib/editorial-pages'
 import { LANDING_THEMES, topicSlug } from '@/lib/landing'
-import { EDITORIAL_COMPARISONS, isEditorialComparisonReady } from '@/lib/comparisons'
+import { fetchCandidateSeoReport } from '@/lib/api'
+import { buildCandidateSitemapEntries, canonicalUrl } from '@/lib/seo'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: canonicalUrl('/') },
     { url: canonicalUrl('/comparar') },
-    { url: canonicalUrl('/comparacoes'), lastModified: new Date('2026-08-07T18:00:00.000Z') },
-    { url: canonicalUrl('/eleicoes-2026'), lastModified: new Date('2026-08-07T18:00:00.000Z') },
+    {
+      url: canonicalUrl('/comparacoes'),
+      lastModified: new Date('2026-08-07T18:00:00.000Z'),
+    },
+    {
+      url: canonicalUrl('/eleicoes-2026'),
+      lastModified: new Date('2026-08-07T18:00:00.000Z'),
+    },
     ...EDITORIAL_PAGES.map((page) => ({
       url: canonicalUrl(`/${page.slug}`),
       lastModified: new Date(page.updatedAt),
@@ -18,7 +25,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]
 
   const report = await fetchCandidateSeoReport()
-
   const candidateRoutes: MetadataRoute.Sitemap = buildCandidateSitemapEntries(
     report.data.map((candidate) => ({
       slug: candidate.slug,
@@ -26,7 +32,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       updatedAt: candidate.materialUpdatedAt,
     })),
   )
-
   const qualified = report.data.filter((candidate) => candidate.indexable)
   const landingRoutes: MetadataRoute.Sitemap = []
 
@@ -43,7 +48,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   if (qualified.length > 0) {
     landingRoutes.push({
       url: canonicalUrl('/graficos/perfis-por-partido'),
-      lastModified: latest(report.data),
+      lastModified: latest(qualified),
     })
   }
 

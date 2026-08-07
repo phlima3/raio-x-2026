@@ -10,6 +10,7 @@ interface CandidateIdentityRecord {
 interface CanonicalCandidateRecord {
   id: string
   position: string
+  isOfficial?: boolean
   tseId?: string | null
   candidacyStatus: string | null
   candidacyStatusSourceUrl?: string | null
@@ -79,7 +80,7 @@ export function groupCandidateRecords<T extends CandidateIdentityRecord>(records
     // consolidar registros; sem isso, cada linha permanece isolada e o gate
     // bloqueia eventuais colisões em vez de escolher um homônimo.
     const positiveIdentity = record.personKey?.trim()
-      ? `person:${record.personKey.trim().toLowerCase()}`
+      ? `person-key:${record.personKey.trim().toLowerCase()}`
       : record.tseId
         ? `tse:${record.tseId}`
         : `record:${record.id}`
@@ -112,6 +113,7 @@ function isElectoralJusticeSource(value: string | null | undefined): boolean {
 }
 
 function sourceAuthority(record: CanonicalCandidateRecord): number {
+  if (record.isOfficial) return 4
   if (record.tseId) return 3
   if (isElectoralJusticeSource(record.candidacyStatusSourceUrl)) return 2
   return record.candidacyStatusSourceUrl ? 1 : 0

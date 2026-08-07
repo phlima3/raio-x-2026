@@ -25,12 +25,15 @@ function robotsFrom(html: string): string | null {
   )
 }
 
-async function fetchText(url: string, init?: RequestInit) {
+async function fetchText(
+  url: string,
+  init?: RequestInit,
+): Promise<{ response: Response; text: string }> {
   const response = await fetch(url, init)
   return { response, text: await response.text() }
 }
 
-async function auditIndexableUrl(url: string) {
+async function auditIndexableUrl(url: string): Promise<void> {
   try {
     const { response, text } = await fetchText(url, { redirect: 'manual' })
     if (response.status !== 200) errors.push(`${url}: HTTP ${response.status}`)
@@ -49,7 +52,7 @@ async function auditIndexableUrl(url: string) {
   }
 }
 
-async function main() {
+async function main(): Promise<void> {
   const [robots, sitemap, search, comparison, ogImage] = await Promise.all([
     fetchText(`${siteOrigin}/robots.txt`),
     fetchText(`${siteOrigin}/sitemap.xml`),

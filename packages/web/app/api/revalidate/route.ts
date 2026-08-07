@@ -2,7 +2,7 @@ import { revalidatePath, revalidateTag } from 'next/cache'
 import { NextResponse } from 'next/server'
 import { validateRevalidationPayload } from '@/lib/revalidation'
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
   const configuredSecret = process.env.REVALIDATION_SECRET
   if (!configuredSecret) {
     return NextResponse.json(

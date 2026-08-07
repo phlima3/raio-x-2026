@@ -33,7 +33,12 @@ export async function compareHandler(
       return
     }
 
-    const compKey = cacheKey.comparison(slugA, slugB, topic ?? 'all')
+    const compKey = cacheKey.comparison(
+      candidateService.getCandidateReadModel(),
+      slugA,
+      slugB,
+      topic ?? 'all',
+    )
     const comparisons = await withCache(compKey, TTL.COMPARISON, async () => {
       const [proposalsA, proposalsB] = await Promise.all([
         getProposalsByCandidate(candidateA.id),

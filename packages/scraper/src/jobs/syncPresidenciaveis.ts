@@ -1,31 +1,36 @@
 import 'dotenv/config'
 import { createHash } from 'node:crypto'
-import { PrismaClient, Position, ProposalStatus } from '@prisma/client'
 import {
-  PRESIDENTIAL_SOURCES,
+  Position,
+  PrismaClient,
+  ProposalOrigin,
+  ProposalStatus,
+  type Candidate,
+} from '@prisma/client'
+
+import {
   CANDIDATE_ALIASES,
   PRESIDENTIAL_PERSON_KEYS,
+  PRESIDENTIAL_SOURCES,
 } from '../data/presidentialSources'
-import { fetchAllSources, FetchedArticle } from '../sources/presidentialNews'
-import {
-  extractPresidenciaveis,
-  extractProposalsFromNews,
-  ExtractedCandidate,
-} from '../processors/presidentialExtractor'
-import { closeBrowser } from '../utils/playwright'
-import { logger } from '../utils/logger'
-import { revalidateCandidatePages } from '../utils/revalidateWeb'
-import { invalidateApiCandidateCaches } from '../utils/invalidateApiCache'
 import {
   isElectoralJusticeSource,
   shouldAcceptIncomingStatus,
 } from '../domain/candidacyStatus'
+import {
+  extractPresidenciaveis,
+  extractProposalsFromNews,
+  type ExtractedCandidate,
+} from '../processors/presidentialExtractor'
+import { fetchAllSources, type FetchedArticle } from '../sources/presidentialNews'
+import { invalidateApiCandidateCaches } from '../utils/invalidateApiCache'
+import { logger } from '../utils/logger'
+import { closeBrowser } from '../utils/playwright'
+import { revalidateCandidatePages } from '../utils/revalidateWeb'
 
 export { isElectoralJusticeSource, shouldAcceptIncomingStatus }
 
 const prisma = new PrismaClient()
-
-// ── Name normalization / matching ─────────────────────────────────────────────
 
 export function normalizeName(name: string): string {
   return name
@@ -37,7 +42,6 @@ export function normalizeName(name: string): string {
     .trim()
 }
 
-/** Resolve apelidos de imprensa ("Lula") para o nome canônico do banco. */
 function canonicalName(name: string): string {
   return CANDIDATE_ALIASES[normalizeName(name)] ?? name
 }
@@ -52,28 +56,32 @@ function slugify(text: string): string {
     .replace(/\s+/g, '-')
 }
 
+function effectiveSlug(candidate: Pick<Candidate, 'slug' | 'name' | 'party' | 'state'>): string {
+  return candidate.slug
+    ?? `${slugify(candidate.name)}-${slugify(candidate.party)}-${slugify(candidate.state)}`
+}
+
 export function namesMatch(a: string, b: string): boolean {
-  const na = normalizeName(canonicalName(a))
-  const nb = normalizeName(canonicalName(b))
-  if (na === nb) return true
-  if (na.length >= 8 && nb.includes(na)) return true
-  if (nb.length >= 8 && na.includes(nb)) return true
-  // Subconjunto de tokens: "flavio bolsonaro" casa com "flavio nantes bolsonaro"
-  const ta = na.split(' ').filter((t) => t.length > 1)
-  const tb = nb.split(' ').filter((t) => t.length > 1)
-  const [shorter, longer] = ta.length <= tb.length ? [ta, tb] : [tb, ta]
-  if (shorter.length >= 2 && shorter.every((t) => longer.includes(t))) return true
-  return false
+  const normalizedA = normalizeName(canonicalName(a))
+  const normalizedB = normalizeName(canonicalName(b))
+  if (normalizedA === normalizedB) return true
+  if (normalizedA.length >= 8 && normalizedB.includes(normalizedA)) return true
+  if (normalizedB.length >= 8 && normalizedA.includes(normalizedB)) return true
+  const tokensA = normalizedA.split(' ').filter((token) => token.length > 1)
+  const tokensB = normalizedB.split(' ').filter((token) => token.length > 1)
+  const [shorter, longer] = tokensA.length <= tokensB.length
+    ? [tokensA, tokensB]
+    : [tokensB, tokensA]
+  return shorter.length >= 2 && shorter.every((token) => longer.includes(token))
 }
 
 export function curatedPersonKeyForName(name: string): string | undefined {
   return PRESIDENTIAL_PERSON_KEYS[normalizeName(canonicalName(name))]
 }
 
-export function findCuratedCandidate<T extends { personKey: string | null }>(
-  name: string,
-  candidates: T[],
-): T | undefined {
+export function findCuratedCandidate<
+  T extends { personKey: string | null },
+>(name: string, candidates: T[]): T | undefined {
   const personKey = curatedPersonKeyForName(name)
   if (!personKey) return undefined
   const matches = candidates.filter(
@@ -81,8 +89,6 @@ export function findCuratedCandidate<T extends { personKey: string | null }>(
   )
   return matches.length === 1 ? matches[0] : undefined
 }
-
-// ── Merge candidates across sources ───────────────────────────────────────────
 
 interface MergedCandidate extends ExtractedCandidate {
   sources: string[]
@@ -96,8 +102,7 @@ export function mergeExtractedCandidates(
 
   for (const { sourceId, sourceUrl, candidates } of perSource) {
     for (const extracted of candidates) {
-      const existing = merged.find((m) => namesMatch(m.name, extracted.name))
-
+      const existing = merged.find((candidate) => namesMatch(candidate.name, extracted.name))
       if (!existing) {
         merged.push({
           ...extracted,
@@ -127,7 +132,6 @@ export function mergeExtractedCandidates(
       existing.currentRole ??= extracted.currentRole
       existing.homeState ??= extracted.homeState
       existing.pollFirstRoundPct ??= extracted.pollFirstRoundPct
-      // Prefere o nome mais completo entre as fontes
       if (canonicalName(extracted.name).length > existing.name.length) {
         existing.name = canonicalName(extracted.name)
       }
@@ -137,129 +141,61 @@ export function mergeExtractedCandidates(
   return merged
 }
 
-// ── Persist candidates ────────────────────────────────────────────────────────
-
-async function upsertPresidenciaveis(merged: MergedCandidate[]): Promise<string[]> {
+async function enrichExistingPresidenciaveis(merged: MergedCandidate[]): Promise<string[]> {
   const dbCandidates = await prisma.candidate.findMany({
-    where: { position: Position.PRESIDENTE, electionYear: 2026 },
+    where: {
+      position: Position.PRESIDENTE,
+      electionYear: 2026,
+      isPublished: true,
+    },
   })
-
-  let created = 0
-  let updated = 0
   const touchedSlugs = new Set<string>()
+  let updated = 0
 
-  for (const m of merged) {
-    const personKey = curatedPersonKeyForName(m.name)
-    if (!personKey) {
-      logger.warn(
-        `[presidenciaveis] ${m.name} sem personKey curado — persistência ignorada`,
+  for (const extracted of merged) {
+    const personKey = curatedPersonKeyForName(extracted.name)
+    const existing = findCuratedCandidate(extracted.name, dbCandidates)
+    if (!personKey || !existing) {
+      logger.info(
+        `[presidenciaveis] Contexto ignorado para ${extracted.name}: identidade curada não corresponde a uma candidatura publicada`,
       )
       continue
     }
-    const identityMatches = dbCandidates.filter(
-      (candidate) => candidate.personKey?.trim().toLowerCase() === personKey,
-    )
-    if (identityMatches.length > 1) {
-      logger.warn(
-        `[presidenciaveis] ${m.name} tem identidade ambígua (${identityMatches.length} registros) — persistência ignorada`,
-      )
-      continue
-    }
-    const existing = identityMatches[0]
+
     const verifiedAt = new Date()
-    const statusSourceUrl = m.statusSourceUrl ?? null
+    const acceptsStatus = shouldAcceptIncomingStatus({
+      currentStatus: existing.candidacyStatus,
+      currentSourceUrl: existing.candidacyStatusSourceUrl,
+      incomingStatus: extracted.status,
+      incomingSourceUrl: extracted.statusSourceUrl,
+    })
+    const identityChanged = existing.personKey?.trim().toLowerCase() !== personKey
+    if (!acceptsStatus && !identityChanged) continue
 
-    if (existing) {
-      const data: Record<string, unknown> = {}
-      const acceptsIncomingStatus = shouldAcceptIncomingStatus({
-        currentStatus: existing.candidacyStatus,
-        currentSourceUrl: existing.candidacyStatusSourceUrl,
-        incomingStatus: m.status,
-        incomingSourceUrl: statusSourceUrl,
-      })
-
-      if (acceptsIncomingStatus) {
-        data.candidacyStatus = m.status
-        data.candidacyStatusSourceUrl = statusSourceUrl
-        data.candidacyStatusVerifiedAt = verifiedAt
-        if (m.status !== existing.candidacyStatus) {
-          data.materialUpdatedAt = verifiedAt
-        }
-      } else {
-        logger.warn(
-          `[presidenciaveis] Status mais fraco ignorado para ${existing.name}: ${m.status}`,
-        )
-      }
-
-      if (m.party && m.party !== existing.party) {
-        logger.info(
-          `[presidenciaveis] ${existing.name}: partido ${existing.party} → ${m.party} (fontes: ${m.sources.join(', ')})`,
-        )
-        data.party = m.party
-        data.partyHistory = existing.partyHistory.includes(m.party)
-          ? existing.partyHistory
-          : [...existing.partyHistory, m.party]
-        data.materialUpdatedAt = verifiedAt
-      }
-
-      if (Object.keys(data).length > 0) {
-        await prisma.candidate.update({ where: { id: existing.id }, data })
-        touchedSlugs.add(
-          existing.slug ?? `${slugify(existing.name)}-${slugify(existing.party)}-${slugify(existing.state)}`,
-        )
-        updated++
-      }
-      continue
-    }
-
-    // Só cria candidatos novos com pré-candidatura anunciada ou confirmada —
-    // "cotado" é especulação e "desistiu" sem registro prévio não interessa
-    if (
-      ![
-        'pre_candidato',
-        'escolhido_convencao',
-        'registro_solicitado',
-        'deferido',
-      ].includes(m.status)
-    ) {
-      logger.info(`[presidenciaveis] Ignorando ${m.name} (${m.status}) — não está no banco`)
-      continue
-    }
-
-    if (!m.party) {
-      logger.warn(`[presidenciaveis] ${m.name} sem partido identificado — pulando criação`)
-      continue
-    }
-
-    const state = m.homeState ?? 'BR'
-    const candidate = await prisma.candidate.create({
+    const statusChanged = acceptsStatus && existing.candidacyStatus !== extracted.status
+    await prisma.candidate.update({
+      where: { id: existing.id },
       data: {
-        name: m.name,
-        personKey,
-        party: m.party,
-        state,
-        position: Position.PRESIDENTE,
-        electionYear: 2026,
-        slug: `${slugify(m.name)}-${slugify(m.party)}-${slugify(state)}`,
-        bio: m.currentRole ?? null,
-        candidacyStatus: m.status,
-        candidacyStatusSourceUrl: statusSourceUrl,
-        candidacyStatusVerifiedAt: verifiedAt,
-        materialUpdatedAt: verifiedAt,
-        partyHistory: [m.party],
+        ...(identityChanged ? { personKey } : {}),
+        ...(acceptsStatus
+          ? {
+              candidacyStatus: extracted.status,
+              candidacyStatusSourceUrl: extracted.statusSourceUrl ?? null,
+              candidacyStatusVerifiedAt: verifiedAt,
+            }
+          : {}),
+        ...(statusChanged || identityChanged ? { materialUpdatedAt: verifiedAt } : {}),
       },
     })
-    dbCandidates.push(candidate)
-    if (candidate.slug) touchedSlugs.add(candidate.slug)
-    created++
-    logger.info(`[presidenciaveis] ✚ Criado: ${m.name} (${m.party}) — ${m.status}`)
+    touchedSlugs.add(effectiveSlug(existing))
+    updated += 1
   }
 
-  logger.info(`[presidenciaveis] Candidatos: ${created} criados, ${updated} atualizados`)
+  logger.info(
+    `[presidenciaveis] Contexto atualizado em ${updated} candidaturas existentes; 0 criadas`,
+  )
   return [...touchedSlugs]
 }
-
-// ── Persist proposals ─────────────────────────────────────────────────────────
 
 const THEME_LABELS: Record<string, string> = {
   economia: 'Economia',
@@ -272,77 +208,80 @@ const THEME_LABELS: Record<string, string> = {
   outros: 'Outros',
 }
 
-async function saveProposalsFromArticles(articles: FetchedArticle[]): Promise<string[]> {
+async function saveProposalsFromArticles(articles: FetchedArticle[]): Promise<void> {
   const dbCandidates = await prisma.candidate.findMany({
-    where: { position: Position.PRESIDENTE, electionYear: 2026 },
+    where: {
+      position: Position.PRESIDENTE,
+      electionYear: 2026,
+      isPublished: true,
+    },
   })
-
   let saved = 0
   let unmatched = 0
-  const touchedSlugs = new Set<string>()
+  let failed = 0
 
   for (const article of articles) {
     const proposals = await extractProposalsFromNews(article.text)
-    logger.info(
-      `[presidenciaveis] ${article.source.id}: ${proposals.length} propostas extraídas`,
-    )
+    logger.info(`[presidenciaveis] ${article.source.id}: ${proposals.length} propostas extraídas`)
 
-    for (const p of proposals) {
-      const candidate = findCuratedCandidate(p.candidateName, dbCandidates)
+    for (const proposal of proposals) {
+      const candidate = findCuratedCandidate(proposal.candidateName, dbCandidates)
       if (!candidate) {
-        unmatched++
+        unmatched += 1
         logger.warn(
-          `[presidenciaveis] Proposta sem candidato correspondente: "${p.candidateName}"`,
+          `[presidenciaveis] Proposta sem identidade curada correspondente: "${proposal.candidateName}"`,
         )
         continue
       }
 
-      // Hash do conteúdo evita duplicar a mesma proposta em re-execuções,
-      // mas permite propostas novas do mesmo candidato/tema
-      const hash = createHash('sha1').update(p.proposal).digest('hex').slice(0, 10)
-      const externalId = `news_${candidate.id}_${p.theme}_${hash}`
+      const hash = createHash('sha1').update(proposal.proposal).digest('hex').slice(0, 10)
+      const externalId = `news_${candidate.id}_${proposal.theme}_${hash}`
 
       try {
-        const existingProposal = await prisma.proposal.findUnique({
+        const existing = await prisma.proposal.findUnique({
           where: { externalId },
-          select: { id: true },
+          select: { reviewedAt: true, candidateId: true },
         })
-        if (existingProposal) continue
+        if (existing?.reviewedAt) {
+          saved += 1
+          continue
+        }
+        if (existing && existing.candidateId !== candidate.id) {
+          throw new Error(`External id ${externalId} pertence a outra candidatura`)
+        }
 
-        const materialUpdatedAt = new Date()
-        await prisma.$transaction([
-          prisma.proposal.create({
-            data: {
-              externalId,
-              source: 'news',
-              title: `${THEME_LABELS[p.theme]} — declaração na imprensa`,
-              description: p.proposal,
-              category: THEME_LABELS[p.theme],
-              tags: [p.theme, 'news', article.source.id],
-              status: ProposalStatus.SUBMITTED,
-              url: article.source.url,
-              candidateId: candidate.id,
-            },
-          }),
-          prisma.candidate.update({
-            where: { id: candidate.id },
-            data: { materialUpdatedAt },
-          }),
-          // Scores existentes foram calculados sobre uma versão anterior das
-          // propostas. Removê-los força recálculo na próxima consulta.
-          prisma.consistencyScore.deleteMany({
-            where: { candidateId: candidate.id },
-          }),
-        ])
-        touchedSlugs.add(
-          candidate.slug ??
-            `${slugify(candidate.name)}-${slugify(candidate.party)}-${slugify(candidate.state)}`,
-        )
-        saved++
-      } catch (err) {
+        await prisma.proposal.upsert({
+          where: { externalId },
+          update: {
+            title: `${THEME_LABELS[proposal.theme]} — declaração na imprensa`,
+            description: proposal.proposal,
+            category: THEME_LABELS[proposal.theme],
+            tags: [proposal.theme, 'news', article.source.id],
+            status: ProposalStatus.DRAFT,
+            isPublished: false,
+            origin: ProposalOrigin.AI_EXTRACTION,
+            url: article.source.url,
+          },
+          create: {
+            externalId,
+            source: 'news',
+            title: `${THEME_LABELS[proposal.theme]} — declaração na imprensa`,
+            description: proposal.proposal,
+            category: THEME_LABELS[proposal.theme],
+            tags: [proposal.theme, 'news', article.source.id],
+            status: ProposalStatus.DRAFT,
+            isPublished: false,
+            origin: ProposalOrigin.AI_EXTRACTION,
+            url: article.source.url,
+            candidateId: candidate.id,
+          },
+        })
+        saved += 1
+      } catch (error) {
+        failed += 1
         logger.error(
           `[presidenciaveis] Falha ao salvar proposta ${externalId}`,
-          err instanceof Error ? err.message : err,
+          error instanceof Error ? error.message : error,
         )
       }
     }
@@ -351,34 +290,29 @@ async function saveProposalsFromArticles(articles: FetchedArticle[]): Promise<st
   logger.info(
     `[presidenciaveis] Propostas: ${saved} salvas, ${unmatched} sem candidato correspondente`,
   )
-  return [...touchedSlugs]
+  if (failed > 0) throw new Error(`[presidenciaveis] ${failed} proposal write(s) failed`)
 }
-
-// ── Main ──────────────────────────────────────────────────────────────────────
 
 export async function runSyncPresidenciaveis(
   mode: 'all' | 'candidates' | 'proposals' = 'all',
 ): Promise<void> {
-  logger.info(`[presidenciaveis] Iniciando sync (mode=${mode}) — ${PRESIDENTIAL_SOURCES.length} fontes`)
+  logger.info(
+    `[presidenciaveis] Iniciando sync (mode=${mode}) — ${PRESIDENTIAL_SOURCES.length} fontes`,
+  )
 
   const articles = await fetchAllSources(PRESIDENTIAL_SOURCES)
   if (articles.length === 0) {
-    logger.error('[presidenciaveis] Nenhuma fonte pôde ser baixada — abortando')
-    return
+    throw new Error('[presidenciaveis] Nenhuma fonte pôde ser baixada')
   }
 
   const touchedSlugs = new Set<string>()
-
   if (mode !== 'proposals') {
-    const perSource: {
+    const perSource: Array<{
       sourceId: string
       sourceUrl?: string
       candidates: ExtractedCandidate[]
-    }[] = []
-
-    // Só listas de candidatos e pesquisas definem QUEM está na disputa —
-    // hubs de notícia servem apenas para propostas
-    for (const article of articles.filter((a) => a.source.kind !== 'news_hub')) {
+    }> = []
+    for (const article of articles.filter((item) => item.source.kind !== 'news_hub')) {
       const candidates = await extractPresidenciaveis(article.text)
       logger.info(
         `[presidenciaveis] ${article.source.id}: ${candidates.length} presidenciáveis extraídos`,
@@ -392,12 +326,10 @@ export async function runSyncPresidenciaveis(
 
     const merged = mergeExtractedCandidates(perSource)
     logger.info(`[presidenciaveis] ${merged.length} presidenciáveis únicos após merge`)
-    for (const slug of await upsertPresidenciaveis(merged)) touchedSlugs.add(slug)
+    for (const slug of await enrichExistingPresidenciaveis(merged)) touchedSlugs.add(slug)
   }
 
-  if (mode !== 'candidates') {
-    for (const slug of await saveProposalsFromArticles(articles)) touchedSlugs.add(slug)
-  }
+  if (mode !== 'candidates') await saveProposalsFromArticles(articles)
 
   if (touchedSlugs.size > 0) {
     await invalidateApiCandidateCaches()
@@ -407,15 +339,13 @@ export async function runSyncPresidenciaveis(
   logger.info('[presidenciaveis] Sync concluído')
 }
 
-// ── Direct execution ──────────────────────────────────────────────────────────
-// Uso: pnpm run sync:presidenciaveis [candidates|proposals]
 if (require.main === module) {
-  const arg = process.argv[2]
-  const mode = arg === 'candidates' || arg === 'proposals' ? arg : 'all'
+  const argument = process.argv[2]
+  const mode = argument === 'candidates' || argument === 'proposals' ? argument : 'all'
 
   runSyncPresidenciaveis(mode)
-    .catch((err) => {
-      logger.error('[presidenciaveis] Fatal error', err)
+    .catch((error) => {
+      logger.error('[presidenciaveis] Fatal error', error)
       process.exitCode = 1
     })
     .finally(async () => {

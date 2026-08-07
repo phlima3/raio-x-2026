@@ -94,8 +94,9 @@ Além do comando, conferir manualmente:
 - HTML sem JavaScript contém propostas, declarações, consistência e transparência já disponíveis;
 - erro transitório da API preserva a última versão ISR servida.
 
-Confirmar também nos logs que `tse-status` conclui ao iniciar e a cada duas horas. O job
-deve unir candidatura e complemento por `SQ_CANDIDATO`, usar
+Confirmar também no GitHub Actions que `Sync TSE Official Data` conclui após cada atualização
+da `main` e no agendamento de duas em duas horas. O job deve unir candidatura e complemento
+por `SQ_CANDIDATO`, usar
 `DS_SITUACAO_JULGAMENTO`/`DS_DETALHE_SITUACAO_CAND` para a decisão e manter rótulos
 genéricos (`#NE`, `APTO`, `CADASTRADO`, `AGUARDANDO JULGAMENTO`) como
 `registro_solicitado`; somente decisões textualmente explícitas podem virar

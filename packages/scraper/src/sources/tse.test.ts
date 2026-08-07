@@ -1,117 +1,73 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { OfficialCandidacyStatus } from '@prisma/client'
+
+import { parseTseCandidateCsv } from './tse/candidateCsv'
 import {
-  joinTseCandidateJudgments,
-  mapTseCandidacyStatus,
   mapTseJudgmentStatus,
-  parseTseCandidateComplementsCsv,
-  parseTseCandidatesCsv,
-  selectRunningMateForCandidate,
-} from './tse'
+  resolveTseCandidateJudgments,
+} from './tse/candidacyStatus'
 
-test('maps only explicit TSE decisions beyond registro solicitado', () => {
-  assert.equal(mapTseCandidacyStatus('#NE'), 'registro_solicitado')
-  assert.equal(mapTseCandidacyStatus('APTO'), 'registro_solicitado')
-  assert.equal(mapTseCandidacyStatus('INAPTO'), 'status_nao_mapeado')
-  assert.equal(mapTseCandidacyStatus('DEFERIDO COM RECURSO'), 'deferido')
-  assert.equal(mapTseCandidacyStatus('INDEFERIDO'), 'indeferido')
-  assert.equal(mapTseCandidacyStatus('RENÚNCIA'), 'desistiu')
-})
-
-test('parses relevant 2026 records and ignores unsupported offices', () => {
+function parseStatus(rawStatus: string) {
   const csv = [
-    '"ANO_ELEICAO";"DS_CARGO";"SQ_CANDIDATO";"NM_CANDIDATO";"NM_URNA_CANDIDATO";"NM_SOCIAL_CANDIDATO";"SG_PARTIDO";"SG_UF";"NR_CANDIDATO";"DS_SITUACAO_CANDIDATURA";"SQ_COLIGACAO";"NM_COLIGACAO";"DT_GERACAO";"HH_GERACAO"',
-    '2026;"PRESIDENTE";280001;"ANA DA SILVA";"ANA NA URNA";"ANA SOCIAL";"ABC";"BR";10;"#NE";900;"ABC";"07/08/2026";"12:30:08"',
-    '2026;"DEPUTADO FEDERAL";280002;"BRUNO LIMA";"BRUNO";"#NULO";"XYZ";"SP";1234;"#NE";901;"XYZ";"07/08/2026";"12:30:08"',
+    'ANO_ELEICAO;CD_ELEICAO;SG_UF;DS_CARGO;SQ_CANDIDATO;NM_CANDIDATO;SG_PARTIDO;DS_SITUACAO_CANDIDATURA',
+    `2026;999;BR;PRESIDENTE;280001;ANA DA SILVA;ABC;${rawStatus}`,
   ].join('\n')
+  return parseTseCandidateCsv(Buffer.from(csv, 'utf8')).records[0]?.normalizedStatus
+}
 
-  const records = parseTseCandidatesCsv(csv, 2026)
-  assert.equal(records.length, 1)
-  assert.equal(records[0].tseId, '280001')
-  assert.equal(records[0].socialName, 'ANA SOCIAL')
-  assert.equal(records[0].candidacyStatus, 'registro_solicitado')
+test('normalizes official TSE candidacy statuses through the modular parser', () => {
+  assert.equal(parseStatus('APTO'), 'ELIGIBLE')
+  assert.equal(parseStatus('AGUARDANDO JULGAMENTO'), 'PENDING')
+  assert.equal(parseStatus('INDEFERIDO COM RECURSO'), 'INELIGIBLE')
+  assert.equal(parseStatus('RENÚNCIA'), 'CANCELLED')
+  assert.equal(parseStatus('RÓTULO FUTURO'), 'UNKNOWN')
 })
 
-test('maps judicial status from the complementary TSE dataset conservatively', () => {
-  assert.equal(mapTseJudgmentStatus({ judgment: 'AGUARDANDO JULGAMENTO' }), 'registro_solicitado')
-  assert.equal(mapTseJudgmentStatus({ judgment: 'INAPTO' }), 'status_nao_mapeado')
-  assert.equal(mapTseJudgmentStatus({ judgment: 'DEFERIDO COM RECURSO' }), 'deferido')
-  assert.equal(mapTseJudgmentStatus({ detail: 'INDEFERIDO' }), 'indeferido')
-  assert.equal(mapTseJudgmentStatus({ detail: 'RENÚNCIA' }), 'desistiu')
-  assert.equal(mapTseJudgmentStatus({ detail: 'CANCELADO' }), 'cancelado')
-  assert.equal(mapTseJudgmentStatus({ detail: 'PEDIDO NÃO CONHECIDO' }), 'pedido_nao_conhecido')
-  assert.equal(mapTseJudgmentStatus({ detail: 'CASSADO COM RECURSO' }), 'cassado')
-  assert.equal(mapTseJudgmentStatus({ detail: 'FALECIMENTO' }), 'falecido')
-  assert.equal(mapTseJudgmentStatus({ detail: 'RÓTULO FUTURO' }), 'status_nao_mapeado')
-  assert.equal(
-    mapTseJudgmentStatus({ judgment: 'AGUARDANDO JULGAMENTO', substituted: 'S' }),
-    'substituido',
-  )
+test('keeps unsupported offices parseable so publication policy can hide them', () => {
+  const csv = [
+    'ANO_ELEICAO;CD_ELEICAO;SG_UF;DS_CARGO;SQ_CANDIDATO;NM_CANDIDATO;SG_PARTIDO;DS_SITUACAO_CANDIDATURA',
+    '2026;999;SP;DEPUTADO FEDERAL;280002;BRUNO LIMA;XYZ;APTO',
+  ].join('\n')
+  const result = parseTseCandidateCsv(Buffer.from(csv, 'utf8'))
+
+  assert.equal(result.records.length, 1)
+  assert.equal(result.records[0].position, 'DEPUTADO_FEDERAL')
 })
 
-test('joins complementary judgments by the stable SQ_CANDIDATO identifier', () => {
-  const candidatesCsv = [
-    '"ANO_ELEICAO";"DS_CARGO";"SQ_CANDIDATO";"NM_CANDIDATO";"NM_SOCIAL_CANDIDATO";"SG_PARTIDO";"SG_UF";"NR_CANDIDATO";"DS_SITUACAO_CANDIDATURA";"SQ_COLIGACAO";"NM_COLIGACAO";"DT_GERACAO";"HH_GERACAO"',
-    '2026;"PRESIDENTE";280001;"ANA DA SILVA";"#NULO";"ABC";"BR";10;"APTO";900;"ABC";"07/08/2026";"12:30:08"',
-  ].join('\n')
-  const complementsCsv = [
-    '"ANO_ELEICAO";"SQ_CANDIDATO";"DS_DETALHE_SITUACAO_CAND";"ST_SUBSTITUIDO";"DS_SITUACAO_JULGAMENTO"',
-    '2026;280001;"DEFERIDO";"N";"DEFERIDO"',
-  ].join('\n')
+test('fails closed for generic INAPTO and conflicting undated judgments', () => {
+  assert.equal(mapTseJudgmentStatus({
+    SQ_CANDIDATO: '1',
+    DS_SITUACAO_CANDIDATO_TOT: 'INAPTO',
+  }), 'status_nao_mapeado')
 
-  const candidates = parseTseCandidatesCsv(candidatesCsv, 2026)
-  const judgments = parseTseCandidateComplementsCsv(complementsCsv, 2026)
-  const joined = joinTseCandidateJudgments(candidates, judgments)
-
-  assert.equal(joined.length, 1)
-  assert.equal(joined[0].candidacyStatus, 'deferido')
-  assert.equal(judgments[0].judgmentLabel, 'DEFERIDO')
+  const judgment = resolveTseCandidateJudgments([
+    { SQ_CANDIDATO: '1', DS_SITUACAO_JULGAMENTO: 'DEFERIDO' },
+    { SQ_CANDIDATO: '1', DS_SITUACAO_JULGAMENTO: 'INDEFERIDO' },
+  ]).get('1')
+  assert.equal(judgment?.ambiguous, true)
+  assert.equal(judgment?.officialStatus, OfficialCandidacyStatus.UNKNOWN)
 })
 
-test('pairs only the current presidential candidate with the active vice endpoint', () => {
-  const candidatesCsv = [
-    '"ANO_ELEICAO";"DS_CARGO";"SQ_CANDIDATO";"NM_CANDIDATO";"NM_SOCIAL_CANDIDATO";"SG_PARTIDO";"SG_UF";"NR_CANDIDATO";"DS_SITUACAO_CANDIDATURA";"SQ_COLIGACAO";"NM_COLIGACAO";"DT_GERACAO";"HH_GERACAO"',
-    '2026;"PRESIDENTE";pres-old;"PRESIDENTE ORIGINAL";"#NULO";"ABC";"BR";10;"INAPTO";coalition-1;"ABC";"07/08/2026";"12:30:08"',
-    '2026;"VICE-PRESIDENTE";vice-old;"VICE ORIGINAL";"#NULO";"ABC";"BR";10;"INAPTO";coalition-1;"ABC";"07/08/2026";"12:30:08"',
-    '2026;"PRESIDENTE";pres-new;"PRESIDENTE SUBSTITUTO";"#NULO";"ABC";"BR";10;"APTO";coalition-1;"ABC";"07/08/2026";"12:30:08"',
-    '2026;"VICE-PRESIDENTE";vice-new;"VICE SUBSTITUTA";"#NULO";"ABC";"BR";10;"APTO";coalition-1;"ABC";"07/08/2026";"12:30:08"',
-  ].join('\n')
-  const complementsCsv = [
-    '"ANO_ELEICAO";"SQ_CANDIDATO";"DS_DETALHE_SITUACAO_CAND";"ST_SUBSTITUIDO";"SQ_SUBSTITUIDO";"DS_SITUACAO_JULGAMENTO"',
-    '2026;pres-old;"INDEFERIDO";"S";"-1";"#NE"',
-    '2026;vice-old;"RENÚNCIA";"S";"-1";"#NE"',
-    '2026;pres-new;"DEFERIDO";"N";pres-old;"#NE"',
-    '2026;vice-new;"DEFERIDO";"N";vice-old;"#NE"',
-  ].join('\n')
-  const records = joinTseCandidateJudgments(
-    parseTseCandidatesCsv(candidatesCsv, 2026),
-    parseTseCandidateComplementsCsv(complementsCsv, 2026),
-  )
-  const oldPresident = records.find((record) => record.tseId === 'pres-old')!
-  const newPresident = records.find((record) => record.tseId === 'pres-new')!
+test('uses the newest timestamp and exposes the replacement chain', () => {
+  const judgments = resolveTseCandidateJudgments([
+    {
+      SQ_CANDIDATO: 'new',
+      SQ_SUBSTITUIDO: 'old',
+      DS_SITUACAO_JULGAMENTO: 'INDEFERIDO',
+      DT_GERACAO: '01/08/2026',
+      HH_GERACAO: '08:00:00',
+    },
+    {
+      SQ_CANDIDATO: 'new',
+      SQ_SUBSTITUIDO: 'old',
+      DS_SITUACAO_JULGAMENTO: 'DEFERIDO',
+      DT_GERACAO: '02/08/2026',
+      HH_GERACAO: '08:00:00',
+    },
+  ])
 
-  assert.equal(selectRunningMateForCandidate(oldPresident, records), undefined)
-  assert.equal(selectRunningMateForCandidate(newPresident, records)?.tseId, 'vice-new')
-})
-
-test('handles independent replacement of only the vice', () => {
-  const candidatesCsv = [
-    '"ANO_ELEICAO";"DS_CARGO";"SQ_CANDIDATO";"NM_CANDIDATO";"NM_SOCIAL_CANDIDATO";"SG_PARTIDO";"SG_UF";"NR_CANDIDATO";"DS_SITUACAO_CANDIDATURA";"SQ_COLIGACAO";"NM_COLIGACAO";"DT_GERACAO";"HH_GERACAO"',
-    '2026;"PRESIDENTE";pres;"PRESIDENTE";"#NULO";"ABC";"BR";10;"APTO";coalition-2;"ABC";"07/08/2026";"12:30:08"',
-    '2026;"VICE-PRESIDENTE";vice-old;"VICE ORIGINAL";"#NULO";"ABC";"BR";10;"INAPTO";coalition-2;"ABC";"07/08/2026";"12:30:08"',
-    '2026;"VICE-PRESIDENTE";vice-new;"VICE SUBSTITUTA";"#NULO";"ABC";"BR";10;"APTO";coalition-2;"ABC";"07/08/2026";"12:30:08"',
-  ].join('\n')
-  const complementsCsv = [
-    '"ANO_ELEICAO";"SQ_CANDIDATO";"DS_DETALHE_SITUACAO_CAND";"ST_SUBSTITUIDO";"SQ_SUBSTITUIDO";"DS_SITUACAO_JULGAMENTO"',
-    '2026;pres;"DEFERIDO";"N";"-1";"#NE"',
-    '2026;vice-old;"RENÚNCIA";"S";"-1";"#NE"',
-    '2026;vice-new;"DEFERIDO";"N";vice-old;"#NE"',
-  ].join('\n')
-  const records = joinTseCandidateJudgments(
-    parseTseCandidatesCsv(candidatesCsv, 2026),
-    parseTseCandidateComplementsCsv(complementsCsv, 2026),
-  )
-  const president = records.find((record) => record.tseId === 'pres')!
-
-  assert.equal(selectRunningMateForCandidate(president, records)?.tseId, 'vice-new')
+  assert.equal(judgments.get('new')?.candidacyStatus, 'deferido')
+  assert.equal(judgments.get('new')?.officialStatus, OfficialCandidacyStatus.ELIGIBLE)
+  assert.equal(judgments.get('new')?.replacesCandidateId, 'old')
 })

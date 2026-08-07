@@ -28,4 +28,8 @@ test('accepts the stable fields needed to monitor Core Web Vitals', () => {
 test('rejects unknown metrics and non-finite values', () => {
   assert.equal(validateWebVital({ id: '1', name: 'CPU', value: 1 }), null)
   assert.equal(validateWebVital({ id: '1', name: 'LCP', value: Number.NaN }), null)
+  assert.equal(
+    validateWebVital({ id: '1', name: 'LCP', value: 1, navigationType: 'x'.repeat(65) }),
+    null,
+  )
 })

@@ -6,6 +6,7 @@ import {
   EDITORIAL_COMPARISONS,
   findEditorialComparison,
   isEditorialComparisonReady,
+  type EditorialComparison,
 } from '@/lib/comparisons'
 import { fetchCandidateSeoQualification } from '@/lib/api'
 import { buildBreadcrumbList, buildEditorialWebPageSchema } from '@/lib/structured-data'
@@ -20,7 +21,9 @@ export function generateStaticParams() {
   }))
 }
 
-async function eligibility(pair: string) {
+async function eligibility(
+  pair: string,
+): Promise<{ comparison: EditorialComparison; indexable: boolean } | null> {
   const comparison = findEditorialComparison(pair)
   if (!comparison || !isEditorialComparisonReady(comparison)) return null
   const [candidateA, candidateB] = await Promise.all([
@@ -41,7 +44,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function EditorialComparisonPage({ params }: Props) {
+export default async function EditorialComparisonPage({ params }: Props): Promise<JSX.Element> {
   const data = await eligibility(params.pair)
   if (!data) notFound()
   const { comparison } = data

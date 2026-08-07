@@ -1,6 +1,7 @@
 import 'dotenv/config'
-import { PrismaClient } from '@prisma/client'
+import { Position, PrismaClient } from '@prisma/client'
 import { withPage } from '../utils/playwright'
+import { navigateForContent } from '../utils/siteNavigation'
 import { processProposalsFromSite } from '../processors/proposalExtractor'
 import { logger } from '../utils/logger'
 
@@ -20,6 +21,13 @@ interface ScrapeResult {
   config: CandidateSiteConfig
   proposalsSaved: number
   error?: string
+}
+
+export interface CandidateSiteSyncMetrics {
+  sites: number
+  succeeded: number
+  failed: number
+  proposals: number
 }
 
 // ── Common proposal page paths ────────────────────────────────────────────────
@@ -54,30 +62,22 @@ export async function scrapeCandidateSite(
   logger.info(`[sites] Scraping ${targetUrl} for ${config.candidateName}`)
 
   return withPage(async (page) => {
-    try {
-      const res = await page.goto(targetUrl, {
-        waitUntil: 'domcontentloaded',
-        timeout: 30_000,
-      })
-
-      if (!res || res.status() >= 400) {
-        throw new Error(`HTTP ${res?.status() ?? 'unknown'} on ${targetUrl}`)
-      }
+    await navigateForContent(page, targetUrl)
 
       // If no explicit proposalsPath, try to find the proposals sub-page
-      if (!config.proposalsPath) {
-        const detected = await detectProposalsLink(page)
-        if (detected && detected !== targetUrl) {
-          logger.info(`[sites] Detected proposals page at ${detected}`)
-          await page.goto(detected, { waitUntil: 'domcontentloaded', timeout: 30_000 })
-        }
+    if (!config.proposalsPath) {
+      const detected = await detectProposalsLink(page)
+      if (detected && detected !== targetUrl) {
+        logger.info(`[sites] Detected proposals page at ${detected}`)
+        await navigateForContent(page, detected)
       }
+    }
 
       // Wait briefly for JS-rendered content
-      await sleep(1_500)
+    await sleep(1_500)
 
       // Extract main content — prefer semantic content areas, fall back to body
-      const html = await page.evaluate(() => {
+    const html = await page.evaluate(() => {
         const selectors = [
           'main',
           '[role="main"]',
@@ -95,24 +95,17 @@ export async function scrapeCandidateSite(
           if (el) return el.innerHTML
         }
         return document.body.innerHTML
-      })
+    })
 
-      const pageUrl = page.url()
-      const saved = await processProposalsFromSite(
-        html,
-        pageUrl,
-        config.candidateId,
-        config.candidateName,
-      )
+    const pageUrl = page.url()
+    const saved = await processProposalsFromSite(
+      html,
+      pageUrl,
+      config.candidateId,
+      config.candidateName,
+    )
 
-      return saved
-    } catch (err) {
-      logger.error(
-        `[sites] Failed to scrape ${targetUrl}`,
-        err instanceof Error ? err.message : err,
-      )
-      return 0
-    }
+    return saved
   })
 }
 
@@ -123,7 +116,7 @@ export async function scrapeCandidateSite(
 export async function detectProposalsPage(siteUrl: string): Promise<string | null> {
   return withPage(async (page) => {
     try {
-      await page.goto(siteUrl, { waitUntil: 'domcontentloaded', timeout: 20_000 })
+      await navigateForContent(page, siteUrl, { navigationTimeoutMs: 20_000 })
 
       // Look for links matching common proposal path patterns
       const found = await page.evaluate((paths) => {
@@ -152,7 +145,7 @@ export async function detectProposalsPage(siteUrl: string): Promise<string | nul
  */
 export async function syncCandidateSites(
   configs: CandidateSiteConfig[],
-): Promise<void> {
+): Promise<CandidateSiteSyncMetrics> {
   logger.info(`[sites] Starting sync for ${configs.length} candidate sites`)
 
   const concurrency = Math.max(1, Number(process.env.SCRAPER_CONCURRENCY) || 2)
@@ -187,6 +180,8 @@ export async function syncCandidateSites(
   logger.info(
     `[sites] Sync complete — ${ok} ok, ${failed} failed, ${totalSaved} proposals saved`,
   )
+  if (failed > 0) throw new Error(`[sites] ${failed} of ${configs.length} candidate sites failed`)
+  return { sites: configs.length, succeeded: ok, failed, proposals: totalSaved }
 }
 
 // ── Load configs from DB ──────────────────────────────────────────────────────
@@ -197,7 +192,11 @@ export async function syncCandidateSites(
  */
 export async function loadCandidateSiteConfigs(): Promise<CandidateSiteConfig[]> {
   const candidates = await prisma.candidate.findMany({
-    where: { siteUrl: { not: null } },
+    where: {
+      siteUrl: { not: null },
+      isPublished: true,
+      position: { in: [Position.PRESIDENTE, Position.GOVERNADOR, Position.SENADOR] },
+    },
     select: { id: true, name: true, siteUrl: true },
   })
 
@@ -239,7 +238,7 @@ if (require.main === module) {
   ;(async () => {
     const configs = await loadCandidateSiteConfigs()
     if (configs.length === 0) {
-      logger.warn('[sites] No candidates with siteUrl found in DB. Run seed first.')
+      logger.warn('[sites] No published candidates with siteUrl found; nothing to enrich.')
       process.exit(0)
     }
     await syncCandidateSites(configs)

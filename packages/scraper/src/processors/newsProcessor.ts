@@ -53,7 +53,9 @@ const TOPIC_LABELS: Record<Topic, string> = {
  * Fetches recent news/statements for a candidate on a given topic using
  * Gemini 1.5 Pro with Search Grounding (last 30 days).
  *
- * Returns an empty array on failure — never throws.
+ * Returns an empty array only when the provider confirms an empty result.
+ * Provider, transport and validation failures are logged and rethrown so
+ * callers never confuse an outage with a destructive empty snapshot.
  */
 export async function fetchCandidateNews(
   candidateName: string,
@@ -87,6 +89,6 @@ Seja factual e neutro. Não invente informações.`
       `[news-processor] Failed to fetch news for ${candidateName}/${topic}`,
       err instanceof Error ? err.message : err,
     )
-    return []
+    throw err
   }
 }

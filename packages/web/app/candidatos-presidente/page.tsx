@@ -6,11 +6,12 @@ import {
 } from '@/components/LandingPage'
 import { fetchCandidateSeoReport } from '@/lib/api'
 import { filterQualifiedCandidates } from '@/lib/landing'
+import type { CandidateSeoReportItem } from '@/lib/types'
 
 const description =
   'Veja os candidatos à Presidência nas Eleições 2026 com situação eleitoral, partido, propostas, histórico e fontes.'
 
-async function candidates() {
+async function candidates(): Promise<CandidateSeoReportItem[]> {
   const report = await fetchCandidateSeoReport()
   return filterQualifiedCandidates(report.data, { position: 'PRESIDENTE' })
 }
@@ -26,7 +27,7 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export default async function PresidentialCandidatesPage() {
+export default async function PresidentialCandidatesPage(): Promise<JSX.Element> {
   const items = await candidates()
   return (
     <LandingPageFrame

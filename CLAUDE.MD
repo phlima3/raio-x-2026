@@ -217,13 +217,22 @@ Páginas de candidatos são geradas estaticamente em build time (`generateStatic
 
 O start script usa `tsx src/index.ts` diretamente. Isso evita o bug do Railway onde o build cache reaproveita o `dist/` compilado antigo, ignorando mudanças no código. `tsx` está em `dependencies` (não devDependencies) para estar disponível em produção.
 
-### Slug do candidato: coluna no banco + fallback por estado
+### Slug do candidato: coluna não exclusiva + aliases persistentes
 
-O modelo `Candidate` tem `slug String? @unique`. O seed popula o slug em cada startup. `getCandidateBySlug` primeiro tenta `findFirst({ where: { slug } })` (lookup direto) e cai no fallback que filtra por estado e compara com `makeSlug` em JavaScript. **Não usar `ILIKE 'nome%'` no PostgreSQL** — nomes acentuados como "Flávio" não casam com `ILIKE 'flavio%'`.
+O modelo `Candidate` tem `slug String?` indexado, mas não exclusivo. Isso permite
+detectar colisões de identidade sem fundir pessoas: um slug só é servido quando
+resolve para uma única candidatura canônica; ambiguidades retornam 404 até revisão.
+O importador TSE cria novos slugs no formato `nome-partido-UF-cargo-ano`, e URLs
+antigas ficam em `CandidateSlugAlias`, cuja chave é exclusiva. **Não usar
+`ILIKE 'nome%'` no PostgreSQL** — nomes
+acentuados como "Flávio" não casam com `ILIKE 'flavio%'`.
 
 ### `withCache` não cacheia `null`
 
-`null` serializado vira a string `"null"` no Redis. `if (cached)` para `"null"` é truthy, então `null` seria retornado eternamente. Correção: só chamar `setex` se `result != null`. Também: flushar `candidates:*` no startup via `invalidate('candidates:*')` para limpar nulls estagnados de antes do seed rodar.
+`null` serializado vira a string `"null"` no Redis. `if (cached)` para `"null"`
+é truthy, então `null` seria retornado eternamente. Correção: só chamar `setex`
+se `result != null`. A API invalida `candidates:*` no startup; as chaves também
+incluem o read model para impedir mistura entre `legacy` e `normalized`.
 
 ### `trust proxy` no Express (Veloz/Railway)
 
@@ -245,13 +254,12 @@ Produção usa `prisma migrate deploy` (não `dev`), executado automaticamente p
 
 Toda a infraestrutura (frontend, API, PostgreSQL, Redis) foi migrada para Veloz. Dados migrados via pg_dump/psql (163 candidatos, 7701 propostas, 43339 votos). Vercel e Railway podem ser desligados após confirmar que DNS propagou corretamente.
 
-### Pipeline de população de dados reais (`populateRealData.ts`)
+### Pipeline de dados official-first
 
-`syncCamara/syncSenado` criam registros Candidate próprios (keyed por `camaraId`/`senadoId`) e nunca linkam aos candidatos do seed. O `populateRealData.ts` resolve isso com dois passos:
-
-1. **Link**: consulta a API do Senado, normaliza nomes (NFD + lowercase), faz fuzzy match com candidatos do seed, salva `senadoId` no candidato existente.
-2. **Sync**: com o `senadoId` correto, sincroniza votos (`saveSenadoVotes`) e matérias (`saveSenadoMaterias`) para o ID certo no banco.
-3. **Sites**: chama `loadCandidateSiteConfigs()` + `syncCandidateSites()` para scraping Playwright + extração Groq.
+O runbook atual é `docs/OFFICIAL_DATA_PIPELINE.md`. Câmara e Senado gravam
+`Person`/`Mandate`, votos e `LegislativeBill` e nunca criam candidaturas. O TSE
+é a fonte canônica de `Candidate`. O comando legado `populate:senado` delega ao
+sync normalizado e não faz mais fuzzy-link.
 
 Scripts adicionados ao `packages/scraper/package.json`:
 - `populate` — executa tudo (link senado + sites)
@@ -275,15 +283,15 @@ URLs verificadas que funcionam:
 O cenário presidencial mudou desde o seed: Tarcísio, Eduardo Leite e Ratinho Jr.
 saíram da disputa; Ciro Gomes (PSDB), Joaquim Barbosa (DC) e outros entraram.
 O job `sync:presidenciaveis` (`packages/scraper/src/jobs/syncPresidenciaveis.ts`)
-mantém a lista atualizada a partir de fontes de imprensa curadas
+enriquece candidaturas já existentes a partir de fontes de imprensa curadas
 (`src/data/presidentialSources.ts` — JOTA, Wikipédia, Datafolha, G1):
 
-- Extrai candidatos (nome, partido, status) e propostas atribuídas via LLM
+- Extrai contexto e propostas atribuídas via LLM, sem criar candidaturas
 - Nova coluna `Candidate.candidacyStatus` (`confirmado | pre_candidato | cotado | desistiu`)
 - Quem desistiu **não é deletado** — marcado como `desistiu` (o frontend decide exibir ou não)
 - Merge entre fontes: status mais forte vence; nomes casados por normalização + aliases
-- Propostas viram `Proposal` com `source: "news"` e dedupe por hash do texto
-- GitHub Actions: opção `presidenciaveis` no workflow_dispatch
+- Propostas viram `Proposal` ocultas em `DRAFT` com `source: "news"` e dedupe por hash
+- GitHub Actions: opção `presidenciaveis` em `manual-data-jobs.yml`
 
 ### Provider Ollama (LLM local)
 
@@ -293,21 +301,26 @@ compartilhados entre Groq/Gemini/Ollama via `llm/baseProvider.ts`; cada provider
 concreto só implementa `complete(prompt)`. Útil para rodadas longas de scraping
 sem estourar rate limit do Groq.
 
-### Patrimônio e financiamento: TSE só disponível após agosto 2026
+### Patrimônio TSE 2026
 
-`AssetDeclaration` e `CampaignFinancing` dependem de dados do TSE que só ficam disponíveis após o prazo de registro de candidatos (15/ago/2026). Essas seções estarão zeradas para todos os candidatos até lá — comportamento correto, não é bug.
+O recurso de bens já está disponível e é importado por `sync:tse:supplemental`.
+Financiamento continua em pipeline histórico/separado.
 
 ### Redis: flushar cache após popular dados
 
-Após rodar `populateRealData`, o Redis pode ter nulls ou dados vazios em cache (TTL 1h). Solução mais rápida: `veloz deploy --service api` → o startup da API faz `invalidate('candidates:*')`. Alternativa: aguardar TTL expirar (~1h).
+Após uma importação, o Redis pode manter dados anteriores até o TTL (1h). O
+startup da API executa `invalidate('candidates:*')`; em rollout controlado,
+reinicie a API conforme o runbook ou aguarde o TTL expirar.
 
 ### NEXT_SESSION.md deve ficar no .gitignore
 
 O arquivo NEXT_SESSION.md (notas de sessão) pode conter URLs de banco, API keys e outros segredos temporários. Está agora no `.gitignore` para nunca ser commitado. GitGuardian detectou vazamento de `DATABASE_PUBLIC_URL` do Railway em commit anterior — rotacionar a senha do banco imediatamente se isso ocorrer.
 
-### GitHub Actions: `workflow_dispatch` com opção `populate`
+### GitHub Actions
 
-O workflow `scraper.yml` tem 6 opções no `workflow_dispatch`: `populate`, `daily`, `weekly`, `all`, `import-gemini`, `fix-migration`. Usar `populate` para bootstrapping inicial (Playwright, timeout 90min). `import-gemini` aplica os JSONs de `gemini-research/outputs/` na produção via `PROD_DATABASE_URL`.
+Schedules são separados por fonte em `sync-tse.yml`, `sync-legislative.yml`,
+`sync-documents.yml`, `sync-sites.yml` e `sync-news.yml`. Jobs antigos ficam em
+`manual-data-jobs.yml`.
 
 ### Pipeline Gemini Deep Search (enriquecimento manual)
 
@@ -317,9 +330,11 @@ Prompts otimizados por candidato em `packages/scraper/src/data/gemini-research/_
 - Preflight idempotente: corrige Renan Santos (MBL → Missão)
 - Roda via GitHub Actions job `import-gemini` com `PROD_DATABASE_URL`
 
-### `seed.ts` prioriza banco sobre defaults (CRÍTICO)
+### Seed somente explícito em desenvolvimento
 
-O seed roda em cada startup do Railway. Lógica correta: `existing.bio ?? c.bio ?? null` (DB ganha). A lógica errada `c.bio ?? existing.bio` sobrescreve dados Gemini em cada restart. Nunca inverter essa ordem.
+O seed não roda em startup/pre-start de produção. Use
+`pnpm --filter @raiox/api run db:seed` apenas para bootstrap deliberado de
+desenvolvimento.
 
 ### Deploy Veloz: `veloz deploy`
 
@@ -344,7 +359,7 @@ Migration `20260326030000_add_unaccent` habilitada em produção. Função `immu
 ```prisma
 model Candidate {
   id             String   @id @default(uuid())
-  slug           String   @unique
+  slug           String?
   name           String
   party          String
   state          String?

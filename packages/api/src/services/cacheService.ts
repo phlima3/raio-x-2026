@@ -3,6 +3,11 @@ import Redis from 'ioredis'
 // ── Client singleton ──────────────────────────────────────────────────────────
 
 let redis: Redis | null = null
+export const CACHE_NAMESPACE = 'raiox:v2:'
+
+function namespaced(key: string): string {
+  return `${CACHE_NAMESPACE}${key}`
+}
 
 function getRedis(): Redis {
   if (!redis) {
@@ -47,10 +52,11 @@ export async function withCache<T>(
   ttlSeconds: number,
   fn: () => Promise<T>,
 ): Promise<T> {
+  if (process.env.CACHE_DISABLED === 'true') return fn()
   const client = getRedis()
 
   try {
-    const cached = await client.get(key)
+    const cached = await client.get(namespaced(key))
     if (cached) return JSON.parse(cached) as T
   } catch {
     // Redis down or parse error — fall through to fn()
@@ -61,7 +67,7 @@ export async function withCache<T>(
   // Don't cache null/undefined — a missing resource may appear later (e.g. after seed)
   if (result != null) {
     try {
-      await client.setex(key, ttlSeconds, JSON.stringify(result))
+      await client.setex(namespaced(key), ttlSeconds, JSON.stringify(result))
     } catch {
       // Best-effort — don't fail because we couldn't cache
     }
@@ -75,18 +81,26 @@ export async function withCache<T>(
  * Pattern invalidation uses SCAN to avoid blocking Redis with KEYS.
  */
 export async function invalidate(keyOrPattern: string): Promise<void> {
+  if (process.env.CACHE_DISABLED === 'true') return
   const client = getRedis()
+  const namespacedKeyOrPattern = namespaced(keyOrPattern)
 
   try {
-    if (keyOrPattern.endsWith('*')) {
+    if (namespacedKeyOrPattern.endsWith('*')) {
       let cursor = '0'
       do {
-        const [nextCursor, keys] = await client.scan(cursor, 'MATCH', keyOrPattern, 'COUNT', 100)
+        const [nextCursor, keys] = await client.scan(
+          cursor,
+          'MATCH',
+          namespacedKeyOrPattern,
+          'COUNT',
+          100,
+        )
         cursor = nextCursor
         if (keys.length > 0) await client.del(...keys)
       } while (cursor !== '0')
     } else {
-      await client.del(keyOrPattern)
+      await client.del(namespacedKeyOrPattern)
     }
   } catch {
     // Best-effort
@@ -101,7 +115,7 @@ export const cacheKey = {
   candidateProposals: (slug: string) => `candidates:proposals:${slug}`,
   proposalList: (query: string) => `proposals:list:${query}`,
   categories: () => 'proposals:categories',
-  comparison: (a: string, b: string, topic: string) =>
-    `comparison:${[a, b].sort().join(':')}:${topic}`,
-  stats: () => 'candidates:stats',
+  comparison: (readModel: string, a: string, b: string, topic: string) =>
+    `comparison:${readModel}:${[a, b].sort().join(':')}:${topic}`,
+  stats: (readModel = 'legacy') => `candidates:stats:${readModel}`,
 }

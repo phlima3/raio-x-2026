@@ -11,6 +11,7 @@ import {
   LANDING_THEMES,
   type LandingThemeSlug,
 } from '@/lib/landing'
+import type { CandidateSeoReportItem } from '@/lib/types'
 
 interface Props { params: { tema: string } }
 
@@ -21,7 +22,13 @@ export function generateStaticParams() {
   return Object.keys(LANDING_THEMES).map((tema) => ({ tema }))
 }
 
-async function pageData(slug: string) {
+interface ThemePageData {
+  slug: LandingThemeSlug
+  theme: (typeof LANDING_THEMES)[LandingThemeSlug]
+  candidates: CandidateSeoReportItem[]
+}
+
+async function pageData(slug: string): Promise<ThemePageData | null> {
   const theme = LANDING_THEMES[slug as LandingThemeSlug]
   if (!theme) return null
   const report = await fetchCandidateSeoReport()
@@ -45,7 +52,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function ThemePage({ params }: Props) {
+export default async function ThemePage({ params }: Props): Promise<JSX.Element> {
   const data = await pageData(params.tema)
   if (!data) notFound()
   const title = `Propostas dos candidatos sobre ${data.theme.label} em 2026`

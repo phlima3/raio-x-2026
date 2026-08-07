@@ -13,7 +13,15 @@ const DESCRIPTION =
 
 export const revalidate = 3600
 
-async function loadGraphData() {
+interface GraphData {
+  stats: Awaited<ReturnType<typeof fetchCandidateStats>>['data']
+  report: Awaited<ReturnType<typeof fetchCandidateSeoReport>>
+  entries: Array<[string, number]>
+  latestMaterialUpdate: string | null
+  ready: boolean
+}
+
+async function loadGraphData(): Promise<GraphData> {
   const [stats, report] = await Promise.all([
     fetchCandidateStats(),
     fetchCandidateSeoReport(),
@@ -67,7 +75,7 @@ function formatDate(value: string | null): string {
   }).format(new Date(value))
 }
 
-export default async function PartyProfilesGraphPage() {
+export default async function PartyProfilesGraphPage(): Promise<JSX.Element> {
   const { stats, entries, latestMaterialUpdate, ready } = await loadGraphData()
   const maximum = Math.max(...entries.map(([, count]) => count), 1)
   const imageUrl = canonicalUrl(`${PATH}/imagem`)

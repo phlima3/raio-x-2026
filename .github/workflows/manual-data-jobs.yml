@@ -1,0 +1,53 @@
+name: Manual Data Maintenance
+
+on:
+  workflow_dispatch:
+    inputs:
+      job:
+        description: Maintenance command
+        required: true
+        type: choice
+        options:
+          - backfill-persons
+          - import-gemini
+          - import-tse-historico
+          - import-tse-financiamento
+          - presidenciaveis
+          - populate
+
+permissions:
+  contents: read
+concurrency:
+  group: manual-data-${{ inputs.job }}
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+      LLM_PROVIDER: ${{ vars.LLM_PROVIDER || 'groq' }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      SCRAPER_HEADLESS: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-pipeline
+      - uses: ./.github/actions/setup-veloz-db-tunnel
+        with:
+          api-key: ${{ secrets.VELOZ_API_KEY }}
+      - name: Install Chromium when required
+        if: inputs.job == 'presidenciaveis' || inputs.job == 'populate'
+        run: pnpm --filter @raiox/scraper exec playwright install chromium --with-deps
+      - name: Run selected maintenance command
+        shell: bash
+        run: |
+          case "${{ inputs.job }}" in
+            backfill-persons) pnpm --filter @raiox/scraper run backfill:persons ;;
+            import-gemini) pnpm --filter @raiox/scraper run import:gemini ;;
+            import-tse-historico) pnpm --filter @raiox/scraper run import:tse ;;
+            import-tse-financiamento) pnpm --filter @raiox/scraper run import:financiamento ;;
+            presidenciaveis) pnpm --filter @raiox/scraper run sync:presidenciaveis ;;
+            populate) pnpm --filter @raiox/scraper run populate ;;
+          esac

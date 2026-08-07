@@ -20,6 +20,29 @@ test('groups duplicate office records for the same person without grouping homon
   assert.deepEqual(groups[0].map((candidate) => candidate.id), ['president', 'governor'])
 })
 
+test('does not treat a normalized Person relation as editorial identity proof', () => {
+  const groups = groupCandidateRecords([
+    {
+      id: 'legacy-row',
+      name: 'Nome legado',
+      state: 'SP',
+      electionYear: 2026,
+      personId: 'person-1',
+      tseId: 'old-tse-id',
+    },
+    {
+      id: 'official-row',
+      name: 'Nome oficial',
+      state: 'BR',
+      electionYear: 2026,
+      personId: 'person-1',
+      tseId: 'new-tse-id',
+    },
+  ])
+
+  assert.equal(groups.length, 2)
+})
+
 test('does not merge same-state homonyms with conflicting electoral identifiers', () => {
   const groups = groupCandidateRecords([
     {

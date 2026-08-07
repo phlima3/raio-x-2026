@@ -15,6 +15,16 @@ function getRedis(): Redis {
   })
 }
 
+export interface RedisHealthClient {
+  connect(): Promise<void>
+  ping(): Promise<unknown>
+}
+
+export async function connectAndPingRedis(client: RedisHealthClient): Promise<void> {
+  await client.connect()
+  await client.ping()
+}
+
 // GET /health — liveness + readiness probe
 router.get('/', async (_req: Request, res: Response): Promise<void> => {
   const timestamp = new Date().toISOString()
@@ -31,7 +41,7 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
   let redisStatus: 'ok' | 'error' = 'ok'
   const redisClient = getRedis()
   try {
-    await redisClient.ping()
+    await connectAndPingRedis(redisClient)
   } catch {
     redisStatus = 'error'
   } finally {

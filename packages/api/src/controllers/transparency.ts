@@ -1,8 +1,32 @@
 import { Request, Response, NextFunction } from 'express'
-import { PrismaClient, VoteType } from '@prisma/client'
+import { Prisma, PrismaClient, VoteType } from '@prisma/client'
 import { z } from 'zod'
+import {
+  PUBLIC_ASSET_DECLARATION_LIMIT,
+  PUBLIC_ASSET_DECLARATION_ORDER_BY,
+  PUBLIC_ASSET_DECLARATION_WHERE,
+  PUBLIC_CAMPAIGN_FINANCING_LIMIT,
+  PUBLIC_CAMPAIGN_FINANCING_ORDER_BY,
+  PUBLIC_CAMPAIGN_FINANCING_WHERE,
+  PUBLIC_VOTING_RECORD_LIMIT,
+  PUBLIC_VOTING_RECORD_ORDER_BY,
+  PUBLIC_VOTING_RECORD_WHERE,
+} from '../domain/publicationPolicy'
+import {
+  getCandidateReadModel,
+  publicCandidateWhere,
+} from '../services/candidateService'
 
 const prisma = new PrismaClient()
+
+async function publicCandidate(
+  candidateId: string,
+): Promise<{ id: string; personId: string | null } | null> {
+  return prisma.candidate.findFirst({
+    where: { id: candidateId, ...publicCandidateWhere() },
+    select: { id: true, personId: true },
+  })
+}
 
 const VotingFiltersSchema = z.object({
   source: z.enum(['camara', 'senado']).optional(),
@@ -10,7 +34,7 @@ const VotingFiltersSchema = z.object({
   from: z.string().optional(),
   to: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(200).default(50),
+  limit: z.coerce.number().int().min(1).max(PUBLIC_VOTING_RECORD_LIMIT).default(50),
 })
 
 export async function getVotingRecordsHandler(
@@ -23,18 +47,38 @@ export async function getVotingRecordsHandler(
     const { source, voteType, from, to, page, limit } = VotingFiltersSchema.parse(req.query)
     const skip = (page - 1) * limit
 
-    const where = {
-      candidateId,
-      ...(source && { source }),
-      ...(voteType && { voteType }),
-      ...(from || to
+    const candidate = await publicCandidate(candidateId)
+    if (!candidate) {
+      res.status(404).json({ success: false, error: 'Candidato não encontrado' })
+      return
+    }
+    const identityWhere: Prisma.VotingRecordWhereInput =
+      getCandidateReadModel() === 'normalized' && candidate.personId
         ? {
-            votedAt: {
-              ...(from && { gte: new Date(from) }),
-              ...(to && { lte: new Date(to) }),
-            },
+            OR: [
+              { candidateId },
+              { personId: candidate.personId },
+              { mandate: { personId: candidate.personId } },
+            ],
           }
-        : {}),
+        : { candidateId }
+    const where: Prisma.VotingRecordWhereInput = {
+      AND: [
+        identityWhere,
+        PUBLIC_VOTING_RECORD_WHERE,
+        {
+          ...(source && { source }),
+          ...(voteType && { voteType }),
+          ...(from || to
+            ? {
+                votedAt: {
+                  ...(from && { gte: new Date(from) }),
+                  ...(to && { lte: new Date(to) }),
+                },
+              }
+            : {}),
+        },
+      ],
     }
 
     const [total, records] = await Promise.all([
@@ -43,7 +87,7 @@ export async function getVotingRecordsHandler(
         where,
         skip,
         take: limit,
-        orderBy: { votedAt: 'desc' },
+        orderBy: PUBLIC_VOTING_RECORD_ORDER_BY,
       }),
     ])
 
@@ -64,10 +108,15 @@ export async function getAssetDeclarationsHandler(
 ): Promise<void> {
   try {
     const { candidateId } = req.params
+    if (!(await publicCandidate(candidateId))) {
+      res.status(404).json({ success: false, error: 'Candidato não encontrado' })
+      return
+    }
 
     const declarations = await prisma.assetDeclaration.findMany({
-      where: { candidateId },
-      orderBy: { year: 'desc' },
+      where: { AND: [{ candidateId }, PUBLIC_ASSET_DECLARATION_WHERE] },
+      orderBy: PUBLIC_ASSET_DECLARATION_ORDER_BY,
+      take: PUBLIC_ASSET_DECLARATION_LIMIT,
     })
 
     // Year-over-year variation
@@ -96,10 +145,15 @@ export async function getCampaignFinancingHandler(
 ): Promise<void> {
   try {
     const { candidateId } = req.params
+    if (!(await publicCandidate(candidateId))) {
+      res.status(404).json({ success: false, error: 'Candidato não encontrado' })
+      return
+    }
 
     const financings = await prisma.campaignFinancing.findMany({
-      where: { candidateId },
-      orderBy: { year: 'desc' },
+      where: { AND: [{ candidateId }, PUBLIC_CAMPAIGN_FINANCING_WHERE] },
+      orderBy: PUBLIC_CAMPAIGN_FINANCING_ORDER_BY,
+      take: PUBLIC_CAMPAIGN_FINANCING_LIMIT,
     })
 
     res.json({

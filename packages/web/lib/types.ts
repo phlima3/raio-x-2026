@@ -4,11 +4,15 @@ export type Position =
   | 'PRESIDENTE'
   | 'VICE_PRESIDENTE'
   | 'SENADOR'
+  | 'PRIMEIRO_SUPLENTE'
+  | 'SEGUNDO_SUPLENTE'
   | 'DEPUTADO_FEDERAL'
   | 'DEPUTADO_ESTADUAL'
+  | 'DEPUTADO_DISTRITAL'
   | 'GOVERNADOR'
   | 'VICE_GOVERNADOR'
   | 'PREFEITO'
+  | 'VICE_PREFEITO'
   | 'VEREADOR'
 
 export type VoteType = 'YES' | 'NO' | 'ABSTENTION' | 'ABSENT' | 'OBSTRUCTION'
@@ -37,6 +41,10 @@ export interface CandidateSummary {
   candidacyStatus?: string | null
   materialUpdatedAt?: string | null
   updatedAt?: string
+  isOfficial?: boolean
+  officialStatus?: 'ELIGIBLE' | 'INELIGIBLE' | 'PENDING' | 'CANCELLED' | 'UNKNOWN' | null
+  dataSource?: string
+  lastSyncedAt?: string | null
 }
 
 export interface Proposal {

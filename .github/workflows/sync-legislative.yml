@@ -1,0 +1,35 @@
+name: Sync Legislative Sources
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source:
+    name: Sync ${{ matrix.source }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    concurrency:
+      group: sync-legislative-${{ matrix.source }}
+      cancel-in-progress: false
+    strategy:
+      fail-fast: false
+      matrix:
+        source: [camara, senado]
+    env:
+      DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+      CAMARA_API_URL: https://dadosabertos.camara.leg.br/api/v2
+      SENADO_API_URL: https://legis.senado.leg.br/dadosabertos
+      SCRAPER_CONCURRENCY: '2'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-pipeline
+      - uses: ./.github/actions/setup-veloz-db-tunnel
+        with:
+          api-key: ${{ secrets.VELOZ_API_KEY }}
+      - name: Sync ${{ matrix.source }}
+        run: pnpm --filter @raiox/scraper run sync:${{ matrix.source }}

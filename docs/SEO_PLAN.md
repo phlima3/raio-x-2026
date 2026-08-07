@@ -11,7 +11,7 @@
 | SEO-001 | Middleware/config canônico implementado e testado | Validar DNS, TLS e redirect da borda após deploy |
 | SEO-002–006 | Metadata, canonical, robots, sitemap, parâmetros e OG implementados | Documentar origem/licença das fotos e auditar produção |
 | SEO-007 | Hooks de verificação, GA4 opcional e Web Vitals implementados | DNS, contas, consentimento, log drain e baseline |
-| SEO-008 | Vocabulário, fonte/data, precedência e junção dos CSVs oficiais de candidatura/julgamento do TSE por `SQ_CANDIDATO` a cada duas horas implementados | Implantar o job e conferir exceções/status de cada pessoa |
+| SEO-008 | Vocabulário, fonte/data, precedência e junção dos CSVs oficiais de candidatura/julgamento do TSE por `SQ_CANDIDATO` após atualização da `main` e a cada duas horas implementados | Implantar o job e conferir exceções/status de cada pessoa |
 | SEO-009 | Identidade positiva (`personKey`/TSE), resolução canônica, aliases, colisão fail-closed e paginação SQL implementados | Atribuir `personKey` e consolidar relações legadas caso a caso |
 | SEO-010 | Gate e relatório automáticos implementados | Revisar e aprovar individualmente; nenhum bulk approve |
 | SEO-011 | Placeholders bloqueiam indexação; home e perfis usam datas materiais; changelog implementado | Reescrever/remover dados antigos de cada perfil |

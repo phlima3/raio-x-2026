@@ -7,6 +7,7 @@ export const PUBLIC_CAMPAIGN_FINANCING_LIMIT = 10
 export const PUBLIC_NEWS_LIMIT = 50
 
 export const PUBLIC_PROPOSAL_WHERE = {
+  isPublished: true,
   url: { startsWith: 'https://' },
   status: { not: ProposalStatus.DRAFT },
 } satisfies Prisma.ProposalWhereInput
@@ -53,10 +54,11 @@ export const PUBLIC_NEWS_ORDER_BY = [
 ] satisfies Prisma.NewsItemOrderByWithRelationInput[]
 
 export function isPublicProposal(input: {
+  isPublished: boolean
   url: string | null
   status: ProposalStatus
 }): boolean {
-  if (input.status === ProposalStatus.DRAFT || !input.url) return false
+  if (!input.isPublished || input.status === ProposalStatus.DRAFT || !input.url) return false
   try {
     return new URL(input.url).protocol === 'https:'
   } catch {
