@@ -62,7 +62,7 @@
 
 ### Itens externos não declarados como concluídos
 
-- deploy e migration em produção;
+- deploy do frontend e auditoria pública completa das páginas SEO;
 - redirect/TLS na borda e DNS;
 - propriedade e sitemap no Google Search Console;
 - decisão de privacidade e credenciais de analytics;
@@ -74,13 +74,17 @@
 ### Evidências de QA do artefato
 
 - Prisma Client regenerado após a migration;
-- schema Prisma validado e migration aditiva encapsulada em `BEGIN`/`COMMIT`; aplicação
-  real aguarda o deploy;
-- API: 18 testes de domínio aprovados e build TypeScript aprovado;
+- schema Prisma validado e migration aditiva encapsulada em `BEGIN`/`COMMIT`;
+- migration `20260807090000_add_seo_editorial_fields` aplicada em produção em 7 de agosto
+  de 2026, com `finished_at`, sem rollback e sem migration falha;
+- API implantada no Veloz pelo deployment `dep_1Bbh_hQ7hntn` e validada em
+  `https://api.raio-x-2026.com.br`;
+- API: 19 testes de domínio aprovados e build TypeScript aprovado;
 - Web: 16 testes aprovados, typecheck e lint sem avisos ou erros;
 - Scraper: 18 testes aprovados e build TypeScript aprovado;
-- total: 52 testes automatizados aprovados;
-- Next.js: build de produção aprovado, com 84 páginas geradas na fixture qualificada;
+- Vitest unitário: 20 testes aprovados; integração: 43 testes aprovados;
+- total: 116 testes automatizados aprovados nas suítes executadas;
+- Next.js: build de produção aprovado, com 83 páginas geradas na fixture qualificada;
 - smoke do build: home, robots, sitemap, hubs, parâmetros, landing programática,
   perfil SSR/ISR, JSON-LD, imagens OG, redirects 308, Web Vitals e revalidação aprovados;
 - sitemap do artefato: 17 URLs únicas, incluindo exatamente o perfil aprovado pela
@@ -114,8 +118,7 @@ persistência: a chapa substituída de Roberto Jefferson ficou sem a vice atual,
 chapa sucessora de Kelmon recebeu Luiz Cláudio Gamonal; o registro cancelado permaneceu
 não qualificante. Isso valida cadeias independentes de titular e vice com dados reais.
 
-A API pública ainda não expõe `/api/candidates/seo-report` antes do deploy desta entrega.
-Por isso o ambiente público atual não foi tratado como evidência desta versão. O build foi
-validado com fixture determinística e agora falha, em vez de publicar um sitemap parcial,
-quando o quality report está indisponível. A contagem final de perfis indexáveis deve ser
-registrada após o deploy da migration/API e a aprovação editorial individual.
+A API pública agora expõe `/api/candidates/seo-report`: o smoke de produção retornou HTTP
+200 com 61 perfis avaliados. Nenhum está indexável ainda; os 61 permanecem bloqueados pelo
+gate até receberem dados completos e aprovação editorial individual. O build também falha,
+em vez de publicar um sitemap parcial, quando o quality report está indisponível.
