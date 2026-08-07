@@ -25,7 +25,14 @@ const nextConfig = {
 
   // TODO: Set up redirects for old URL patterns
   async redirects() {
-    return []
+    return [
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'www.raio-x-2026.com.br' }],
+        destination: 'https://raio-x-2026.com.br/:path*',
+        permanent: true,
+      },
+    ]
   },
 
   // TODO: Configure headers for security (CSP, X-Frame-Options)

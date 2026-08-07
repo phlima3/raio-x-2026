@@ -6,13 +6,27 @@ import { fetchCandidates } from '@/lib/api'
 import { Comparator } from '@/components/Comparator'
 import type { CandidateSummary } from '@/lib/types'
 
-export const metadata: Metadata = {
-  title: 'Comparar Candidatos',
-  description: 'Compare propostas e histórico de dois candidatos lado a lado.',
+interface Props {
+  searchParams: {
+    a?: string
+    b?: string
+    topic?: string
+    [key: string]: string | string[] | undefined
+  }
 }
 
-interface Props {
-  searchParams: { a?: string; b?: string; topic?: string }
+export function generateMetadata({ searchParams }: Props): Metadata {
+  const hasParameters = Object.keys(searchParams).length > 0
+
+  return {
+    title: 'Comparar Candidatos',
+    description: 'Compare propostas e histórico de dois candidatos lado a lado.',
+    alternates: { canonical: '/comparar' },
+    robots: hasParameters
+      ? { index: false, follow: true }
+      : { index: true, follow: true },
+    openGraph: { url: '/comparar' },
+  }
 }
 
 export default async function CompararPage({ searchParams }: Props) {
@@ -41,6 +55,12 @@ export default async function CompararPage({ searchParams }: Props) {
         <p className="mt-2 font-serif italic text-ink-muted text-[15px] leading-relaxed">
           Selecione dois candidatos para ver propostas, divergências e um resumo gerado por IA.
         </p>
+        <Link
+          href="/comparacoes"
+          className="mt-4 inline-block font-mono text-[10px] uppercase tracking-[0.16em] text-ember hover:underline"
+        >
+          Ver comparações com revisão editorial →
+        </Link>
       </header>
 
       {!bothSelected && (

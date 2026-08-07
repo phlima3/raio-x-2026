@@ -11,6 +11,9 @@ export function generateMetadata({ searchParams }: Props): Metadata {
   return {
     title: q ? `Busca: "${q}"` : 'Buscar Candidatos',
     description: 'Encontre candidatos a presidente ou governador por nome, partido ou estado.',
+    alternates: { canonical: '/busca' },
+    robots: { index: false, follow: true },
+    openGraph: { url: '/busca' },
   }
 }
 

@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import type { CandidateSummary, ComparisonResult } from '@/lib/types'
+import { absoluteImageUrl } from '@/lib/seo'
 import { ProposalBlock } from './ProposalBlock'
 
 interface ComparisonData {
@@ -76,9 +77,9 @@ export function Comparator({ candidateSlugA, candidateSlugB, topic }: Comparator
   // Sliding tab indicator
   useLayoutEffect(() => {
     if (!tabBarRef.current || !indicatorRef.current || !currentTheme) return
-    const activeBtn = tabBarRef.current.querySelector<HTMLButtonElement>(
-      `[data-theme="${currentTheme}"]`
-    )
+    const activeBtn = Array.from(
+      tabBarRef.current.querySelectorAll<HTMLButtonElement>('[data-theme]'),
+    ).find((button) => button.dataset.theme === currentTheme)
     if (!activeBtn) return
 
     const barRect = tabBarRef.current.getBoundingClientRect()
@@ -202,13 +203,16 @@ export function Comparator({ candidateSlugA, candidateSlugB, topic }: Comparator
     <div>
       {/* Candidate headers — dual column, stack on mobile */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8 mb-8">
-        {[data.candidateA, data.candidateB].map((c) => (
+        {[data.candidateA, data.candidateB].map((c) => {
+          const photoUrl = absoluteImageUrl(c.photoUrl)
+
+          return (
           <div key={c.slug} className="border-b-2 border-ink pb-4" data-cmp-header>
             <div className="flex items-center gap-3">
               <div className="relative w-12 h-12 rounded-full overflow-hidden border border-ink/20 bg-ember/10 shrink-0">
-                {c.photoUrl ? (
+                {photoUrl ? (
                   <Image
-                    src={c.photoUrl}
+                    src={photoUrl}
                     alt={c.name}
                     fill
                     sizes="48px"
@@ -231,7 +235,8 @@ export function Comparator({ candidateSlugA, candidateSlugB, topic }: Comparator
               </div>
             </div>
           </div>
-        ))}
+          )
+        })}
       </div>
 
       {/* Topic tabs — editorial with sliding indicator */}

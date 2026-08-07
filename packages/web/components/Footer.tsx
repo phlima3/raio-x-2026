@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { LastUpdated } from './LastUpdated'
 
 const ELECTION_DATE = new Date('2026-10-04T00:00:00-03:00')
 
@@ -9,23 +8,22 @@ function daysUntilElection(): number {
 }
 
 const SECTIONS: Array<{ href: string; label: string }> = [
-  { href: '/', label: 'Candidatos' },
+  { href: '/eleicoes-2026', label: 'Eleições 2026' },
+  { href: '/candidatos-presidente', label: 'Presidência' },
   { href: '/comparar', label: 'Comparar' },
   { href: '/busca', label: 'Buscar' },
 ]
 
-const SOURCES: Array<{ href: string; label: string }> = [
-  { href: 'https://dadosabertos.tse.jus.br', label: 'TSE' },
-  { href: 'https://dadosabertos.camara.leg.br', label: 'Câmara' },
-  { href: 'https://legis.senado.leg.br/dadosabertos', label: 'Senado' },
-  { href: 'https://portaldatransparencia.gov.br', label: 'Portal da Transparência' },
+const TRUST_LINKS: Array<{ href: string; label: string }> = [
+  { href: '/metodologia', label: 'Metodologia' },
+  { href: '/fontes', label: 'Fontes' },
+  { href: '/politica-editorial', label: 'Política editorial' },
+  { href: '/correcoes', label: 'Correções' },
 ]
 
 export function Footer() {
   const daysLeft = daysUntilElection()
-  const now = new Date()
-  const year = now.getFullYear()
-  const builtAt = now.toISOString()
+  const year = new Date().getFullYear()
 
   return (
     <footer
@@ -46,7 +44,7 @@ export function Footer() {
             dias
           </span>
           <a
-            href="https://github.com"
+            href="https://github.com/phlima3/raio-x-2026"
             target="_blank"
             rel="noopener noreferrer"
             className="focus-editorial hover:text-ember transition-colors"
@@ -113,15 +111,13 @@ export function Footer() {
           <div className="col-span-6 md:col-span-4">
             <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-ember mb-5">
               <span className="inline-block w-6 h-px bg-ember align-middle mr-2" />
-              Fontes
+              Projeto
             </p>
             <ul className="space-y-3">
-              {SOURCES.map(({ href, label }) => (
+              {TRUST_LINKS.map(({ href, label }) => (
                 <li key={href}>
-                  <a
+                  <Link
                     href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     className="focus-editorial font-serif text-lg md:text-xl hover:text-ember transition-colors border-b border-transparent hover:border-ember pb-0.5 inline-flex items-baseline gap-1.5"
                   >
                     <span>{label}</span>
@@ -129,9 +125,9 @@ export function Footer() {
                       aria-hidden
                       className="font-mono text-[10px] text-ink-soft"
                     >
-                      ↗
+                      →
                     </span>
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -153,10 +149,12 @@ export function Footer() {
           <span className="italic font-serif text-sm normal-case tracking-normal text-ink-muted">
             “dados públicos, não partidários.”
           </span>
-          <span className="ml-auto text-ink-soft flex items-center gap-2">
-            <span>Compilado</span>
-            <LastUpdated isoDate={builtAt} />
-          </span>
+          <Link
+            href="/changelog"
+            className="ml-auto text-ink-soft hover:text-ember hover:underline"
+          >
+            Histórico de atualizações →
+          </Link>
         </div>
       </div>
     </footer>

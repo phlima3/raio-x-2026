@@ -33,7 +33,7 @@ function fmtBRL(value: string | number): string {
   })
 }
 
-interface TransparencyData {
+export interface TransparencyData {
   voting: VotingRecord[]
   assets: AssetDeclaration[]
   financing: CampaignFinancing | null
@@ -41,15 +41,17 @@ interface TransparencyData {
 
 interface TransparencyPanelProps {
   candidateSlug: string
+  initialData?: TransparencyData
 }
 
-export function TransparencyPanel({ candidateSlug }: TransparencyPanelProps) {
+export function TransparencyPanel({ candidateSlug, initialData }: TransparencyPanelProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>('voting')
-  const [data, setData] = useState<TransparencyData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState<TransparencyData | null>(initialData ?? null)
+  const [loading, setLoading] = useState(initialData === undefined)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (initialData !== undefined) return
     const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 
     fetch(`${API_BASE}/api/candidates/${candidateSlug}/transparency`, {
@@ -62,7 +64,7 @@ export function TransparencyPanel({ candidateSlug }: TransparencyPanelProps) {
       })
       .catch(() => setError('Falha de conexão'))
       .finally(() => setLoading(false))
-  }, [candidateSlug])
+  }, [candidateSlug, initialData])
 
   const tabs: { key: ActiveTab; label: string }[] = [
     { key: 'voting', label: 'Votações' },

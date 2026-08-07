@@ -1,19 +1,27 @@
 import 'dotenv/config'
 import { createHash } from 'node:crypto'
-import { PrismaClient, Position, ProposalStatus, Candidate } from '@prisma/client'
+import { PrismaClient, Position, ProposalStatus } from '@prisma/client'
 import {
   PRESIDENTIAL_SOURCES,
   CANDIDATE_ALIASES,
+  PRESIDENTIAL_PERSON_KEYS,
 } from '../data/presidentialSources'
 import { fetchAllSources, FetchedArticle } from '../sources/presidentialNews'
 import {
   extractPresidenciaveis,
   extractProposalsFromNews,
   ExtractedCandidate,
-  CandidacyStatus,
 } from '../processors/presidentialExtractor'
 import { closeBrowser } from '../utils/playwright'
 import { logger } from '../utils/logger'
+import { revalidateCandidatePages } from '../utils/revalidateWeb'
+import { invalidateApiCandidateCaches } from '../utils/invalidateApiCache'
+import {
+  isElectoralJusticeSource,
+  shouldAcceptIncomingStatus,
+} from '../domain/candidacyStatus'
+
+export { isElectoralJusticeSource, shouldAcceptIncomingStatus }
 
 const prisma = new PrismaClient()
 
@@ -58,30 +66,35 @@ export function namesMatch(a: string, b: string): boolean {
   return false
 }
 
-function findCandidate(name: string, candidates: Candidate[]): Candidate | undefined {
-  return candidates.find((c) => namesMatch(c.name, name))
+export function curatedPersonKeyForName(name: string): string | undefined {
+  return PRESIDENTIAL_PERSON_KEYS[normalizeName(canonicalName(name))]
+}
+
+export function findCuratedCandidate<T extends { personKey: string | null }>(
+  name: string,
+  candidates: T[],
+): T | undefined {
+  const personKey = curatedPersonKeyForName(name)
+  if (!personKey) return undefined
+  const matches = candidates.filter(
+    (candidate) => candidate.personKey?.trim().toLowerCase() === personKey,
+  )
+  return matches.length === 1 ? matches[0] : undefined
 }
 
 // ── Merge candidates across sources ───────────────────────────────────────────
 
-// Em caso de conflito entre fontes, o status mais "forte" vence
-const STATUS_PRIORITY: Record<CandidacyStatus, number> = {
-  desistiu: 4,
-  confirmado: 3,
-  pre_candidato: 2,
-  cotado: 1,
-}
-
 interface MergedCandidate extends ExtractedCandidate {
   sources: string[]
+  statusSourceUrl?: string
 }
 
 export function mergeExtractedCandidates(
-  perSource: { sourceId: string; candidates: ExtractedCandidate[] }[],
+  perSource: { sourceId: string; sourceUrl?: string; candidates: ExtractedCandidate[] }[],
 ): MergedCandidate[] {
   const merged: MergedCandidate[] = []
 
-  for (const { sourceId, candidates } of perSource) {
+  for (const { sourceId, sourceUrl, candidates } of perSource) {
     for (const extracted of candidates) {
       const existing = merged.find((m) => namesMatch(m.name, extracted.name))
 
@@ -90,13 +103,25 @@ export function mergeExtractedCandidates(
           ...extracted,
           name: canonicalName(extracted.name),
           sources: [sourceId],
+          statusSourceUrl: sourceUrl,
         })
         continue
       }
 
       existing.sources.push(sourceId)
-      if (STATUS_PRIORITY[extracted.status] > STATUS_PRIORITY[existing.status]) {
+      if (
+        shouldAcceptIncomingStatus({
+          currentStatus: existing.status,
+          currentSourceUrl: existing.statusSourceUrl,
+          incomingStatus: extracted.status,
+          incomingSourceUrl: sourceUrl,
+        }) &&
+        (extracted.status !== existing.status ||
+          isElectoralJusticeSource(sourceUrl) ||
+          !isElectoralJusticeSource(existing.statusSourceUrl))
+      ) {
         existing.status = extracted.status
+        existing.statusSourceUrl = sourceUrl
       }
       existing.party ??= extracted.party
       existing.currentRole ??= extracted.currentRole
@@ -114,19 +139,57 @@ export function mergeExtractedCandidates(
 
 // ── Persist candidates ────────────────────────────────────────────────────────
 
-async function upsertPresidenciaveis(merged: MergedCandidate[]): Promise<void> {
+async function upsertPresidenciaveis(merged: MergedCandidate[]): Promise<string[]> {
   const dbCandidates = await prisma.candidate.findMany({
     where: { position: Position.PRESIDENTE, electionYear: 2026 },
   })
 
   let created = 0
   let updated = 0
+  const touchedSlugs = new Set<string>()
 
   for (const m of merged) {
-    const existing = findCandidate(m.name, dbCandidates)
+    const personKey = curatedPersonKeyForName(m.name)
+    if (!personKey) {
+      logger.warn(
+        `[presidenciaveis] ${m.name} sem personKey curado — persistência ignorada`,
+      )
+      continue
+    }
+    const identityMatches = dbCandidates.filter(
+      (candidate) => candidate.personKey?.trim().toLowerCase() === personKey,
+    )
+    if (identityMatches.length > 1) {
+      logger.warn(
+        `[presidenciaveis] ${m.name} tem identidade ambígua (${identityMatches.length} registros) — persistência ignorada`,
+      )
+      continue
+    }
+    const existing = identityMatches[0]
+    const verifiedAt = new Date()
+    const statusSourceUrl = m.statusSourceUrl ?? null
 
     if (existing) {
-      const data: Record<string, unknown> = { candidacyStatus: m.status }
+      const data: Record<string, unknown> = {}
+      const acceptsIncomingStatus = shouldAcceptIncomingStatus({
+        currentStatus: existing.candidacyStatus,
+        currentSourceUrl: existing.candidacyStatusSourceUrl,
+        incomingStatus: m.status,
+        incomingSourceUrl: statusSourceUrl,
+      })
+
+      if (acceptsIncomingStatus) {
+        data.candidacyStatus = m.status
+        data.candidacyStatusSourceUrl = statusSourceUrl
+        data.candidacyStatusVerifiedAt = verifiedAt
+        if (m.status !== existing.candidacyStatus) {
+          data.materialUpdatedAt = verifiedAt
+        }
+      } else {
+        logger.warn(
+          `[presidenciaveis] Status mais fraco ignorado para ${existing.name}: ${m.status}`,
+        )
+      }
 
       if (m.party && m.party !== existing.party) {
         logger.info(
@@ -136,16 +199,29 @@ async function upsertPresidenciaveis(merged: MergedCandidate[]): Promise<void> {
         data.partyHistory = existing.partyHistory.includes(m.party)
           ? existing.partyHistory
           : [...existing.partyHistory, m.party]
+        data.materialUpdatedAt = verifiedAt
       }
 
-      await prisma.candidate.update({ where: { id: existing.id }, data })
-      updated++
+      if (Object.keys(data).length > 0) {
+        await prisma.candidate.update({ where: { id: existing.id }, data })
+        touchedSlugs.add(
+          existing.slug ?? `${slugify(existing.name)}-${slugify(existing.party)}-${slugify(existing.state)}`,
+        )
+        updated++
+      }
       continue
     }
 
     // Só cria candidatos novos com pré-candidatura anunciada ou confirmada —
     // "cotado" é especulação e "desistiu" sem registro prévio não interessa
-    if (m.status !== 'confirmado' && m.status !== 'pre_candidato') {
+    if (
+      ![
+        'pre_candidato',
+        'escolhido_convencao',
+        'registro_solicitado',
+        'deferido',
+      ].includes(m.status)
+    ) {
       logger.info(`[presidenciaveis] Ignorando ${m.name} (${m.status}) — não está no banco`)
       continue
     }
@@ -159,6 +235,7 @@ async function upsertPresidenciaveis(merged: MergedCandidate[]): Promise<void> {
     const candidate = await prisma.candidate.create({
       data: {
         name: m.name,
+        personKey,
         party: m.party,
         state,
         position: Position.PRESIDENTE,
@@ -166,15 +243,20 @@ async function upsertPresidenciaveis(merged: MergedCandidate[]): Promise<void> {
         slug: `${slugify(m.name)}-${slugify(m.party)}-${slugify(state)}`,
         bio: m.currentRole ?? null,
         candidacyStatus: m.status,
+        candidacyStatusSourceUrl: statusSourceUrl,
+        candidacyStatusVerifiedAt: verifiedAt,
+        materialUpdatedAt: verifiedAt,
         partyHistory: [m.party],
       },
     })
     dbCandidates.push(candidate)
+    if (candidate.slug) touchedSlugs.add(candidate.slug)
     created++
     logger.info(`[presidenciaveis] ✚ Criado: ${m.name} (${m.party}) — ${m.status}`)
   }
 
   logger.info(`[presidenciaveis] Candidatos: ${created} criados, ${updated} atualizados`)
+  return [...touchedSlugs]
 }
 
 // ── Persist proposals ─────────────────────────────────────────────────────────
@@ -190,13 +272,14 @@ const THEME_LABELS: Record<string, string> = {
   outros: 'Outros',
 }
 
-async function saveProposalsFromArticles(articles: FetchedArticle[]): Promise<void> {
+async function saveProposalsFromArticles(articles: FetchedArticle[]): Promise<string[]> {
   const dbCandidates = await prisma.candidate.findMany({
     where: { position: Position.PRESIDENTE, electionYear: 2026 },
   })
 
   let saved = 0
   let unmatched = 0
+  const touchedSlugs = new Set<string>()
 
   for (const article of articles) {
     const proposals = await extractProposalsFromNews(article.text)
@@ -205,7 +288,7 @@ async function saveProposalsFromArticles(articles: FetchedArticle[]): Promise<vo
     )
 
     for (const p of proposals) {
-      const candidate = findCandidate(p.candidateName, dbCandidates)
+      const candidate = findCuratedCandidate(p.candidateName, dbCandidates)
       if (!candidate) {
         unmatched++
         logger.warn(
@@ -220,21 +303,41 @@ async function saveProposalsFromArticles(articles: FetchedArticle[]): Promise<vo
       const externalId = `news_${candidate.id}_${p.theme}_${hash}`
 
       try {
-        await prisma.proposal.upsert({
+        const existingProposal = await prisma.proposal.findUnique({
           where: { externalId },
-          update: {},
-          create: {
-            externalId,
-            source: 'news',
-            title: `${THEME_LABELS[p.theme]} — declaração na imprensa`,
-            description: p.proposal,
-            category: THEME_LABELS[p.theme],
-            tags: [p.theme, 'news', article.source.id],
-            status: ProposalStatus.SUBMITTED,
-            url: article.source.url,
-            candidateId: candidate.id,
-          },
+          select: { id: true },
         })
+        if (existingProposal) continue
+
+        const materialUpdatedAt = new Date()
+        await prisma.$transaction([
+          prisma.proposal.create({
+            data: {
+              externalId,
+              source: 'news',
+              title: `${THEME_LABELS[p.theme]} — declaração na imprensa`,
+              description: p.proposal,
+              category: THEME_LABELS[p.theme],
+              tags: [p.theme, 'news', article.source.id],
+              status: ProposalStatus.SUBMITTED,
+              url: article.source.url,
+              candidateId: candidate.id,
+            },
+          }),
+          prisma.candidate.update({
+            where: { id: candidate.id },
+            data: { materialUpdatedAt },
+          }),
+          // Scores existentes foram calculados sobre uma versão anterior das
+          // propostas. Removê-los força recálculo na próxima consulta.
+          prisma.consistencyScore.deleteMany({
+            where: { candidateId: candidate.id },
+          }),
+        ])
+        touchedSlugs.add(
+          candidate.slug ??
+            `${slugify(candidate.name)}-${slugify(candidate.party)}-${slugify(candidate.state)}`,
+        )
         saved++
       } catch (err) {
         logger.error(
@@ -248,6 +351,7 @@ async function saveProposalsFromArticles(articles: FetchedArticle[]): Promise<vo
   logger.info(
     `[presidenciaveis] Propostas: ${saved} salvas, ${unmatched} sem candidato correspondente`,
   )
+  return [...touchedSlugs]
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -263,8 +367,14 @@ export async function runSyncPresidenciaveis(
     return
   }
 
+  const touchedSlugs = new Set<string>()
+
   if (mode !== 'proposals') {
-    const perSource: { sourceId: string; candidates: ExtractedCandidate[] }[] = []
+    const perSource: {
+      sourceId: string
+      sourceUrl?: string
+      candidates: ExtractedCandidate[]
+    }[] = []
 
     // Só listas de candidatos e pesquisas definem QUEM está na disputa —
     // hubs de notícia servem apenas para propostas
@@ -273,16 +383,25 @@ export async function runSyncPresidenciaveis(
       logger.info(
         `[presidenciaveis] ${article.source.id}: ${candidates.length} presidenciáveis extraídos`,
       )
-      perSource.push({ sourceId: article.source.id, candidates })
+      perSource.push({
+        sourceId: article.source.id,
+        sourceUrl: article.source.url,
+        candidates,
+      })
     }
 
     const merged = mergeExtractedCandidates(perSource)
     logger.info(`[presidenciaveis] ${merged.length} presidenciáveis únicos após merge`)
-    await upsertPresidenciaveis(merged)
+    for (const slug of await upsertPresidenciaveis(merged)) touchedSlugs.add(slug)
   }
 
   if (mode !== 'candidates') {
-    await saveProposalsFromArticles(articles)
+    for (const slug of await saveProposalsFromArticles(articles)) touchedSlugs.add(slug)
+  }
+
+  if (touchedSlugs.size > 0) {
+    await invalidateApiCandidateCaches()
+    await revalidateCandidatePages([...touchedSlugs])
   }
 
   logger.info('[presidenciaveis] Sync concluído')

@@ -58,7 +58,10 @@ ${text.slice(0, 12_000)}`
         `[${this.providerName}] extractProposals failed to parse response`,
         err instanceof Error ? err.message : err,
       )
-      return ProposalsByThemeSchema.parse({})
+      // A provider/parsing failure is not an authoritative empty snapshot.
+      // Propagate it so callers preserve the last successfully published data.
+      if (err instanceof Error) throw err
+      throw new Error(String(err))
     }
   }
 

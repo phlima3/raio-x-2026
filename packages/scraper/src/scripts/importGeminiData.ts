@@ -15,6 +15,13 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { PrismaClient, ProposalStatus } from '@prisma/client'
 import { z } from 'zod'
+import {
+  hasCandidateMaterialChange,
+  type CandidateMaterialPatch,
+  type CandidateMaterialSnapshot,
+} from '../domain/candidateMaterialChange'
+import { invalidateApiCandidateCaches } from '../utils/invalidateApiCache'
+import { revalidateCandidatePages } from '../utils/revalidateWeb'
 
 const prisma = new PrismaClient()
 const DRY_RUN = process.argv.includes('--dry-run')
@@ -86,6 +93,15 @@ function readOutputFiles(dir: string): { file: string; data: unknown }[] {
     .filter(Boolean) as { file: string; data: unknown }[]
 }
 
+function optionalHttpsUrl(value: string | null | undefined): string | undefined {
+  if (!value) return undefined
+  try {
+    return new URL(value).protocol === 'https:' ? value : undefined
+  } catch {
+    return undefined
+  }
+}
+
 async function importCandidate(output: GeminiOutput): Promise<void> {
   const { slug } = output
 
@@ -93,8 +109,23 @@ async function importCandidate(output: GeminiOutput): Promise<void> {
   // runs for both presidente and governador — they share slug but different id).
   // Use raw query to avoid stale Prisma client type issues with the slug column.
   const candidates = await prisma.$queryRaw<
-    { id: string; name: string; party: string; state: string; position: string }[]
-  >`SELECT id, name, party, state, position FROM "Candidate" WHERE slug = ${slug}`
+    Array<{
+      id: string
+      name: string
+      party: string
+      state: string
+      position: string
+      bio: string | null
+      bioSummary: string | null
+      photoUrl: string | null
+      photoSourceUrl: string | null
+      siteUrl: string | null
+      bioSourceUrl: string | null
+      approvalRate: number | null
+    }>
+  >`SELECT id, name, party, state, position, bio, "bioSummary", "photoUrl",
+           "photoSourceUrl", "siteUrl", "bioSourceUrl", "approvalRate"
+    FROM "Candidate" WHERE slug = ${slug}`
 
   if (candidates.length === 0) {
     warn(`No candidate found with slug "${slug}" — skipping`)
@@ -104,17 +135,39 @@ async function importCandidate(output: GeminiOutput): Promise<void> {
   for (const candidate of candidates) {
     log(`  Updating ${candidate.name} (${candidate.position}) — ${slug}`)
 
-    if (!DRY_RUN) {
+    const candidatePatch: CandidateMaterialPatch = {
+      ...(output.bio ? { bio: output.bio } : {}),
+      ...(output.recentContext ? { bioSummary: output.recentContext } : {}),
+      ...(output.photoUrl ? { photoUrl: output.photoUrl } : {}),
+      ...(optionalHttpsUrl(output.officialPhotoPageUrl)
+        ? { photoSourceUrl: optionalHttpsUrl(output.officialPhotoPageUrl) }
+        : {}),
+      ...(optionalHttpsUrl(output.officialSiteUrl)
+        ? { siteUrl: optionalHttpsUrl(output.officialSiteUrl) }
+        : {}),
+      ...(optionalHttpsUrl(output.wikipediaUrl) || optionalHttpsUrl(output.officialSiteUrl)
+        ? {
+            bioSourceUrl:
+              optionalHttpsUrl(output.wikipediaUrl) ?? optionalHttpsUrl(output.officialSiteUrl),
+          }
+        : {}),
+      ...(output.approvalRate != null ? { approvalRate: output.approvalRate } : {}),
+    }
+    const materialChanged = hasCandidateMaterialChange(
+      candidate satisfies CandidateMaterialSnapshot,
+      candidatePatch,
+    )
+
+    if (!DRY_RUN && materialChanged) {
       await prisma.candidate.update({
         where: { id: candidate.id },
         data: {
-          ...(output.bio ? { bio: output.bio } : {}),
-          ...(output.recentContext ? { bioSummary: output.recentContext } : {}),
-          ...(output.photoUrl ? { photoUrl: output.photoUrl } : {}),
-          ...(output.officialSiteUrl ? { siteUrl: output.officialSiteUrl } : {}),
-          ...(output.approvalRate != null ? { approvalRate: output.approvalRate } : {}),
+          ...candidatePatch,
+          materialUpdatedAt: new Date(),
         },
       })
+      await invalidateApiCandidateCaches()
+      await revalidateCandidatePages([slug])
     }
 
     // Upsert proposals for each keyPosition theme
@@ -131,10 +184,18 @@ async function importCandidate(output: GeminiOutput): Promise<void> {
         if (!DRY_RUN) {
           const existing = await prisma.proposal.findUnique({
             where: { externalId },
-            select: { id: true },
+            select: { id: true, status: true, candidateId: true },
           })
 
           if (existing) {
+            if (existing.candidateId !== candidate.id) {
+              warn(`External proposal id collision for ${externalId} — skipping`)
+              continue
+            }
+            if (existing.status !== ProposalStatus.DRAFT) {
+              warn(`Published proposal ${externalId} requires editorial update — skipping`)
+              continue
+            }
             await prisma.proposal.update({
               where: { externalId },
               data: { title, description, category, tags: [category, 'programa'] },
@@ -162,13 +223,78 @@ async function importCandidate(output: GeminiOutput): Promise<void> {
 // ── Pre-flight migrations ─────────────────────────────────────────────────────
 
 async function runPreflightFixes(): Promise<void> {
-  // Idempotent: fix Renan Santos MBL → Missão (one-time migration)
-  const n = await prisma.$executeRaw`
-    UPDATE "Candidate"
-    SET party = 'Missão', slug = 'renan-santos-missao-sp'
-    WHERE name = 'Renan Santos' AND state = 'SP' AND position = 'PRESIDENTE' AND party = 'MBL'
-  `
-  if (n > 0) log(`[preflight] Renan Santos: updated party MBL → Missão`)
+  // Idempotent: fix Renan Santos MBL → Missão while preserving the old URL.
+  const oldSlug = 'renan-santos-mbl-sp'
+  const newSlug = 'renan-santos-missao-sp'
+  const candidates = await prisma.candidate.findMany({
+    where: {
+      name: 'Renan Santos',
+      state: 'SP',
+      position: 'PRESIDENTE',
+      electionYear: 2026,
+      OR: [{ party: 'MBL' }, { slug: newSlug }],
+    },
+    select: { id: true, party: true, slug: true },
+  })
+  if (candidates.length === 0) return
+  if (candidates.length !== 1) {
+    warn('[preflight] Identidade ambígua para Renan Santos — correção não aplicada')
+    return
+  }
+
+  const candidateId = candidates[0].id
+  const [targetCollision, sourceCollision, existingAlias] = await Promise.all([
+    prisma.candidate.findFirst({
+      where: { slug: newSlug, id: { not: candidateId } },
+      select: { id: true },
+    }),
+    prisma.candidate.findFirst({
+      where: { slug: oldSlug, id: { not: candidateId } },
+      select: { id: true },
+    }),
+    prisma.candidateSlugAlias.findUnique({
+      where: { slug: oldSlug },
+      select: { candidateId: true },
+    }),
+  ])
+  if (
+    targetCollision ||
+    sourceCollision ||
+    (existingAlias && existingAlias.candidateId !== candidateId)
+  ) {
+    warn('[preflight] Colisão de slug/alias para Renan Santos — correção não aplicada')
+    return
+  }
+
+  const candidateNeedsUpdate =
+    candidates[0].party !== 'Missão' || candidates[0].slug !== newSlug
+  if (!candidateNeedsUpdate && existingAlias) return
+
+  await prisma.$transaction([
+    ...(candidateNeedsUpdate || !existingAlias
+      ? [
+          prisma.candidate.update({
+            where: { id: candidateId },
+            data: {
+              party: 'Missão',
+              slug: newSlug,
+              materialUpdatedAt: new Date(),
+            },
+          }),
+        ]
+      : []),
+    ...(existingAlias
+      ? []
+      : [
+          prisma.candidateSlugAlias.create({
+            data: { slug: oldSlug, candidateId },
+          }),
+        ]),
+  ])
+
+  log(`[preflight] Renan Santos: updated party MBL → Missão with permanent slug alias`)
+  await invalidateApiCandidateCaches()
+  await revalidateCandidatePages([oldSlug, newSlug])
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
 import 'dotenv/config'
-import { dailySyncJob } from './jobs/dailySync'
+import { dailySyncJob, runTseStatusSync, tseStatusJob } from './jobs/dailySync'
 import { weeklyProposalsJob } from './jobs/weeklyProposals'
 import { logger } from './utils/logger'
 
@@ -15,7 +15,14 @@ async function main() {
 
   // Start cron jobs (they schedule themselves)
   dailySyncJob.start()
+  tseStatusJob.start()
   weeklyProposalsJob.start()
+
+  // Confere o snapshot oficial ao iniciar; as rodadas seguintes ocorrem a
+  // cada duas horas e mantêm a meta operacional abaixo de quatro horas.
+  void runTseStatusSync().catch((error) => {
+    logger.error('[tse-status] Sincronização inicial falhou', error)
+  })
 
   logger.info('Cron jobs started. Scraper is running.')
 }

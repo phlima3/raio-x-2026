@@ -43,19 +43,26 @@ enum VoteType {
 
 model Candidate {
   id              String   @id @default(cuid())
+  personKey       String?  // Chave curada que une registros da mesma pessoa; nunca inferida só por nome
   tseId           String?  @unique // ID no TSE
   camaraId        String?  @unique // ID na API da Câmara dos Deputados
   senadoId        String?  @unique // ID na API do Senado Federal
-  slug            String?  @unique // URL slug (ex: lula-pt-sp)
+  slug            String?  // URL persistente do perfil; duplicatas legadas são resolvidas no domínio
   name            String
   socialName      String?
   party           String   // Sigla do partido (ex: PT, PL, MDB)
   state           String   // UF (ex: SP, RJ, MG)
   position        Position
   coalitionName   String?
+  runningMateName String?  // Vice na chapa, quando aplicável
+  runningMateParty String?
+  runningMateSourceUrl String?
   photoUrl        String?
+  photoSourceUrl  String?  // Origem pública da foto para crédito/auditoria
+  photoLicense    String?  // Licença ou justificativa de uso editorial
   bio             String?  @db.Text
   bioSummary      String?  @db.Text // Gerado pelo Gemini
+  bioSourceUrl    String?  // Fonte principal da trajetória/biografia
   siteUrl         String?
   email           String?
 
@@ -65,7 +72,16 @@ model Candidate {
   isIncumbent     Boolean  @default(false)
   approvalRate    Int?     // Índice de aprovação 0–100
   partyHistory    String[] // Partidos anteriores em ordem cronológica
-  candidacyStatus String?  // confirmado | pre_candidato | cotado | desistiu (sync via notícias)
+  candidacyStatus           String?   // vocabulário eleitoral documentado em docs/runbooks/EDITORIAL_QUALITY_GATE.md
+  candidacyStatusSourceUrl  String?   // Evidência TSE/TRE ou jornalística para a situação exibida
+  candidacyStatusVerifiedAt DateTime? // Momento em que a fonte foi verificada
+
+  // Controle editorial e datas materiais usadas pelo quality gate de indexação
+  materialUpdatedAt  DateTime?
+  reviewedAt         DateTime?
+  editorialApprovedAt DateTime?
+  editorialAuthor    String?
+  editorialReviewer  String?
 
   proposals          Proposal[]
   votingRecords      VotingRecord[]
@@ -73,14 +89,26 @@ model Candidate {
   campaignFinancings CampaignFinancing[]
   consistencyScores  ConsistencyScore[]
   newsItems          NewsItem[]
+  slugAliases        CandidateSlugAlias[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([party])
+  @@index([personKey])
   @@index([state])
   @@index([position])
   @@index([electionYear])
+  @@index([slug])
+}
+
+model CandidateSlugAlias {
+  slug        String    @id
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@index([candidateId])
 }
 
 model Proposal {

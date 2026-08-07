@@ -34,6 +34,9 @@ export interface CandidateSummary {
   electionYear: number
   slug: string
   firstProposalTitle?: string | null
+  candidacyStatus?: string | null
+  materialUpdatedAt?: string | null
+  updatedAt?: string
 }
 
 export interface Proposal {
@@ -87,12 +90,25 @@ export interface CandidateDetail extends CandidateSummary {
   siteUrl: string | null
   email: string | null
   coalitionName: string | null
+  runningMateName?: string | null
+  runningMateParty?: string | null
+  runningMateSourceUrl?: string | null
   approvalRate: number | null
   partyHistory: string[]
   proposals: Proposal[]
   votingRecords: VotingRecord[]
   assetDeclarations: AssetDeclaration[]
   campaignFinancings: CampaignFinancing[]
+  candidacyStatusSourceUrl?: string | null
+  candidacyStatusVerifiedAt?: string | null
+  bioSourceUrl?: string | null
+  materialUpdatedAt?: string | null
+  reviewedAt?: string | null
+  editorialApprovedAt?: string | null
+  editorialAuthor?: string | null
+  editorialReviewer?: string | null
+  photoSourceUrl?: string | null
+  photoLicense?: string | null
 }
 
 export interface ComparisonResult {
@@ -117,9 +133,48 @@ export interface NewsItem {
   id: string
   title: string
   summary: string
-  sourceUrl: string
+  sourceUrl: string | null
   publishedAt: string
   topic: string
   hasContradiction: boolean
   contradictionNote: string | null
+}
+
+export interface ConsistencyScore {
+  theme: string
+  score: number
+  label: string
+  explanation: string
+  contradictions: Array<{ proposal: string; vote: string; description: string }>
+  proposalCount: number
+  voteCount: number
+  computedAt: string
+}
+
+export interface CandidateSeoReportItem {
+  id: string
+  slug: string
+  aliases: string[]
+  duplicateCandidateIds: string[]
+  name: string
+  party: string
+  state: string
+  position: Position
+  electionYear: number
+  candidacyStatus: string | null
+  candidacyStatusVerifiedAt: string | null
+  materialUpdatedAt: string | null
+  reviewedAt: string | null
+  updatedAt: string
+  topics: string[]
+  searchIntent: {
+    primary: string
+    secondary: string[]
+    validation: 'hipotese_aguardando_search_console'
+  }
+  indexable: boolean
+  blockers: string[]
+  warnings: string[]
+  substantiveModules: string[]
+  blockerMessages: string[]
 }

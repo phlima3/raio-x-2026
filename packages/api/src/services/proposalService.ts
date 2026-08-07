@@ -1,6 +1,7 @@
 import { PrismaClient, Prisma } from '@prisma/client'
 import { ProposalFilters } from '../types/proposal'
 import { withCache, cacheKey, TTL } from './cacheService'
+import { PUBLIC_PROPOSAL_WHERE } from '../domain/publicationPolicy'
 
 const prisma = new PrismaClient()
 
@@ -10,7 +11,7 @@ export async function listProposals(filters: ProposalFilters) {
   const { candidateId, category, status, source, search, page, limit } = filters
   const skip = (page - 1) * limit
 
-  const where: Prisma.ProposalWhereInput = {
+  const requestedWhere: Prisma.ProposalWhereInput = {
     ...(candidateId && { candidateId }),
     ...(category && { category: { contains: category, mode: 'insensitive' } }),
     ...(status && { status }),
@@ -21,6 +22,9 @@ export async function listProposals(filters: ProposalFilters) {
         { description: { contains: search, mode: 'insensitive' } },
       ],
     }),
+  }
+  const where: Prisma.ProposalWhereInput = {
+    AND: [PUBLIC_PROPOSAL_WHERE, requestedWhere],
   }
 
   const [total, proposals] = await Promise.all([
@@ -53,8 +57,8 @@ export async function listProposals(filters: ProposalFilters) {
 // ── Get proposal by ID ────────────────────────────────────────────────────────
 
 export async function getProposalById(id: string) {
-  return prisma.proposal.findUnique({
-    where: { id },
+  return prisma.proposal.findFirst({
+    where: { AND: [{ id }, PUBLIC_PROPOSAL_WHERE] },
     include: {
       candidate: {
         select: { id: true, name: true, party: true, state: true, position: true },
@@ -68,7 +72,7 @@ export async function getProposalById(id: string) {
 export async function getProposalsByCandidate(candidateId: string) {
   return withCache(cacheKey.candidateProposals(candidateId), TTL.PROPOSALS, async () => {
     const proposals = await prisma.proposal.findMany({
-      where: { candidateId },
+      where: { AND: [{ candidateId }, PUBLIC_PROPOSAL_WHERE] },
       orderBy: [{ category: 'asc' }, { proposedAt: 'desc' }],
     })
 
@@ -91,7 +95,9 @@ export async function getProposalCategories() {
       by: ['category'],
       _count: { id: true },
       orderBy: { _count: { id: 'desc' } },
-      where: { category: { not: null } },
+      where: {
+        AND: [{ category: { not: null } }, PUBLIC_PROPOSAL_WHERE],
+      },
     })
 
     return rows.map((r) => ({ category: r.category, count: r._count.id }))

@@ -4,7 +4,8 @@ import { syncSenado } from '../sources/senado'
 import { syncTse } from '../sources/tse'
 import { logger } from '../utils/logger'
 
-// Daily cron job: sync government APIs (Câmara, Senado, TSE)
+// Daily cron job: sync stable Câmara/Senado data. TSE candidacy status has a
+// separate two-hour schedule because it is time-sensitive during registration.
 // Schedule: every day at 03:00 BRT (06:00 UTC)
 // These APIs are relatively stable — daily refresh is sufficient
 
@@ -13,6 +14,7 @@ import { logger } from '../utils/logger'
 // TODO: Store sync run history (startedAt, finishedAt, recordsUpdated, errors)
 
 const CRON_SCHEDULE = '0 6 * * *' // 06:00 UTC = 03:00 BRT
+const TSE_STATUS_CRON_SCHEDULE = '15 */2 * * *'
 
 async function runDailySync(): Promise<void> {
   logger.info('[daily-sync] Starting daily government API sync…')
@@ -25,11 +27,10 @@ async function runDailySync(): Promise<void> {
   const results = await Promise.allSettled([
     syncCamara({}, { dateFrom }),
     syncSenado(),
-    syncTse(),
   ])
 
   results.forEach((result, index) => {
-    const source = ['camara', 'senado', 'tse'][index]
+    const source = ['camara', 'senado'][index]
     if (result.status === 'rejected') {
       logger.error(`[daily-sync] ${source} sync failed`, result.reason)
     } else {
@@ -45,13 +46,33 @@ export const dailySyncJob = cron.schedule(CRON_SCHEDULE, runDailySync, {
   timezone: 'America/Sao_Paulo',
 })
 
+let tseStatusSyncRunning = false
+
+export async function runTseStatusSync(): Promise<void> {
+  if (tseStatusSyncRunning) {
+    logger.warn('[tse-status] Sincronização anterior ainda está em execução; rodada ignorada')
+    return
+  }
+  tseStatusSyncRunning = true
+  try {
+    await syncTse(2026)
+  } finally {
+    tseStatusSyncRunning = false
+  }
+}
+
+export const tseStatusJob = cron.schedule(TSE_STATUS_CRON_SCHEDULE, runTseStatusSync, {
+  scheduled: false,
+  timezone: 'America/Sao_Paulo',
+})
+
 // Allow running once immediately for testing
 export { runDailySync }
 
 // ── Direct execution ──────────────────────────────────────────────────────────
 // Used by: pnpm run sync:all
 if (require.main === module) {
-  runDailySync()
+  Promise.all([runDailySync(), runTseStatusSync()])
     .catch((err) => {
       logger.error('[daily-sync] Fatal error', err)
       process.exit(1)

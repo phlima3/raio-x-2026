@@ -1,6 +1,8 @@
 import { PrismaClient, ProposalStatus } from '@prisma/client'
 import { createProvider, ProposalsByTheme } from './llm'
 import { logger } from '../utils/logger'
+import { invalidateApiCandidateCaches } from '../utils/invalidateApiCache'
+import { revalidateCandidatePages } from '../utils/revalidateWeb'
 
 const prisma = new PrismaClient()
 
@@ -81,12 +83,29 @@ export async function processProposalsFromSite(
   const proposals = flattenByTheme(byTheme, candidateId, sourceUrl)
   if (proposals.length === 0) {
     logger.info(`[extractor] No proposals extracted from ${sourceUrl}`)
-    return 0
   }
 
-  const saved = await persistProposals(proposals)
-  logger.info(`[extractor] ${saved} proposals saved for ${candidateName}`)
-  return saved
+  const changed = await persistProposals(proposals, { candidateId, sourceUrl })
+  if (changed > 0) {
+    const candidate = await prisma.candidate.findUnique({
+      where: { id: candidateId },
+      select: { slug: true, name: true, party: true, state: true },
+    })
+    await invalidateApiCandidateCaches()
+    if (candidate) {
+      const slug = candidate.slug ?? [candidate.name, candidate.party, candidate.state]
+        .map((value) => value
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, ''))
+        .join('-')
+      await revalidateCandidatePages([slug])
+    }
+  }
+  logger.info(`[extractor] ${changed} proposal records reconciled for ${candidateName}`)
+  return changed
 }
 
 /**
@@ -141,7 +160,7 @@ function flattenByTheme(
       if (!description.trim()) continue
 
       const category = THEME_LABELS[themeKey]
-      const title = `${category} — proposta ${i + 1}`
+      const title = proposalTitleFromDescription(category, description)
       const externalId = `site_${candidateId}_${themeKey}_${i}`
 
       results.push({
@@ -161,39 +180,167 @@ function flattenByTheme(
   return results
 }
 
-async function persistProposals(proposals: ProcessedProposal[]): Promise<number> {
-  let saved = 0
+export function proposalTitleFromDescription(
+  category: string,
+  description: string,
+): string {
+  const compact = description.replace(/\s+/g, ' ').trim()
+  const firstSentence = compact.split(/(?<=[.!?])\s+/)[0].replace(/[.!?]+$/, '').trim()
+  const excerpt = firstSentence.slice(0, 140).trim()
+  return excerpt.length >= 12
+    ? excerpt
+    : `${category}: ${compact.slice(0, 120).trim()}`
+}
 
-  for (const p of proposals) {
-    try {
-      await prisma.proposal.upsert({
-        where: { externalId: p.externalId },
+interface ExistingProposalSnapshot {
+  id: string
+  externalId: string | null
+  source: string
+  title: string
+  description: string | null
+  category: string | null
+  tags: string[]
+  status: ProposalStatus
+  url: string | null
+  candidateId: string
+}
+
+interface ProposalSourceSnapshot {
+  candidateId: string
+  sourceUrl: string
+}
+
+function sameTags(left: string[], right: string[]): boolean {
+  return [...left].sort().join('\u0000') === [...right].sort().join('\u0000')
+}
+
+export function hasProposalMaterialChange(
+  existing: Omit<ExistingProposalSnapshot, 'id'> | undefined,
+  incoming: ProcessedProposal,
+): boolean {
+  return (
+    !existing ||
+    existing.source !== incoming.source ||
+    existing.title !== incoming.title ||
+    existing.description !== incoming.description ||
+    existing.category !== incoming.category ||
+    !sameTags(existing.tags, incoming.tags) ||
+    existing.status !== incoming.status ||
+    existing.url !== incoming.sourceUrl ||
+    existing.candidateId !== incoming.candidateId
+  )
+}
+
+export function isProposalMissingFromSource(
+  existing: Pick<
+    ExistingProposalSnapshot,
+    'externalId' | 'source' | 'status' | 'url' | 'candidateId'
+  >,
+  currentExternalIds: ReadonlySet<string>,
+  snapshot: ProposalSourceSnapshot,
+): boolean {
+  return (
+    existing.source === 'candidate_site' &&
+    existing.candidateId === snapshot.candidateId &&
+    existing.url === snapshot.sourceUrl &&
+    existing.status !== ProposalStatus.DRAFT &&
+    (!existing.externalId || !currentExternalIds.has(existing.externalId))
+  )
+}
+
+async function persistProposals(
+  proposals: ProcessedProposal[],
+  snapshot: ProposalSourceSnapshot,
+): Promise<number> {
+  const candidateIds = new Set(proposals.map((proposal) => proposal.candidateId))
+  if (candidateIds.size > 1 || (candidateIds.size === 1 && !candidateIds.has(snapshot.candidateId))) {
+    throw new Error('A batch of extracted proposals must belong to exactly one candidate')
+  }
+  const candidateId = snapshot.candidateId
+  const externalIds = proposals.map((proposal) => proposal.externalId)
+
+  const existing = await prisma.proposal.findMany({
+    where: {
+      OR: [
+        ...(externalIds.length > 0 ? [{ externalId: { in: externalIds } }] : []),
+        {
+          candidateId,
+          source: 'candidate_site',
+          url: snapshot.sourceUrl,
+        },
+      ],
+    },
+    select: {
+      id: true,
+      externalId: true,
+      source: true,
+      title: true,
+      description: true,
+      category: true,
+      tags: true,
+      status: true,
+      url: true,
+      candidateId: true,
+    },
+  })
+  const existingByExternalId = new Map(
+    existing
+      .filter((proposal): proposal is typeof proposal & { externalId: string } =>
+        Boolean(proposal.externalId),
+      )
+      .map((proposal) => [proposal.externalId, proposal]),
+  )
+  const changed = proposals.filter((proposal) =>
+    hasProposalMaterialChange(existingByExternalId.get(proposal.externalId), proposal),
+  )
+  const currentExternalIds = new Set(externalIds)
+  const removed = existing.filter((proposal) =>
+    isProposalMissingFromSource(proposal, currentExternalIds, snapshot),
+  )
+  if (changed.length === 0 && removed.length === 0) return 0
+
+  const materialUpdatedAt = new Date()
+  await prisma.$transaction([
+    ...changed.map((proposal) =>
+      prisma.proposal.upsert({
+        where: { externalId: proposal.externalId },
         update: {
-          title: p.title,
-          description: p.description,
-          category: p.category,
-          tags: p.tags,
+          source: proposal.source,
+          title: proposal.title,
+          description: proposal.description,
+          category: proposal.category,
+          tags: proposal.tags,
+          status: proposal.status,
+          url: proposal.sourceUrl,
+          candidateId: proposal.candidateId,
         },
         create: {
-          externalId: p.externalId,
-          source: p.source,
-          title: p.title,
-          description: p.description,
-          category: p.category,
-          tags: p.tags,
-          status: p.status,
-          url: p.sourceUrl,
-          candidateId: p.candidateId,
+          externalId: proposal.externalId,
+          source: proposal.source,
+          title: proposal.title,
+          description: proposal.description,
+          category: proposal.category,
+          tags: proposal.tags,
+          status: proposal.status,
+          url: proposal.sourceUrl,
+          candidateId: proposal.candidateId,
         },
-      })
-      saved++
-    } catch (err) {
-      logger.error(
-        `[extractor] Failed to save proposal ${p.externalId}`,
-        err instanceof Error ? err.message : err,
-      )
-    }
-  }
+      }),
+    ),
+    ...(removed.length > 0
+      ? [
+          prisma.proposal.updateMany({
+            where: { id: { in: removed.map((proposal) => proposal.id) } },
+            data: { status: ProposalStatus.DRAFT },
+          }),
+        ]
+      : []),
+    prisma.candidate.update({
+      where: { id: candidateId },
+      data: { materialUpdatedAt },
+    }),
+    prisma.consistencyScore.deleteMany({ where: { candidateId } }),
+  ])
 
-  return saved
+  return changed.length + removed.length
 }

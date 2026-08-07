@@ -7,6 +7,14 @@
 import { PrismaClient } from '@prisma/client'
 import { analyzeConsistency } from './geminiService'
 import { withCache, invalidate, TTL } from './cacheService'
+import {
+  PUBLIC_PROPOSAL_LIMIT,
+  PUBLIC_PROPOSAL_ORDER_BY,
+  PUBLIC_PROPOSAL_WHERE,
+  PUBLIC_VOTING_RECORD_LIMIT,
+  PUBLIC_VOTING_RECORD_ORDER_BY,
+  PUBLIC_VOTING_RECORD_WHERE,
+} from '../domain/publicationPolicy'
 
 const prisma = new PrismaClient()
 
@@ -60,11 +68,17 @@ export async function computeConsistencyScores(candidateId: string): Promise<Con
   const candidate = await prisma.candidate.findUnique({
     where: { id: candidateId },
     include: {
-      proposals: { select: { title: true, description: true, category: true } },
+      proposals: {
+        where: PUBLIC_PROPOSAL_WHERE,
+        select: { title: true, description: true, category: true },
+        orderBy: PUBLIC_PROPOSAL_ORDER_BY,
+        take: PUBLIC_PROPOSAL_LIMIT,
+      },
       votingRecords: {
+        where: PUBLIC_VOTING_RECORD_WHERE,
         select: { proposalName: true, voteType: true, votedAt: true },
-        orderBy: { votedAt: 'desc' },
-        take: 500,
+        orderBy: PUBLIC_VOTING_RECORD_ORDER_BY,
+        take: PUBLIC_VOTING_RECORD_LIMIT,
       },
     },
   })

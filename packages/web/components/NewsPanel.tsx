@@ -13,14 +13,16 @@ const TOPIC_LABELS: Record<string, string> = {
 
 interface NewsPanelProps {
   candidateSlug: string
+  initialItems?: NewsItem[]
 }
 
-export function NewsPanel({ candidateSlug }: NewsPanelProps) {
-  const [items, setItems] = useState<NewsItem[]>([])
-  const [loading, setLoading] = useState(true)
+export function NewsPanel({ candidateSlug, initialItems }: NewsPanelProps) {
+  const [items, setItems] = useState<NewsItem[]>(initialItems ?? [])
+  const [loading, setLoading] = useState(initialItems === undefined)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (initialItems !== undefined) return
     const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 
     fetch(`${API_BASE}/api/candidates/${candidateSlug}/news`)
@@ -31,7 +33,7 @@ export function NewsPanel({ candidateSlug }: NewsPanelProps) {
       })
       .catch(() => setError('Falha de conexão'))
       .finally(() => setLoading(false))
-  }, [candidateSlug])
+  }, [candidateSlug, initialItems])
 
   if (loading) {
     return (
@@ -121,14 +123,18 @@ export function NewsPanel({ candidateSlug }: NewsPanelProps) {
                   <span className="tabular-nums">
                     {new Date(item.publishedAt).toLocaleDateString('pt-BR')}
                   </span>
-                  <a
-                    href={item.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="focus-editorial ml-auto text-ember hover:underline underline-offset-4"
-                  >
-                    Ver fonte ↗
-                  </a>
+                  {item.sourceUrl ? (
+                    <a
+                      href={item.sourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="focus-editorial ml-auto text-ember hover:underline underline-offset-4"
+                    >
+                      Ver fonte ↗
+                    </a>
+                  ) : (
+                    <span className="ml-auto">Fonte em revisão</span>
+                  )}
                 </div>
               </div>
             </div>

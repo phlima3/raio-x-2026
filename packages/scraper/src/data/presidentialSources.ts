@@ -74,3 +74,22 @@ export const CANDIDATE_ALIASES: Record<string, string> = {
   'eduardo leite': 'Eduardo Leite',
   'rui costa pimenta': 'Rui Costa Pimenta',
 }
+
+/**
+ * Identidades editoriais curadas. A chave persistida é opaca e só entra nesta
+ * lista após conferência humana; normalizar um nome não cria identidade.
+ */
+export const PRESIDENTIAL_PERSON_KEYS: Record<string, string> = {
+  'luiz inacio lula da silva': 'd7a40159-32f7-4d18-a01d-2eb96ef8eae9',
+  'flavio bolsonaro': 'c8b680bb-f3a3-4705-b12e-b6b2ddde2a95',
+  'ronaldo caiado': '36bc025c-7d2f-4b04-96f8-c43e371a50f0',
+  'romeu zema': 'ba1d6927-7bcb-45a1-9555-d0ca1f75d897',
+  'renan santos': '9a23e126-fc84-414a-ad5f-0f98ee402108',
+  'ciro gomes': 'f9bca31d-4b56-49ea-97a9-c43c2a304975',
+  'joaquim barbosa': 'cf225b01-f496-4b61-9ef0-3ff4a2bdde94',
+  'aldo rebelo': '81404d1b-0c15-47b8-9594-52dc82620203',
+  'cabo daciolo': '1e73bcd6-e587-4c46-9805-a52084a89048',
+  'simone tebet': '839fa647-8fea-43cb-aeb9-03cb4cd109c3',
+  'eduardo leite': 'ad5b1a75-e8aa-4a2a-a50e-69c96700806d',
+  'rui costa pimenta': '7973b99f-a992-487d-8cc6-bfe6bd7c70e7',
+}
