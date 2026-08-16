@@ -28,6 +28,15 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 12
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/raiox2026_test
       CACHE_DISABLED: 'true'
@@ -44,5 +53,23 @@ jobs:
         run: pnpm test:integration
       - name: Typecheck workspace
         run: pnpm typecheck
+      # As páginas de candidato, tema, UF e comparação são pré-renderizadas e
+      # consultam a API durante `next build`. Sem ela no ar o build falha em
+      # `generateStaticParams`, que é como a indexação SEO passou despercebida:
+      # o CI nunca chegou a exercitá-la. O banco está vazio, então o build
+      # valida a fiação de SSG, não o conteúdo.
+      - name: Start API for the web build
+        working-directory: packages/api
+        run: |
+          ./node_modules/.bin/tsx src/index.ts &
+          for _ in $(seq 1 30); do
+            if curl -sf http://localhost:3001/health > /dev/null; then
+              echo "API healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "API did not become healthy in 60s" >&2
+          exit 1
       - name: Build workspace
         run: pnpm build
