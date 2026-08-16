@@ -7,6 +7,7 @@ import {
   getCandidateConsistencyHandler,
   getCandidateStatsHandler,
   getCandidateNewsHandler,
+  getCandidateSeoReportHandler,
 } from '../controllers/candidates'
 
 const router: RouterType = Router()
@@ -16,6 +17,9 @@ router.get('/', listCandidatesHandler)
 
 // GET /api/candidates/stats — aggregate counts by position/party/state
 router.get('/stats', getCandidateStatsHandler)
+
+// GET /api/candidates/seo-report — automatic, fail-closed indexability report
+router.get('/seo-report', getCandidateSeoReportHandler)
 
 // GET /api/candidates/:slug — full candidate profile
 router.get('/:slug', getCandidateHandler)

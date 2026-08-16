@@ -1,9 +1,10 @@
 import Link from 'next/link'
 
 const NAV_ITEMS: Array<{ href: string; label: string; external?: boolean }> = [
-  { href: '/', label: 'Candidatos' },
+  { href: '/eleicoes-2026', label: 'Eleições' },
+  { href: '/candidatos-presidente', label: 'Candidatos' },
   { href: '/comparar', label: 'Comparar' },
-  { href: 'https://dadosabertos.tse.jus.br', label: 'Fontes', external: true },
+  { href: '/fontes', label: 'Fontes' },
 ]
 
 export function Navbar() {

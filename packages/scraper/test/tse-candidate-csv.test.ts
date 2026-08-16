@@ -23,6 +23,7 @@ describe('parseTseCandidateCsv', () => {
         position: 'PRESIDENTE',
         name: 'MARIA DA SILVA',
         ballotName: 'MARIA; DO POVO',
+        socialName: 'MARIA SOCIAL',
         party: 'ABC',
         ballotNumber: 10,
         rawStatus: 'APTO',
@@ -35,8 +36,8 @@ describe('parseTseCandidateCsv', () => {
 
   it('auto-detects Latin-1 and maps official null markers without corrupting names', () => {
     const latin1Csv = [
-      'ANO_ELEICAO;CD_ELEICAO;SG_UF;DS_CARGO;SQ_CANDIDATO;NM_CANDIDATO;NM_URNA_CANDIDATO;SG_PARTIDO;NR_CANDIDATO;DS_SITUACAO_CANDIDATURA',
-      '2026;999;SP;GOVERNADOR;260000000002;JOÃO AÇÃO;#NULO#;XYZ;-1;INDEFERIDO COM RECURSO',
+      'ANO_ELEICAO;CD_ELEICAO;SG_UF;DS_CARGO;SQ_CANDIDATO;NM_CANDIDATO;NM_URNA_CANDIDATO;NM_SOCIAL_CANDIDATO;SG_PARTIDO;NR_CANDIDATO;DS_SITUACAO_CANDIDATURA',
+      '2026;999;SP;GOVERNADOR;260000000002;JOÃO AÇÃO;JOÃO NA URNA;#NULO#;XYZ;-1;INDEFERIDO COM RECURSO',
     ].join('\r\n')
 
     const result = parseTseCandidateCsv(Buffer.from(latin1Csv, 'latin1'))
@@ -44,7 +45,8 @@ describe('parseTseCandidateCsv', () => {
     expect(result.encoding).toBe('latin1')
     expect(result.records[0]).toEqual(expect.objectContaining({
       name: 'JOÃO AÇÃO',
-      ballotName: null,
+      ballotName: 'JOÃO NA URNA',
+      socialName: null,
       ballotNumber: null,
       normalizedStatus: 'INELIGIBLE',
     }))

@@ -16,6 +16,13 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { ProposalOrigin, ProposalStatus } from '@prisma/client'
 import { z } from 'zod'
+import {
+  hasCandidateMaterialChange,
+  type CandidateMaterialPatch,
+  type CandidateMaterialSnapshot,
+} from '../domain/candidateMaterialChange'
+import { invalidateApiCandidateCaches } from '../utils/invalidateApiCache'
+import { revalidateCandidatePages } from '../utils/revalidateWeb'
 
 const prisma = createScraperPrismaClient()
 const DRY_RUN = process.argv.includes('--dry-run')
@@ -87,6 +94,15 @@ function readOutputFiles(dir: string): { file: string; data: unknown }[] {
     .filter(Boolean) as { file: string; data: unknown }[]
 }
 
+function optionalHttpsUrl(value: string | null | undefined): string | undefined {
+  if (!value) return undefined
+  try {
+    return new URL(value).protocol === 'https:' ? value : undefined
+  } catch {
+    return undefined
+  }
+}
+
 async function importCandidate(output: GeminiOutput): Promise<void> {
   const { slug } = output
 
@@ -94,28 +110,71 @@ async function importCandidate(output: GeminiOutput): Promise<void> {
   // runs for both presidente and governador — they share slug but different id).
   // Use raw query to avoid stale Prisma client type issues with the slug column.
   const candidates = await prisma.$queryRaw<
-    { id: string; name: string; party: string; state: string; position: string }[]
-  >`SELECT id, name, party, state, position FROM "Candidate" WHERE slug = ${slug}`
+    Array<{
+      id: string
+      name: string
+      party: string
+      state: string
+      position: string
+      bio: string | null
+      bioSummary: string | null
+      photoUrl: string | null
+      photoSourceUrl: string | null
+      siteUrl: string | null
+      bioSourceUrl: string | null
+      approvalRate: number | null
+    }>
+  >`SELECT id, name, party, state, position, bio, "bioSummary", "photoUrl",
+           "photoSourceUrl", "siteUrl", "bioSourceUrl", "approvalRate"
+    FROM "Candidate" WHERE slug = ${slug}`
 
   if (candidates.length === 0) {
     warn(`No candidate found with slug "${slug}" — skipping`)
+    return
+  }
+  if (candidates.length !== 1) {
+    warn(
+      `Slug "${slug}" resolves to ${candidates.length} candidates — skipping until identity review`,
+    )
     return
   }
 
   for (const candidate of candidates) {
     log(`  Updating ${candidate.name} (${candidate.position}) — ${slug}`)
 
-    if (!DRY_RUN) {
+    const candidatePatch: CandidateMaterialPatch = {
+      ...(output.bio ? { bio: output.bio } : {}),
+      ...(output.recentContext ? { bioSummary: output.recentContext } : {}),
+      ...(output.photoUrl ? { photoUrl: output.photoUrl } : {}),
+      ...(optionalHttpsUrl(output.officialPhotoPageUrl)
+        ? { photoSourceUrl: optionalHttpsUrl(output.officialPhotoPageUrl) }
+        : {}),
+      ...(optionalHttpsUrl(output.officialSiteUrl)
+        ? { siteUrl: optionalHttpsUrl(output.officialSiteUrl) }
+        : {}),
+      ...(optionalHttpsUrl(output.wikipediaUrl) || optionalHttpsUrl(output.officialSiteUrl)
+        ? {
+            bioSourceUrl:
+              optionalHttpsUrl(output.wikipediaUrl) ?? optionalHttpsUrl(output.officialSiteUrl),
+          }
+        : {}),
+      ...(output.approvalRate != null ? { approvalRate: output.approvalRate } : {}),
+    }
+    const materialChanged = hasCandidateMaterialChange(
+      candidate satisfies CandidateMaterialSnapshot,
+      candidatePatch,
+    )
+
+    if (!DRY_RUN && materialChanged) {
       await prisma.candidate.update({
         where: { id: candidate.id },
         data: {
-          ...(output.bio ? { bio: output.bio } : {}),
-          ...(output.recentContext ? { bioSummary: output.recentContext } : {}),
-          ...(output.photoUrl ? { photoUrl: output.photoUrl } : {}),
-          ...(output.officialSiteUrl ? { siteUrl: output.officialSiteUrl } : {}),
-          ...(output.approvalRate != null ? { approvalRate: output.approvalRate } : {}),
+          ...candidatePatch,
+          materialUpdatedAt: new Date(),
         },
       })
+      await invalidateApiCandidateCaches()
+      await revalidateCandidatePages([slug])
     }
 
     // Upsert proposals for each keyPosition theme
@@ -132,11 +191,20 @@ async function importCandidate(output: GeminiOutput): Promise<void> {
         if (!DRY_RUN) {
           const existing = await prisma.proposal.findUnique({
             where: { externalId },
-            select: { id: true, reviewedAt: true },
+            select: {
+              id: true,
+              status: true,
+              candidateId: true,
+              reviewedAt: true,
+            },
           })
 
           if (existing) {
-            if (existing.reviewedAt) {
+            if (existing.candidateId !== candidate.id) {
+              warn(`External proposal id collision for ${externalId} — skipping`)
+              continue
+            }
+            if (existing.reviewedAt || existing.status !== ProposalStatus.DRAFT) {
               log('      preservada: proposta já revisada')
               continue
             }

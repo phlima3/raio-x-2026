@@ -19,6 +19,7 @@ export interface TseCandidateRecord {
   rawPosition: string
   name: string
   ballotName: string | null
+  socialName: string | null
   party: string
   ballotNumber: number | null
   rawStatus: string
@@ -219,6 +220,7 @@ export function parseTseCandidateCsv(
       rawPosition,
       name,
       ballotName: get('NM_URNA_CANDIDATO'),
+      socialName: get('NM_SOCIAL_CANDIDATO'),
       party,
       ballotNumber: parseInteger(get('NR_CANDIDATO')),
       rawStatus,

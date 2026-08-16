@@ -8,6 +8,14 @@ import { prisma } from '../lib/prisma'
 
 import { analyzeConsistency } from './geminiService'
 import { withCache, invalidate, TTL } from './cacheService'
+import {
+  PUBLIC_PROPOSAL_LIMIT,
+  PUBLIC_PROPOSAL_ORDER_BY,
+  PUBLIC_PROPOSAL_WHERE,
+  PUBLIC_VOTING_RECORD_LIMIT,
+  PUBLIC_VOTING_RECORD_ORDER_BY,
+  PUBLIC_VOTING_RECORD_WHERE,
+} from '../domain/publicationPolicy'
 import { getCandidateReadModel, publicCandidateWhere } from './candidateService'
 
 
@@ -62,13 +70,16 @@ export async function computeConsistencyScores(candidateId: string): Promise<Con
     where: { id: candidateId, ...publicCandidateWhere() },
     include: {
       proposals: {
-        where: { isPublished: true },
+        where: PUBLIC_PROPOSAL_WHERE,
         select: { title: true, description: true, category: true },
+        orderBy: PUBLIC_PROPOSAL_ORDER_BY,
+        take: PUBLIC_PROPOSAL_LIMIT,
       },
       votingRecords: {
+        where: PUBLIC_VOTING_RECORD_WHERE,
         select: { proposalName: true, voteType: true, votedAt: true },
-        orderBy: { votedAt: 'desc' },
-        take: 500,
+        orderBy: PUBLIC_VOTING_RECORD_ORDER_BY,
+        take: PUBLIC_VOTING_RECORD_LIMIT,
       },
     },
   })
@@ -77,7 +88,8 @@ export async function computeConsistencyScores(candidateId: string): Promise<Con
 
   const votingRecords = getCandidateReadModel() === 'normalized' && candidate.personId
     ? await prisma.votingRecord.findMany({
-        where: {
+      where: {
+          ...PUBLIC_VOTING_RECORD_WHERE,
           OR: [
             { candidateId },
             { personId: candidate.personId },
@@ -85,8 +97,8 @@ export async function computeConsistencyScores(candidateId: string): Promise<Con
           ],
         },
         select: { proposalName: true, voteType: true, votedAt: true },
-        orderBy: { votedAt: 'desc' },
-        take: 500,
+        orderBy: PUBLIC_VOTING_RECORD_ORDER_BY,
+        take: PUBLIC_VOTING_RECORD_LIMIT,
       })
     : candidate.votingRecords
 

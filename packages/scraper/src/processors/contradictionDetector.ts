@@ -56,7 +56,9 @@ function getModel() {
 /**
  * Detects whether a news item contradicts a candidate's declared proposals.
  *
- * Returns `null` when there are no proposals to compare against or on error.
+ * Returns `null` only when there are no proposals to compare against.
+ * Provider and validation failures are rethrown so callers preserve the last
+ * reviewed contradiction state rather than silently replacing it with false.
  * Only flags *clear and direct* contradictions — ambiguous or weak conflicts
  * are not reported to avoid false positives.
  */
@@ -101,7 +103,7 @@ Divergências menores, nuances ou incertezas = false.`
       '[contradiction-detector] Analysis failed',
       err instanceof Error ? err.message : err,
     )
-    return null
+    throw err
   }
 }
 

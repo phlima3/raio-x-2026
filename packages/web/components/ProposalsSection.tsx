@@ -1,19 +1,21 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { ProposalBlock } from './ProposalBlock'
 import type { Proposal } from '@/lib/types'
 
 interface Props {
   proposals: Proposal[]
-  initialTema?: string
 }
 
-export function ProposalsSection({ proposals, initialTema }: Props) {
+export function ProposalsSection({ proposals }: Props) {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const [activeTema, setActiveTema] = useState(initialTema ?? '')
+  const [activeTema, setActiveTema] = useState('')
+
+  useEffect(() => {
+    setActiveTema(new URLSearchParams(window.location.search).get('tema') ?? '')
+  }, [])
 
   if (proposals.length === 0) {
     return (
@@ -45,7 +47,7 @@ export function ProposalsSection({ proposals, initialTema }: Props) {
 
   const handleTema = (tema: string) => {
     setActiveTema(tema)
-    const params = new URLSearchParams(searchParams.toString())
+    const params = new URLSearchParams(window.location.search)
     if (tema) params.set('tema', tema)
     else params.delete('tema')
     router.replace(`?${params}`, { scroll: false })

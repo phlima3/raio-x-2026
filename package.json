@@ -15,7 +15,7 @@
     "db:studio": "pnpm --filter @raiox/api db:studio",
     "scraper:sync": "pnpm --filter @raiox/scraper sync",
     "test": "vitest run",
-    "test:unit": "vitest run --exclude **/*.integration.test.ts",
+    "test:unit": "vitest run --exclude **/*.integration.test.ts && pnpm --filter @raiox/api test && pnpm --filter @raiox/scraper test && pnpm --filter @raiox/web test",
     "test:integration": "vitest run --config vitest.integration.config.mts",
     "typecheck": "pnpm -r typecheck",
     "clean:processes": "pkill -9 -f 'tsx.*raio-x' 2>/dev/null; pkill -9 -f 'next.*dev' 2>/dev/null; echo 'Done'"

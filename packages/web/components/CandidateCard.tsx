@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import { ViewTransitionLink } from './ViewTransitionLink'
+import { absoluteImageUrl } from '@/lib/seo'
 
 const POSITION_LABELS: Record<string, string> = {
   PRESIDENTE: 'Presidente',
@@ -58,6 +59,7 @@ export function CandidateCard({
   index,
 }: CandidateCardProps) {
   const initials = initialsFor(name)
+  const safePhotoUrl = absoluteImageUrl(photoUrl)
 
   return (
     <ViewTransitionLink
@@ -76,9 +78,9 @@ export function CandidateCard({
             className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden bg-ember/10 border border-ink/15 shrink-0"
             style={{ viewTransitionName: `photo-${slug}` }}
           >
-            {photoUrl ? (
+            {safePhotoUrl ? (
               <Image
-                src={photoUrl}
+                src={safePhotoUrl}
                 alt={name}
                 fill
                 sizes="56px"

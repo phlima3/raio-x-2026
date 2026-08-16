@@ -1,26 +1,11 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-
-interface Contradiction {
-  proposal: string
-  vote: string
-  description: string
-}
-
-interface ConsistencyScore {
-  theme: string
-  score: number
-  label: string
-  explanation: string
-  contradictions: Contradiction[]
-  proposalCount: number
-  voteCount: number
-  computedAt: string
-}
+import type { ConsistencyScore } from '@/lib/types'
 
 interface ConsistencyPanelProps {
   candidateSlug: string
+  initialScores?: ConsistencyScore[]
 }
 
 function labelTone(label: string): string {
@@ -57,9 +42,9 @@ function pluralVotes(n: number): string {
   return `${n} votação${n === 1 ? '' : 'es'}`
 }
 
-export function ConsistencyPanel({ candidateSlug }: ConsistencyPanelProps) {
-  const [scores, setScores] = useState<ConsistencyScore[] | null>(null)
-  const [loading, setLoading] = useState(false)
+export function ConsistencyPanel({ candidateSlug, initialScores }: ConsistencyPanelProps) {
+  const [scores, setScores] = useState<ConsistencyScore[] | null>(initialScores ?? null)
+  const [loading, setLoading] = useState(initialScores === undefined)
   const [error, setError] = useState<string | null>(null)
   const [expanded, setExpanded] = useState<string | null>(null)
 
@@ -83,8 +68,8 @@ export function ConsistencyPanel({ candidateSlug }: ConsistencyPanelProps) {
   }, [candidateSlug])
 
   useEffect(() => {
-    load()
-  }, [load])
+    if (initialScores === undefined) load()
+  }, [initialScores, load])
 
   if (!loading && !error && scores !== null && scores.length === 0) {
     return (
@@ -95,6 +80,13 @@ export function ConsistencyPanel({ candidateSlug }: ConsistencyPanelProps) {
         <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-soft">
           Necessário: propostas catalogadas + histórico de votações
         </p>
+        <button
+          type="button"
+          onClick={load}
+          className="focus-editorial mt-5 font-mono text-[10px] uppercase tracking-[0.18em] text-ember hover:underline"
+        >
+          Gerar análise sob demanda →
+        </button>
       </div>
     )
   }
@@ -111,7 +103,7 @@ export function ConsistencyPanel({ candidateSlug }: ConsistencyPanelProps) {
             onClick={load}
             className="focus-editorial font-mono text-[11px] uppercase tracking-[0.22em] text-ember hover:underline underline-offset-4 whitespace-nowrap"
           >
-            § Recalcular
+            § Atualizar análise
           </button>
         )}
       </div>

@@ -130,7 +130,7 @@ tenta adivinhar IDs de um endpoint DivulgaCand não documentado.
 | Fonte | Agenda | Workflow |
 |---|---:|---|
 | Câmara e Senado | diariamente 03:00 | `sync-legislative.yml` |
-| TSE candidaturas + complementares | diariamente 07:00 | `sync-tse.yml` |
+| TSE candidaturas + complementares | ao atualizar `main` e a cada 2h, no minuto 15 | `sync-tse.yml` |
 | Documentos oficiais | diariamente 08:00 | `sync-documents.yml` |
 | Sites de candidatos | segunda-feira 04:00 | `sync-sites.yml` |
 | Notícias/contexto | quarta-feira 04:00 | `sync-news.yml` |
@@ -150,7 +150,10 @@ Cada parlamentar é uma unidade idempotente e recebe até três tentativas para
 desconexões transitórias; esgotar as tentativas ainda falha a fonte inteira.
 Backfills exigem as flags explícitas mostradas acima.
 
-No workflow TSE, `candidacies` possui timeout de 90 minutos. O job
+No workflow TSE, cada execução começa sincronizando o snapshot canônico de candidaturas;
+isso ocorre após uma atualização da `main` e também no cron de duas horas. `candidacies`
+aplica migrations pendentes pelo Prisma, sob o lock do próprio migrador, antes de acessar
+o novo schema e possui timeout de 90 minutos. O job
 `supplemental` inicia somente após seu sucesso, abre túnel próprio e possui 120
 minutos. Persistência complementar ocorre em lotes idempotentes. Ao iniciar um
 run, uma execução anterior da mesma fonte/tipo que permaneça `RUNNING` por mais

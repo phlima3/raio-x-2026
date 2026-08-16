@@ -134,30 +134,46 @@ model Person {
 }
 
 model Candidate {
-  id            String   @id @default(cuid())
-  tseId         String?  @unique // ID no TSE
-  camaraId      String?  @unique // ID na API da Câmara dos Deputados
-  senadoId      String?  @unique // ID na API do Senado Federal
-  slug          String?  @unique // URL slug (ex: lula-pt-sp)
-  name          String
-  socialName    String?
-  party         String // Sigla do partido (ex: PT, PL, MDB)
-  state         String // UF (ex: SP, RJ, MG)
-  position      Position
-  coalitionName String?
-  photoUrl      String?
-  bio           String?  @db.Text
-  bioSummary    String?  @db.Text // Gerado pelo Gemini
-  siteUrl       String?
-  email         String?
+  id                   String   @id @default(cuid())
+  personKey            String? // Chave curada que une registros legados; nunca inferida só por nome
+  tseId                String?  @unique // ID no TSE
+  camaraId             String?  @unique // ID na API da Câmara dos Deputados
+  senadoId             String?  @unique // ID na API do Senado Federal
+  slug                 String? // URL persistente; colisões ficam bloqueadas até curadoria
+  name                 String
+  socialName           String?
+  party                String // Sigla do partido (ex: PT, PL, MDB)
+  state                String // UF (ex: SP, RJ, MG)
+  position             Position
+  coalitionName        String?
+  runningMateName      String?
+  runningMateParty     String?
+  runningMateSourceUrl String?
+  photoUrl             String?
+  photoSourceUrl       String?
+  photoLicense         String?
+  bio                  String?  @db.Text
+  bioSummary           String?  @db.Text
+  bioSourceUrl         String?
+  siteUrl              String?
+  email                String?
 
   // Dados eleitorais
-  ballotNumber    Int?
-  electionYear    Int      @default(2026)
-  isIncumbent     Boolean  @default(false)
-  approvalRate    Int? // Índice de aprovação 0–100
-  partyHistory    String[] // Partidos anteriores em ordem cronológica
-  candidacyStatus String? // confirmado | pre_candidato | cotado | desistiu (sync via notícias)
+  ballotNumber              Int?
+  electionYear              Int       @default(2026)
+  isIncumbent               Boolean   @default(false)
+  approvalRate              Int?
+  partyHistory              String[]
+  candidacyStatus           String?
+  candidacyStatusSourceUrl  String?
+  candidacyStatusVerifiedAt DateTime?
+
+  // Controle editorial e datas materiais usadas pelo quality gate de indexação.
+  materialUpdatedAt   DateTime?
+  reviewedAt          DateTime?
+  editorialApprovedAt DateTime?
+  editorialAuthor     String?
+  editorialReviewer   String?
 
   // Fachada compatível de uma candidatura em uma eleição.
   personId          String?
@@ -182,18 +198,30 @@ model Candidate {
   sourceDocuments        SourceDocument[]
   officialDatasetRecords OfficialDatasetRecord[]
   reviewItems            ReviewItem[]
+  slugAliases            CandidateSlugAlias[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([party])
+  @@index([personKey])
   @@index([state])
   @@index([position])
   @@index([electionYear])
+  @@index([slug])
   @@index([personId])
   @@index([isPublished, position, electionYear])
   @@index([dataSource])
   @@index([syncRunId])
+}
+
+model CandidateSlugAlias {
+  slug        String    @id
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@index([candidateId])
 }
 
 model Mandate {

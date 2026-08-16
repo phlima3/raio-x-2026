@@ -1,16 +1,13 @@
-import { createScraperPrismaClient } from '../utils/prisma'
 import { ProposalOrigin, ProposalStatus, type PrismaClient } from '@prisma/client'
-import { createProvider, ProposalsByTheme } from './llm'
+
+import { createScraperPrismaClient } from '../utils/prisma'
+import { createProvider, type ProposalsByTheme } from './llm'
+import { invalidateApiCandidateCaches } from '../utils/invalidateApiCache'
 import { logger } from '../utils/logger'
+import { revalidateCandidatePages } from '../utils/revalidateWeb'
 
 const prisma = createScraperPrismaClient()
 
-// ── HTML → plain text ─────────────────────────────────────────────────────────
-
-/**
- * Strips HTML tags and normalises whitespace.
- * Preserves newlines at block-level elements for readability.
- */
 export function htmlToText(html: string): string {
   return html
     .replace(/<(br|p|div|li|h[1-6]|tr)[^>]*>/gi, '\n')
@@ -25,8 +22,6 @@ export function htmlToText(html: string): string {
     .replace(/\n{3,}/g, '\n\n')
     .trim()
 }
-
-// ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface ProcessedProposal {
   externalId: string
@@ -51,17 +46,6 @@ const THEME_LABELS: Record<keyof ProposalsByTheme, string> = {
   outros: 'Outros',
 }
 
-// ── Core pipeline ─────────────────────────────────────────────────────────────
-
-/**
- * Extracts and persists proposals from a candidate site's HTML.
- *
- * @param html        - Raw HTML from the candidate page
- * @param sourceUrl   - URL of the page (used as source reference)
- * @param candidateId - Internal Prisma candidate id
- * @param candidateName - Display name used in logging
- * @returns Number of proposals saved to the database
- */
 export async function processProposalsFromSite(
   html: string,
   sourceUrl: string,
@@ -77,46 +61,32 @@ export async function processProposalsFromSite(
   }
 
   const provider = createProvider()
-  const byTheme = await provider.extractProposals(text)
-
-  const proposals = flattenByTheme(byTheme, candidateId, sourceUrl)
-  if (proposals.length === 0) {
-    logger.info(`[extractor] No proposals extracted from ${sourceUrl}`)
-    return 0
-  }
-
-  const saved = await persistExtractedProposals(proposals)
-  logger.info(`[extractor] ${saved} proposals saved for ${candidateName}`)
-  return saved
+  const proposals = flattenByTheme(
+    await provider.extractProposals(text),
+    candidateId,
+    sourceUrl,
+  )
+  const result = await reconcileExtractedProposals(
+    proposals,
+    { candidateId, sourceUrl },
+  )
+  logger.info(
+    `[extractor] ${result.saved} hidden drafts saved and ${result.removed} stale proposals unpublished for ${candidateName}`,
+  )
+  return result.saved
 }
 
-/**
- * Generates a plain-language summary for a bill (PL/Matéria).
- * Returns the original ementa if the LLM call fails.
- */
-export async function summarizeProposal(
-  ementa: string,
-  fullText: string,
-): Promise<string> {
-  const provider = createProvider()
-  return provider.summarizeProposal(ementa, fullText)
+export async function summarizeProposal(ementa: string, fullText: string): Promise<string> {
+  return createProvider().summarizeProposal(ementa, fullText)
 }
 
-/**
- * Generates a concise bio summary for a candidate.
- * Returns the original bio if the LLM call fails.
- */
 export async function summarizeBio(
   bioText: string,
   candidateName: string,
 ): Promise<string> {
-  const provider = createProvider()
-  return provider.summarizeBio(bioText, candidateName)
+  return createProvider().summarizeBio(bioText, candidateName)
 }
 
-/**
- * Returns a neutral comparison of two candidates' proposals on a theme.
- */
 export async function compareProposals(
   theme: string,
   proposalsA: string[],
@@ -124,11 +94,8 @@ export async function compareProposals(
   nameA: string,
   nameB: string,
 ): Promise<string> {
-  const provider = createProvider()
-  return provider.compareProposals(theme, proposalsA, proposalsB, nameA, nameB)
+  return createProvider().compareProposals(theme, proposalsA, proposalsB, nameA, nameB)
 }
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function flattenByTheme(
   byTheme: ProposalsByTheme,
@@ -137,18 +104,17 @@ function flattenByTheme(
 ): ProcessedProposal[] {
   const results: ProcessedProposal[] = []
 
-  for (const [themeKey, proposals] of Object.entries(byTheme) as [keyof ProposalsByTheme, string[]][]) {
-    for (const [i, description] of proposals.entries()) {
+  for (const [themeKey, proposals] of Object.entries(byTheme) as Array<[
+    keyof ProposalsByTheme,
+    string[],
+  ]>) {
+    for (const [index, description] of proposals.entries()) {
       if (!description.trim()) continue
-
       const category = THEME_LABELS[themeKey]
-      const title = `${category} — proposta ${i + 1}`
-      const externalId = `site_${candidateId}_${themeKey}_${i}`
-
       results.push({
-        externalId,
+        externalId: `site_${candidateId}_${themeKey}_${index}`,
         source: 'candidate_site',
-        title,
+        title: proposalTitleFromDescription(category, description),
         description: description.trim(),
         category,
         tags: [themeKey],
@@ -162,7 +128,192 @@ function flattenByTheme(
   return results
 }
 
+export function proposalTitleFromDescription(category: string, description: string): string {
+  const compact = description.replace(/\s+/g, ' ').trim()
+  const firstSentence = compact.split(/(?<=[.!?])\s+/)[0].replace(/[.!?]+$/, '').trim()
+  const excerpt = firstSentence.slice(0, 140).trim()
+  return excerpt.length >= 12 ? excerpt : `${category}: ${compact.slice(0, 120).trim()}`
+}
+
+interface ExistingProposalSnapshot {
+  id?: string
+  externalId: string | null
+  source: string
+  title?: string
+  description?: string | null
+  category?: string | null
+  tags?: string[]
+  status: ProposalStatus
+  url: string | null
+  candidateId: string
+}
+
+interface ProposalSourceSnapshot {
+  candidateId: string
+  sourceUrl: string
+}
+
+function sameTags(left: string[], right: string[]): boolean {
+  return [...left].sort().join('\u0000') === [...right].sort().join('\u0000')
+}
+
+export function hasProposalMaterialChange(
+  existing: Omit<ExistingProposalSnapshot, 'id'> | undefined,
+  incoming: ProcessedProposal,
+): boolean {
+  return (
+    !existing ||
+    existing.source !== incoming.source ||
+    existing.title !== incoming.title ||
+    existing.description !== incoming.description ||
+    existing.category !== incoming.category ||
+    !sameTags(existing.tags ?? [], incoming.tags) ||
+    existing.status !== incoming.status ||
+    existing.url !== incoming.sourceUrl ||
+    existing.candidateId !== incoming.candidateId
+  )
+}
+
+export function isProposalMissingFromSource(
+  existing: Pick<
+    ExistingProposalSnapshot,
+    'externalId' | 'source' | 'status' | 'url' | 'candidateId'
+  >,
+  currentExternalIds: ReadonlySet<string>,
+  snapshot: ProposalSourceSnapshot,
+): boolean {
+  return (
+    existing.source === 'candidate_site' &&
+    existing.candidateId === snapshot.candidateId &&
+    existing.url === snapshot.sourceUrl &&
+    existing.status !== ProposalStatus.DRAFT &&
+    (!existing.externalId || !currentExternalIds.has(existing.externalId))
+  )
+}
+
 type ProposalPersistence = Pick<PrismaClient, 'proposal'>
+
+export interface ProposalReconciliationResult {
+  saved: number
+  removed: number
+}
+
+/**
+ * Persists a complete, successfully extracted source snapshot atomically.
+ * Reviewed rows that are still present are immutable; reviewed/public rows
+ * missing from the snapshot are unpublished and derived scores are revoked.
+ */
+export async function reconcileExtractedProposals(
+  proposals: ProcessedProposal[],
+  snapshot: ProposalSourceSnapshot,
+  db: PrismaClient = prisma,
+): Promise<ProposalReconciliationResult> {
+  if (proposals.some((proposal) =>
+    proposal.candidateId !== snapshot.candidateId || proposal.sourceUrl !== snapshot.sourceUrl
+  )) {
+    throw new Error('Proposal snapshot mixes candidates or source URLs')
+  }
+
+  const result = await db.$transaction(async (tx) => {
+    const candidate = await tx.candidate.findUnique({
+      where: { id: snapshot.candidateId },
+      select: { slug: true },
+    })
+    if (!candidate) throw new Error(`Candidate ${snapshot.candidateId} not found`)
+
+    let saved = 0
+    for (const proposal of proposals) {
+      const existing = await tx.proposal.findUnique({
+        where: { externalId: proposal.externalId },
+        select: { reviewedAt: true, status: true, candidateId: true },
+      })
+      if (existing && existing.candidateId !== proposal.candidateId) {
+        throw new Error(`External id ${proposal.externalId} belongs to another candidate`)
+      }
+      if (existing?.reviewedAt || (existing && existing.status !== ProposalStatus.DRAFT)) {
+        saved += 1
+        continue
+      }
+
+      await tx.proposal.upsert({
+        where: { externalId: proposal.externalId },
+        update: {
+          source: proposal.source,
+          title: proposal.title,
+          description: proposal.description,
+          category: proposal.category,
+          tags: proposal.tags,
+          status: ProposalStatus.DRAFT,
+          isPublished: false,
+          origin: ProposalOrigin.AI_EXTRACTION,
+          url: proposal.sourceUrl,
+        },
+        create: {
+          externalId: proposal.externalId,
+          source: proposal.source,
+          title: proposal.title,
+          description: proposal.description,
+          category: proposal.category,
+          tags: proposal.tags,
+          status: ProposalStatus.DRAFT,
+          isPublished: false,
+          origin: ProposalOrigin.AI_EXTRACTION,
+          url: proposal.sourceUrl,
+          candidateId: proposal.candidateId,
+        },
+      })
+      saved += 1
+    }
+
+    const currentExternalIds = new Set(proposals.map((proposal) => proposal.externalId))
+    const sourceProposals = await tx.proposal.findMany({
+      where: {
+        candidateId: snapshot.candidateId,
+        source: 'candidate_site',
+        url: snapshot.sourceUrl,
+      },
+      select: {
+        id: true,
+        externalId: true,
+        source: true,
+        status: true,
+        url: true,
+        candidateId: true,
+      },
+    })
+    const removedIds = sourceProposals
+      .filter((existing) => isProposalMissingFromSource(
+        existing,
+        currentExternalIds,
+        snapshot,
+      ))
+      .map((existing) => existing.id)
+
+    if (removedIds.length > 0) {
+      const materialUpdatedAt = new Date()
+      await tx.proposal.updateMany({
+        where: { id: { in: removedIds } },
+        data: { status: ProposalStatus.DRAFT, isPublished: false },
+      })
+      await tx.consistencyScore.deleteMany({
+        where: { candidateId: snapshot.candidateId },
+      })
+      await tx.candidate.update({
+        where: { id: snapshot.candidateId },
+        data: { materialUpdatedAt },
+      })
+    }
+
+    return { saved, removed: removedIds.length, slug: candidate.slug }
+  })
+
+  if (result.removed > 0) {
+    await invalidateApiCandidateCaches()
+    if (result.slug) await revalidateCandidatePages([result.slug])
+  }
+
+  return { saved: result.saved, removed: result.removed }
+}
 
 export async function persistExtractedProposals(
   proposals: ProcessedProposal[],
@@ -170,48 +321,54 @@ export async function persistExtractedProposals(
 ): Promise<number> {
   let saved = 0
 
-  for (const p of proposals) {
+  for (const proposal of proposals) {
     try {
       const existing = await db.proposal.findUnique({
-        where: { externalId: p.externalId },
-        select: { reviewedAt: true },
+        where: { externalId: proposal.externalId },
+        select: { reviewedAt: true, candidateId: true },
       })
       if (existing?.reviewedAt) {
-        saved++
+        saved += 1
         continue
       }
+      if (existing && existing.candidateId !== proposal.candidateId) {
+        throw new Error(`External id ${proposal.externalId} belongs to another candidate`)
+      }
+
       await db.proposal.upsert({
-        where: { externalId: p.externalId },
+        where: { externalId: proposal.externalId },
         update: {
-          title: p.title,
-          description: p.description,
-          category: p.category,
-          tags: p.tags,
+          source: proposal.source,
+          title: proposal.title,
+          description: proposal.description,
+          category: proposal.category,
+          tags: proposal.tags,
           status: ProposalStatus.DRAFT,
           isPublished: false,
           origin: ProposalOrigin.AI_EXTRACTION,
+          url: proposal.sourceUrl,
         },
         create: {
-          externalId: p.externalId,
-          source: p.source,
-          title: p.title,
-          description: p.description,
-          category: p.category,
-          tags: p.tags,
-          status: p.status,
+          externalId: proposal.externalId,
+          source: proposal.source,
+          title: proposal.title,
+          description: proposal.description,
+          category: proposal.category,
+          tags: proposal.tags,
+          status: ProposalStatus.DRAFT,
           isPublished: false,
           origin: ProposalOrigin.AI_EXTRACTION,
-          url: p.sourceUrl,
-          candidateId: p.candidateId,
+          url: proposal.sourceUrl,
+          candidateId: proposal.candidateId,
         },
       })
-      saved++
-    } catch (err) {
+      saved += 1
+    } catch (error) {
       logger.error(
-        `[extractor] Failed to save proposal ${p.externalId}`,
-        err instanceof Error ? err.message : err,
+        `[extractor] Failed to save proposal ${proposal.externalId}`,
+        error instanceof Error ? error.message : error,
       )
-      throw err
+      throw error
     }
   }
 

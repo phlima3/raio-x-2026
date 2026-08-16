@@ -1,18 +1,17 @@
-import { prisma } from '../lib/prisma'
 import { Prisma } from '@prisma/client'
-import { ProposalFilters } from '../types/proposal'
-import { withCache, cacheKey, TTL } from './cacheService'
+
+import { prisma } from '../lib/prisma'
+import { PUBLIC_PROPOSAL_WHERE } from '../domain/publicationPolicy'
+import type { ProposalFilters } from '../types/proposal'
+import { cacheKey, TTL, withCache } from './cacheService'
 import { publicCandidateWhere } from './candidateService'
 
-
-// ── List proposals ────────────────────────────────────────────────────────────
 
 export async function listProposals(filters: ProposalFilters) {
   const { candidateId, category, status, source, search, page, limit } = filters
   const skip = (page - 1) * limit
 
-  const where: Prisma.ProposalWhereInput = {
-    isPublished: true,
+  const requestedWhere: Prisma.ProposalWhereInput = {
     candidate: publicCandidateWhere(),
     ...(candidateId && { candidateId }),
     ...(category && { category: { contains: category, mode: 'insensitive' } }),
@@ -24,6 +23,9 @@ export async function listProposals(filters: ProposalFilters) {
         { description: { contains: search, mode: 'insensitive' } },
       ],
     }),
+  }
+  const where: Prisma.ProposalWhereInput = {
+    AND: [PUBLIC_PROPOSAL_WHERE, requestedWhere],
   }
 
   const [total, proposals] = await Promise.all([
@@ -53,11 +55,11 @@ export async function listProposals(filters: ProposalFilters) {
   }
 }
 
-// ── Get proposal by ID ────────────────────────────────────────────────────────
-
 export async function getProposalById(id: string) {
   return prisma.proposal.findFirst({
-    where: { id, isPublished: true, candidate: publicCandidateWhere() },
+    where: {
+      AND: [{ id, candidate: publicCandidateWhere() }, PUBLIC_PROPOSAL_WHERE],
+    },
     include: {
       candidate: {
         select: { id: true, name: true, party: true, state: true, position: true },
@@ -66,27 +68,28 @@ export async function getProposalById(id: string) {
   })
 }
 
-// ── Get proposals by candidate ────────────────────────────────────────────────
-
 export async function getProposalsByCandidate(candidateId: string) {
   return withCache(cacheKey.candidateProposals(candidateId), TTL.PROPOSALS, async () => {
     const proposals = await prisma.proposal.findMany({
-      where: { candidateId, isPublished: true },
+      where: {
+        AND: [
+          { candidateId, candidate: publicCandidateWhere() },
+          PUBLIC_PROPOSAL_WHERE,
+        ],
+      },
       orderBy: [{ category: 'asc' }, { proposedAt: 'desc' }],
     })
 
     const grouped: Record<string, typeof proposals> = {}
-    for (const p of proposals) {
-      const key = p.category ?? 'Outros'
+    for (const proposal of proposals) {
+      const key = proposal.category ?? 'Outros'
       if (!grouped[key]) grouped[key] = []
-      grouped[key].push(p)
+      grouped[key].push(proposal)
     }
 
     return grouped
   })
 }
-
-// ── Get categories ────────────────────────────────────────────────────────────
 
 export async function getProposalCategories() {
   return withCache(cacheKey.categories(), TTL.CATEGORIES, async () => {
@@ -95,12 +98,13 @@ export async function getProposalCategories() {
       _count: { id: true },
       orderBy: { _count: { id: 'desc' } },
       where: {
-        category: { not: null },
-        isPublished: true,
-        candidate: publicCandidateWhere(),
+        AND: [
+          { category: { not: null }, candidate: publicCandidateWhere() },
+          PUBLIC_PROPOSAL_WHERE,
+        ],
       },
     })
 
-    return rows.map((r) => ({ category: r.category, count: r._count.id }))
+    return rows.map((row) => ({ category: row.category, count: row._count.id }))
   })
 }

@@ -3,12 +3,25 @@ import { Request, Response, NextFunction } from 'express'
 import { Prisma, VoteType } from '@prisma/client'
 import { z } from 'zod'
 import {
+  PUBLIC_ASSET_DECLARATION_LIMIT,
+  PUBLIC_ASSET_DECLARATION_ORDER_BY,
+  PUBLIC_ASSET_DECLARATION_WHERE,
+  PUBLIC_CAMPAIGN_FINANCING_LIMIT,
+  PUBLIC_CAMPAIGN_FINANCING_ORDER_BY,
+  PUBLIC_CAMPAIGN_FINANCING_WHERE,
+  PUBLIC_VOTING_RECORD_LIMIT,
+  PUBLIC_VOTING_RECORD_ORDER_BY,
+  PUBLIC_VOTING_RECORD_WHERE,
+} from '../domain/publicationPolicy'
+import {
   getCandidateReadModel,
   publicCandidateWhere,
 } from '../services/candidateService'
 
 
-async function publicCandidate(candidateId: string) {
+async function publicCandidate(
+  candidateId: string,
+): Promise<{ id: string; personId: string | null } | null> {
   return prisma.candidate.findFirst({
     where: { id: candidateId, ...publicCandidateWhere() },
     select: { id: true, personId: true },
@@ -21,7 +34,7 @@ const VotingFiltersSchema = z.object({
   from: z.string().optional(),
   to: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(200).default(50),
+  limit: z.coerce.number().int().min(1).max(PUBLIC_VOTING_RECORD_LIMIT).default(50),
 })
 
 export async function getVotingRecordsHandler(
@@ -50,17 +63,22 @@ export async function getVotingRecordsHandler(
           }
         : { candidateId }
     const where: Prisma.VotingRecordWhereInput = {
-      ...identityWhere,
-      ...(source && { source }),
-      ...(voteType && { voteType }),
-      ...(from || to
-        ? {
-            votedAt: {
-              ...(from && { gte: new Date(from) }),
-              ...(to && { lte: new Date(to) }),
-            },
-          }
-        : {}),
+      AND: [
+        identityWhere,
+        PUBLIC_VOTING_RECORD_WHERE,
+        {
+          ...(source && { source }),
+          ...(voteType && { voteType }),
+          ...(from || to
+            ? {
+                votedAt: {
+                  ...(from && { gte: new Date(from) }),
+                  ...(to && { lte: new Date(to) }),
+                },
+              }
+            : {}),
+        },
+      ],
     }
 
     const [total, records] = await Promise.all([
@@ -69,7 +87,7 @@ export async function getVotingRecordsHandler(
         where,
         skip,
         take: limit,
-        orderBy: { votedAt: 'desc' },
+        orderBy: PUBLIC_VOTING_RECORD_ORDER_BY,
       }),
     ])
 
@@ -96,8 +114,9 @@ export async function getAssetDeclarationsHandler(
     }
 
     const declarations = await prisma.assetDeclaration.findMany({
-      where: { candidateId },
-      orderBy: { year: 'desc' },
+      where: { AND: [{ candidateId }, PUBLIC_ASSET_DECLARATION_WHERE] },
+      orderBy: PUBLIC_ASSET_DECLARATION_ORDER_BY,
+      take: PUBLIC_ASSET_DECLARATION_LIMIT,
     })
 
     // Year-over-year variation
@@ -132,8 +151,9 @@ export async function getCampaignFinancingHandler(
     }
 
     const financings = await prisma.campaignFinancing.findMany({
-      where: { candidateId },
-      orderBy: { year: 'desc' },
+      where: { AND: [{ candidateId }, PUBLIC_CAMPAIGN_FINANCING_WHERE] },
+      orderBy: PUBLIC_CAMPAIGN_FINANCING_ORDER_BY,
+      take: PUBLIC_CAMPAIGN_FINANCING_LIMIT,
     })
 
     res.json({

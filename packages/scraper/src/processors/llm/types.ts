@@ -43,8 +43,9 @@ export interface LLMProvider {
 
   /**
    * Extracts proposals from clean text and classifies them by theme.
-   * Returns empty arrays for themes with no proposals; never throws on
-   * empty/short input — returns an empty ProposalsByTheme object instead.
+   * Returns empty arrays for a valid response with no proposals. Short input
+   * also returns an empty object; provider and parsing failures throw so the
+   * caller cannot mistake an outage for an authoritative empty snapshot.
    */
   extractProposals(text: string): Promise<ProposalsByTheme>
 

@@ -5,6 +5,13 @@ import { CandidateFiltersSchema } from '../types/candidate'
 import * as candidateService from '../services/candidateService'
 import * as consistencyService from '../services/consistencyService'
 import { withCache, TTL } from '../services/cacheService'
+import { getCandidateSeoReport } from '../services/seoQualityService'
+import { presentNewsItem } from '../domain/newsPresentation'
+import {
+  PUBLIC_NEWS_LIMIT,
+  PUBLIC_NEWS_ORDER_BY,
+  PUBLIC_NEWS_WHERE,
+} from '../domain/publicationPolicy'
 
 
 export async function listCandidatesHandler(
@@ -67,6 +74,26 @@ export async function getCandidateStatsHandler(
   try {
     const stats = await candidateService.getCandidateStats()
     res.json({ success: true, data: stats })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function getCandidateSeoReportHandler(
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const data = await getCandidateSeoReport()
+    res.json({
+      success: true,
+      data,
+      meta: {
+        total: data.length,
+        indexable: data.filter((candidate) => candidate.indexable).length,
+      },
+    })
   } catch (err) {
     next(err)
   }
@@ -148,15 +175,21 @@ export async function getCandidateNewsHandler(
       () =>
         prisma.newsItem.findMany({
           where: {
-            candidateId: candidate.id,
-            ...(topic ? { topic } : {}),
-            ...(contradictionsOnly ? { hasContradiction: true } : {}),
+            AND: [
+              PUBLIC_NEWS_WHERE,
+              {
+                candidateId: candidate.id,
+                ...(topic ? { topic } : {}),
+                ...(contradictionsOnly ? { hasContradiction: true } : {}),
+              },
+            ],
           },
-          orderBy: [{ publishedAt: 'desc' }, { fetchedAt: 'desc' }],
+          orderBy: PUBLIC_NEWS_ORDER_BY,
+          take: PUBLIC_NEWS_LIMIT,
         }),
     )
 
-    res.json({ success: true, data: news })
+    res.json({ success: true, data: news.map(presentNewsItem) })
   } catch (err) {
     next(err)
   }

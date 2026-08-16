@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
+    "test": "tsx --test src/**/*.test.ts",
     "typecheck": "tsc --noEmit",
     "sync": "tsx src/index.ts",
     "sync:camara": "tsx src/sources/camara.ts",
@@ -31,11 +32,13 @@
   "dependencies": {
     "@google/generative-ai": "^0.14.1",
     "@prisma/client": "^5.14.0",
+    "adm-zip": "^0.5.16",
     "axios": "^1.7.2",
     "csv-parse": "^7.0.1",
     "dotenv": "^16.4.5",
     "fflate": "^0.8.3",
     "groq-sdk": "^1.1.2",
+    "ioredis": "^5.10.1",
     "iconv-lite": "^0.7.3",
     "node-cron": "^3.0.3",
     "pdfjs-dist": "^4.10.38",
@@ -45,6 +48,7 @@
   "devDependencies": {
     "@types/node": "^20.14.2",
     "@types/node-cron": "^3.0.11",
+    "@types/adm-zip": "^0.5.7",
     "prisma": "^5.14.0",
     "tsx": "^4.15.6",
     "typescript": "^5.4.5"

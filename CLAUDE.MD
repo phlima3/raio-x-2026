@@ -160,6 +160,7 @@ pnpm run sync:all                # todos os jobs
 - `api` → CNAME `cname.onveloz.com`
 
 ### Variáveis de ambiente — Veloz (serviço web)
+- `API_URL_INTERNAL` = `http://api:3001`
 - `NEXT_PUBLIC_API_URL` = `https://api.raio-x-2026.com.br`
 
 ### Variáveis de ambiente — Veloz (serviço API)
@@ -217,12 +218,14 @@ Páginas de candidatos são geradas estaticamente em build time (`generateStatic
 
 O start script usa `tsx src/index.ts` diretamente. Isso evita o bug do Railway onde o build cache reaproveita o `dist/` compilado antigo, ignorando mudanças no código. `tsx` está em `dependencies` (não devDependencies) para estar disponível em produção.
 
-### Slug do candidato: coluna no banco + fallback por estado
+### Slug do candidato: coluna não exclusiva + aliases persistentes
 
-O modelo `Candidate` tem `slug String? @unique`. O importador TSE preserva slugs
-editoriais existentes e cria novos no formato `nome-partido-UF-cargo-ano`.
-`getCandidateBySlug` primeiro tenta o lookup direto e mantém o fallback legado por
-estado e `makeSlug`. **Não usar `ILIKE 'nome%'` no PostgreSQL** — nomes
+O modelo `Candidate` tem `slug String?` indexado, mas não exclusivo. Isso permite
+detectar colisões de identidade sem fundir pessoas: um slug só é servido quando
+resolve para uma única candidatura canônica; ambiguidades retornam 404 até revisão.
+O importador TSE cria novos slugs no formato `nome-partido-UF-cargo-ano`, e URLs
+antigas ficam em `CandidateSlugAlias`, cuja chave é exclusiva. **Não usar
+`ILIKE 'nome%'` no PostgreSQL** — nomes
 acentuados como "Flávio" não casam com `ILIKE 'flavio%'`.
 
 ### `withCache` não cacheia `null`
@@ -371,7 +374,7 @@ Migration `20260326030000_add_unaccent` habilitada em produção. Função `immu
 ```prisma
 model Candidate {
   id             String   @id @default(uuid())
-  slug           String   @unique
+  slug           String?
   name           String
   party          String
   state          String?

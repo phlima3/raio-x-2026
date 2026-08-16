@@ -1,4 +1,11 @@
-import { DataSource, Position, PrismaClient, ProposalOrigin } from '@prisma/client'
+import {
+  DataSource,
+  Position,
+  PrismaClient,
+  ProposalOrigin,
+  ProposalStatus,
+  VoteType,
+} from '@prisma/client'
 import request from 'supertest'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
@@ -80,6 +87,8 @@ describe('public candidate API', () => {
           candidateId: 'published-president',
           isPublished: true,
           origin: ProposalOrigin.EDITORIAL,
+          status: ProposalStatus.SUBMITTED,
+          url: 'https://example.org/programa-oficial',
         },
         {
           externalId: 'ai-hidden',
@@ -89,6 +98,60 @@ describe('public candidate API', () => {
           candidateId: 'published-president',
           isPublished: false,
           origin: ProposalOrigin.AI_EXTRACTION,
+        },
+      ],
+    })
+    await prisma.votingRecord.createMany({
+      data: [
+        {
+          source: 'camara',
+          proposalName: 'Votação com fonte pública',
+          proposalUrl: 'https://camara.example/votacao',
+          voteType: VoteType.YES,
+          votedAt: new Date('2026-08-01T00:00:00Z'),
+          candidateId: 'published-president',
+        },
+        {
+          source: 'camara',
+          proposalName: 'Votação sem fonte pública',
+          proposalUrl: 'http://camara.example/inseguro',
+          voteType: VoteType.NO,
+          votedAt: new Date('2026-08-02T00:00:00Z'),
+          candidateId: 'published-president',
+        },
+      ],
+    })
+    await prisma.assetDeclaration.createMany({
+      data: [
+        {
+          candidateId: 'published-president',
+          year: 2026,
+          totalValue: 100,
+          sourceUrl: 'https://tse.example/bens',
+        },
+        {
+          candidateId: 'published-president',
+          year: 2022,
+          totalValue: 50,
+          sourceUrl: null,
+        },
+      ],
+    })
+    await prisma.campaignFinancing.createMany({
+      data: [
+        {
+          candidateId: 'published-president',
+          year: 2026,
+          totalReceived: 100,
+          totalSpent: 80,
+          sourceUrl: 'https://tse.example/financiamento',
+        },
+        {
+          candidateId: 'published-president',
+          year: 2022,
+          totalReceived: 50,
+          totalSpent: 45,
+          sourceUrl: 'http://tse.example/inseguro',
         },
       ],
     })
@@ -102,7 +165,15 @@ describe('public candidate API', () => {
     await request(app).get('/api/candidates/deputado-nao-publicavel-abc-sp').expect(404)
     await request(app).get('/api/transparency/hidden-governor/assets').expect(404)
     await request(app).get('/api/transparency/published-deputy/voting').expect(404)
-    await request(app).get('/api/transparency/published-president/assets').expect(200)
+    const voting = await request(app)
+      .get('/api/transparency/published-president/voting')
+      .expect(200)
+    const assets = await request(app)
+      .get('/api/transparency/published-president/assets')
+      .expect(200)
+    const financing = await request(app)
+      .get('/api/transparency/published-president/financing')
+      .expect(200)
 
     expect(list.body.data.map((candidate: { id: string }) => candidate.id)).toEqual([
       'published-president',
@@ -132,6 +203,12 @@ describe('public candidate API', () => {
       expect(detail.body.data).not.toHaveProperty(internalField)
     }
     expect(JSON.stringify(proposals.body.data)).not.toContain('ai-hidden')
+    expect(voting.body.data.map((record: { proposalName: string }) => record.proposalName))
+      .toEqual(['Votação com fonte pública'])
+    expect(assets.body.data.map((declaration: { year: number }) => declaration.year))
+      .toEqual([2026])
+    expect(financing.body.data.map((record: { year: number }) => record.year))
+      .toEqual([2026])
   })
 
   it('resolves a legacy name-party-state slug and still returns the full detail payload', async () => {
@@ -164,6 +241,9 @@ describe('public candidate API', () => {
         title: 'Proposta do candidato sem slug',
         tags: [],
         candidateId: 'legacy-slugless-president',
+        origin: ProposalOrigin.EDITORIAL,
+        status: ProposalStatus.SUBMITTED,
+        url: 'https://example.org/proposta-sem-slug',
         isPublished: true,
       },
     })

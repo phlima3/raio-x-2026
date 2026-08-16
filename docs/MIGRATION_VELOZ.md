@@ -100,7 +100,8 @@ No Veloz, usar `preStartCommand: "npx prisma migrate deploy"` e
 - **Start:** `next start`
 - **Porta:** 3000
 - **⚠️ IMPORTANTE:** O `next.config.mjs` **não usa** `output: "standalone"` — compatível com Veloz sem alteração.
-- **Variável obrigatória:** `NEXT_PUBLIC_API_URL` apontando para o domínio da API no Veloz
+- **Variáveis obrigatórias:** `API_URL_INTERNAL=http://api:3001` para chamadas server-side
+  em runtime e `NEXT_PUBLIC_API_URL` apontando para o domínio público da API no Veloz
 
 ### 5.3 — PostgreSQL
 
@@ -235,8 +236,9 @@ veloz env set RATE_LIMIT_WINDOW_MS=60000 --service api
 veloz env set SCRAPER_CONCURRENCY=2 --service api
 veloz env set SCRAPER_HEADLESS=true --service api
 
-# Variável do Frontend (usar o domínio da API no Veloz)
-veloz env set NEXT_PUBLIC_API_URL=https://api-raiox2026.onveloz.com --service web
+# Variáveis do Frontend: privada em runtime e pública no browser/build
+veloz env set API_URL_INTERNAL=http://api:3001 --service web
+veloz env set NEXT_PUBLIC_API_URL=https://api.raio-x-2026.com.br --service web
 ```
 
 > `DATABASE_URL` e `REDIS_URL` são injetados automaticamente — não setar manualmente.

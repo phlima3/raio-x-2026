@@ -1,6 +1,10 @@
 import { DataSource, OfficialCandidacyStatus, Position, type PrismaClient, ReviewItemKind, ReviewItemStatus } from '@prisma/client'
 
 import { normalizePersonName } from '../../jobs/backfillPersons'
+import {
+  resolveTseCandidateJudgments,
+  type TseComplementRow,
+} from './candidacyStatus'
 import type { TseCandidateRecord } from './candidateCsv'
 
 export interface ImportTseCandidatesInput {
@@ -11,6 +15,9 @@ export interface ImportTseCandidatesInput {
   syncedAt?: Date
   batchSize?: number
   dryRun?: boolean
+  complementRows?: readonly TseComplementRow[]
+  complementSourceUrl?: string
+  requireComplementJudgment?: boolean
 }
 
 export interface TseCandidateImportMetrics {
@@ -120,7 +127,9 @@ function sharesElectoralUnit(
   return candidateState.toUpperCase() === record.state.toUpperCase()
 }
 
-function statusRaw(record: TseCandidateRecord): string {
+// DS_SITUACAO_CANDIDATURA sozinho não distingue indeferido de sub judice; o
+// detalhe carrega essa informação quando o TSE a publica.
+function combinedRawStatus(record: TseCandidateRecord): string {
   return record.rawStatusDetail && record.rawStatusDetail !== record.rawStatus
     ? `${record.rawStatus} / ${record.rawStatusDetail}`
     : record.rawStatus
@@ -145,6 +154,22 @@ function officialStatus(status: TseCandidateRecord['normalizedStatus']): Officia
   return OfficialCandidacyStatus[status]
 }
 
+function legacyCandidacyStatus(record: TseCandidateRecord): string {
+  const raw = normalizeComparable(record.rawStatus)
+  if (raw.includes('substituid')) return 'substituido'
+  if (raw.includes('renuncia') || raw.includes('desist')) return 'desistiu'
+  if (raw.includes('indeferid')) return 'indeferido'
+  if (raw.includes('deferid')) return 'deferido'
+  if (raw.includes('cancelad')) return 'cancelado'
+  if (raw.includes('cassad')) return 'cassado'
+  if (raw.includes('falec')) return 'falecido'
+  if (
+    record.normalizedStatus === 'ELIGIBLE' ||
+    record.normalizedStatus === 'PENDING'
+  ) return 'registro_solicitado'
+  return 'status_nao_mapeado'
+}
+
 function isPublicCandidate(position: Position, status: OfficialCandidacyStatus): boolean {
   return PUBLIC_POSITIONS.has(position) && PUBLISHABLE_STATUSES.has(status)
 }
@@ -154,7 +179,7 @@ async function availableSlug(
   record: TseCandidateRecord,
 ): Promise<string> {
   const base = makeOfficialCandidateSlug(record)
-  const existing = await prisma.candidate.findUnique({ where: { slug: base }, select: { id: true } })
+  const existing = await prisma.candidate.findFirst({ where: { slug: base }, select: { id: true } })
   return existing ? `${base}-${record.tseId.slice(-6)}` : base
 }
 
@@ -191,7 +216,7 @@ async function resolveOrCreatePerson(
         where: { id: personIds[0] },
         data: {
           name: record.name,
-          socialName: record.ballotName,
+          socialName: record.socialName,
           normalizedName: normalizePersonName(record.name),
           dataSource: DataSource.TSE,
         },
@@ -204,7 +229,7 @@ async function resolveOrCreatePerson(
       const person = await prisma.person.create({
         data: {
           name: record.name,
-          socialName: record.ballotName,
+          socialName: record.socialName,
           normalizedName: normalizePersonName(record.name),
           dataSource: DataSource.TSE,
         },
@@ -217,7 +242,7 @@ async function resolveOrCreatePerson(
   const person = await prisma.person.create({
     data: {
       name: record.name,
-      socialName: record.ballotName,
+      socialName: record.socialName,
       normalizedName: normalizePersonName(record.name),
       dataSource: DataSource.TSE,
     },
@@ -301,6 +326,7 @@ export async function importTseCandidates(
 
   const syncedAt = input.syncedAt ?? new Date()
   const batchSize = Math.max(1, Math.min(input.batchSize ?? 250, 1_000))
+  const judgments = resolveTseCandidateJudgments(input.complementRows ?? [])
 
   for (let offset = 0; offset < input.records.length; offset += batchSize) {
     const batch = input.records.slice(offset, offset + batchSize)
@@ -311,11 +337,47 @@ export async function importTseCandidates(
         metrics.hidden++
         continue
       }
-      const status = officialStatus(record.normalizedStatus)
+      const judgment = judgments.get(record.tseId)
+      const missingRequiredJudgment = input.requireComplementJudgment === true && !judgment
+      const status = missingRequiredJudgment
+        ? OfficialCandidacyStatus.UNKNOWN
+        : judgment?.officialStatus ?? officialStatus(record.normalizedStatus)
+      const candidacyStatus = missingRequiredJudgment
+        ? 'status_nao_mapeado'
+        : judgment?.candidacyStatus ?? legacyCandidacyStatus(record)
+      const statusRaw = missingRequiredJudgment
+        ? '#NE'
+        : judgment?.rawStatus ?? combinedRawStatus(record)
+      const statusSourceUrl = input.requireComplementJudgment || judgment
+        ? input.complementSourceUrl ?? input.sourceUrl
+        : input.sourceUrl
+      const statusNeedsReview = missingRequiredJudgment || judgment?.ambiguous === true
+      const statusReviewReason = missingRequiredJudgment
+        ? `Complemento TSE ausente para ${record.tseId}`
+        : `Complemento TSE conflitante para ${record.tseId}`
       const policyPublished = isPublicCandidate(position, status)
       const existingOfficial = await prisma.candidate.findUnique({
         where: { tseId: record.tseId },
-        select: { id: true, personId: true, isPublished: true },
+        select: {
+          id: true,
+          personId: true,
+          name: true,
+          socialName: true,
+          party: true,
+          state: true,
+          position: true,
+          ballotNumber: true,
+          electionYear: true,
+          electionId: true,
+          isOfficial: true,
+          officialStatus: true,
+          officialStatusRaw: true,
+          isPublished: true,
+          candidacyStatus: true,
+          candidacyStatusSourceUrl: true,
+          dataSource: true,
+          sourceUrl: true,
+        },
       })
 
       if (existingOfficial) {
@@ -329,13 +391,32 @@ export async function importTseCandidates(
           record,
           position,
         )
-        const isPublished = policyPublished && !openReview && !personResolution.ambiguousMandates
+        const isPublished =
+          policyPublished && !openReview && !personResolution.ambiguousMandates && !statusNeedsReview
+        const materialChanged =
+          existingOfficial.personId !== personResolution.personId ||
+          existingOfficial.name !== record.name ||
+          existingOfficial.socialName !== record.socialName ||
+          existingOfficial.party !== record.party ||
+          existingOfficial.state !== record.state ||
+          existingOfficial.position !== position ||
+          existingOfficial.ballotNumber !== record.ballotNumber ||
+          existingOfficial.electionYear !== record.electionYear ||
+          existingOfficial.electionId !== record.electionId ||
+          existingOfficial.isOfficial !== true ||
+          existingOfficial.officialStatus !== status ||
+          existingOfficial.officialStatusRaw !== statusRaw ||
+          existingOfficial.candidacyStatus !== candidacyStatus ||
+          existingOfficial.candidacyStatusSourceUrl !== statusSourceUrl ||
+          existingOfficial.isPublished !== isPublished ||
+          existingOfficial.dataSource !== DataSource.TSE ||
+          existingOfficial.sourceUrl !== input.sourceUrl
         await prisma.candidate.update({
           where: { id: existingOfficial.id },
           data: {
             personId: personResolution.personId,
             name: record.name,
-            socialName: record.ballotName,
+            socialName: record.socialName,
             party: record.party,
             state: record.state,
             position,
@@ -344,7 +425,11 @@ export async function importTseCandidates(
             electionId: record.electionId,
             isOfficial: true,
             officialStatus: status,
-            officialStatusRaw: statusRaw(record),
+            officialStatusRaw: statusRaw,
+            candidacyStatus,
+            candidacyStatusSourceUrl: statusSourceUrl,
+            candidacyStatusVerifiedAt: syncedAt,
+            ...(materialChanged ? { materialUpdatedAt: syncedAt } : {}),
             isPublished,
             dataSource: DataSource.TSE,
             sourceUrl: input.sourceUrl,
@@ -364,6 +449,18 @@ export async function importTseCandidates(
           })) metrics.reviewItems++
           metrics.ambiguous++
         }
+        if (statusNeedsReview) {
+          if (await upsertReviewItem(prisma, {
+            record,
+            candidateId: existingOfficial.id,
+            personId: personResolution.personId,
+            syncRunId: input.syncRunId,
+            kind: ReviewItemKind.SOURCE_DATA_ERROR,
+            reason: statusReviewReason,
+            checksum: input.checksum,
+          })) metrics.reviewItems++
+          metrics.conflicts++
+        }
         metrics.updated++
         isPublished ? metrics.published++ : metrics.hidden++
         continue
@@ -382,6 +479,7 @@ export async function importTseCandidates(
           socialName: true,
           party: true,
           state: true,
+          candidacyStatus: true,
         },
       })
       const sameName = candidatesForOffice.filter(
@@ -393,10 +491,14 @@ export async function importTseCandidates(
           sharesElectoralUnit(candidate.state, record, position),
       )
 
+      // Um único homônimo com o mesmo partido e unidade eleitoral é a mesma
+      // pessoa: promova a ficha editorial em vez de duplicá-la. Qualquer outro
+      // caso cai no fallback conservador abaixo.
       if (exactMatches.length === 1) {
         const match = exactMatches[0]
         const personResolution = await ensureCandidatePerson(prisma, match, record, position)
-        const isPublished = policyPublished && !personResolution.ambiguousMandates
+        const isPublished =
+          policyPublished && !personResolution.ambiguousMandates && !statusNeedsReview
         await prisma.candidate.update({
           where: { id: match.id },
           data: {
@@ -410,7 +512,11 @@ export async function importTseCandidates(
             electionId: record.electionId,
             isOfficial: true,
             officialStatus: status,
-            officialStatusRaw: statusRaw(record),
+            officialStatusRaw: statusRaw,
+            candidacyStatus,
+            candidacyStatusSourceUrl: statusSourceUrl,
+            candidacyStatusVerifiedAt: syncedAt,
+            materialUpdatedAt: syncedAt,
             isPublished,
             dataSource: DataSource.TSE,
             sourceUrl: input.sourceUrl,
@@ -436,8 +542,12 @@ export async function importTseCandidates(
       }
 
       const personResolution = await resolveOrCreatePerson(prisma, record, position)
-      const needsEditorialReview = exactMatches.length > 1 || sameName.length > 0
-      const needsReview = needsEditorialReview || personResolution.ambiguousMandates
+      // Nome, partido e UF não provam identidade. Se já existe qualquer linha
+      // editorial homônima, crie uma candidatura oficial separada e bloqueada
+      // para reconciliação explícita; nunca promova o registro legado por nome.
+      const needsEditorialReview = sameName.length > 0
+      const identityAmbiguous = sameName.length > 1 || personResolution.ambiguousMandates
+      const needsReview = needsEditorialReview || identityAmbiguous || statusNeedsReview
       const slug = await availableSlug(prisma, record)
       const created = await prisma.candidate.create({
         data: {
@@ -445,7 +555,7 @@ export async function importTseCandidates(
           tseId: record.tseId,
           slug,
           name: record.name,
-          socialName: record.ballotName,
+          socialName: record.socialName,
           party: record.party,
           state: record.state,
           position,
@@ -454,7 +564,11 @@ export async function importTseCandidates(
           electionId: record.electionId,
           isOfficial: true,
           officialStatus: status,
-          officialStatusRaw: statusRaw(record),
+          officialStatusRaw: statusRaw,
+          candidacyStatus,
+          candidacyStatusSourceUrl: statusSourceUrl,
+          candidacyStatusVerifiedAt: syncedAt,
+          materialUpdatedAt: syncedAt,
           isPublished: needsReview ? false : policyPublished,
           dataSource: DataSource.TSE,
           sourceUrl: input.sourceUrl,
@@ -467,14 +581,18 @@ export async function importTseCandidates(
       metrics.created++
 
       if (needsReview) {
-        const kind = exactMatches.length > 1 || personResolution.ambiguousMandates
-          ? ReviewItemKind.IDENTITY_AMBIGUITY
-          : ReviewItemKind.CANDIDACY_CONFLICT
-        const reason = exactMatches.length > 1
-          ? `Mais de uma candidatura editorial corresponde ao registro TSE ${record.tseId}`
+        const kind = statusNeedsReview
+          ? ReviewItemKind.SOURCE_DATA_ERROR
+          : identityAmbiguous
+            ? ReviewItemKind.IDENTITY_AMBIGUITY
+            : ReviewItemKind.CANDIDACY_CONFLICT
+        const reason = statusNeedsReview
+          ? statusReviewReason
           : personResolution.ambiguousMandates
-            ? `Mais de um mandato corresponde ao registro TSE ${record.tseId}`
-            : `Registro TSE ${record.tseId} conflita com partido ou UF editorial`
+          ? `Mais de um mandato corresponde ao registro TSE ${record.tseId}`
+          : sameName.length > 1
+            ? `Mais de um homônimo editorial corresponde ao registro TSE ${record.tseId}`
+          : `Registro TSE ${record.tseId} possui homônimo editorial e exige reconciliação explícita`
         if (await upsertReviewItem(prisma, {
           record,
           candidateId: created.id,
@@ -484,13 +602,72 @@ export async function importTseCandidates(
           reason,
           checksum: input.checksum,
         })) metrics.reviewItems++
-        exactMatches.length > 1 || personResolution.ambiguousMandates
-          ? metrics.ambiguous++
-          : metrics.conflicts++
+        identityAmbiguous ? metrics.ambiguous++ : metrics.conflicts++
       }
 
       created.isPublished ? metrics.published++ : metrics.hidden++
     }
+  }
+
+  const replacedIds = new Set(
+    [...judgments.values()]
+      .map((judgment) => judgment.replacesCandidateId)
+      .filter((value): value is string => Boolean(value)),
+  )
+  const activeStatuses = new Set(['registro_solicitado', 'deferido'])
+  const activeSlateMember = (record: TseCandidateRecord): boolean => {
+    const judgment = judgments.get(record.tseId)
+    if (input.requireComplementJudgment === true && !judgment) return false
+    return activeStatuses.has(judgment?.candidacyStatus ?? legacyCandidacyStatus(record))
+  }
+  const presidents = input.records.filter((record) => record.position === 'PRESIDENTE')
+  for (const president of presidents) {
+    const coalitionKey = president.raw.SQ_COLIGACAO
+    const presidentActive =
+      !replacedIds.has(president.tseId) &&
+      activeSlateMember(president)
+    const runningMates = presidentActive && coalitionKey
+      ? input.records.filter(
+          (record) =>
+            record.position === 'VICE_PRESIDENTE' &&
+            record.raw.SQ_COLIGACAO === coalitionKey &&
+            !replacedIds.has(record.tseId) &&
+            activeSlateMember(record),
+        )
+      : []
+    const runningMate = runningMates.length === 1 ? runningMates[0] : null
+    const runningMateName = runningMate?.name ?? null
+    const runningMateParty = runningMate?.party ?? null
+    const runningMateSourceUrl = runningMate
+      ? judgments.has(runningMate.tseId)
+        ? input.complementSourceUrl ?? input.sourceUrl
+        : input.sourceUrl
+      : null
+    const candidate = await prisma.candidate.findUnique({
+      where: { tseId: president.tseId },
+      select: {
+        id: true,
+        runningMateName: true,
+        runningMateParty: true,
+        runningMateSourceUrl: true,
+      },
+    })
+    if (!candidate) continue
+    const materialChanged =
+      candidate.runningMateName !== runningMateName ||
+      candidate.runningMateParty !== runningMateParty ||
+      candidate.runningMateSourceUrl !== runningMateSourceUrl
+    if (!materialChanged) continue
+
+    await prisma.candidate.update({
+      where: { id: candidate.id },
+      data: {
+        runningMateName,
+        runningMateParty,
+        runningMateSourceUrl,
+        materialUpdatedAt: syncedAt,
+      },
+    })
   }
 
   return metrics

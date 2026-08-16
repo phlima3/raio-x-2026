@@ -5,10 +5,19 @@ import { logger } from '../utils/logger'
 // ── Schemas ───────────────────────────────────────────────────────────────────
 
 export const CandidacyStatusSchema = z.enum([
-  'confirmado', // candidatura registrada/oficializada em convenção
-  'pre_candidato', // pré-candidatura anunciada publicamente
-  'cotado', // especulado pela imprensa, sem anúncio
-  'desistiu', // desistiu ou retirou a pré-candidatura
+  'cotado',
+  'pre_candidato',
+  'escolhido_convencao',
+  'registro_solicitado',
+  'deferido',
+  'indeferido',
+  'desistiu',
+  'substituido',
+  'cancelado',
+  'pedido_nao_conhecido',
+  'cassado',
+  'falecido',
+  'status_nao_mapeado',
 ])
 
 export type CandidacyStatus = z.infer<typeof CandidacyStatusSchema>
@@ -73,14 +82,22 @@ Retorne APENAS um array JSON válido, sem markdown, sem explicações. Cada item
 {
   "name": "nome mais completo citado no texto",
   "party": "sigla do partido (ex: PT, PL, Novo) ou null se não citado",
-  "status": "confirmado" | "pre_candidato" | "cotado" | "desistiu",
+  "status": "cotado" | "pre_candidato" | "escolhido_convencao" | "registro_solicitado" | "deferido" | "indeferido" | "desistiu" | "substituido" | "cancelado" | "pedido_nao_conhecido" | "cassado" | "falecido" | "status_nao_mapeado",
   "currentRole": "cargo atual (ex: 'Governador de Goiás') ou null",
   "homeState": "UF de origem/atuação (ex: 'GO') ou null",
   "pollFirstRoundPct": número (intenção de voto no 1º turno, se o texto citar) ou null
 }
 
 Regras:
-- "desistiu" para quem o texto diz que retirou a candidatura ou optou por outro cargo
+- "cotado": apenas especulado, sem anúncio da própria pessoa ou partido
+- "pre_candidato": pré-candidatura publicamente anunciada, antes da convenção
+- "escolhido_convencao": nome escolhido formalmente em convenção partidária
+- "registro_solicitado": pedido de registro protocolado na Justiça Eleitoral
+- "deferido" ou "indeferido": somente quando a decisão da Justiça Eleitoral estiver explícita
+- "desistiu": retirou a candidatura ou optou por outro cargo
+- "substituido": foi formalmente substituído por outra candidatura
+- "cancelado", "pedido_nao_conhecido", "cassado" ou "falecido": somente quando esse resultado estiver explícito
+- "status_nao_mapeado": situação oficial diferente das anteriores; exige revisão humana
 - Não invente dados que não estejam no texto
 - Se o texto não fala de eleição presidencial, retorne []
 

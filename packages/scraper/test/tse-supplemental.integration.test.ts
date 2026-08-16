@@ -90,6 +90,25 @@ function makeClient(): TseCkanClient {
   }
 }
 
+function makeSocialClient(
+  rows: string[][],
+  fetchedAt: Date,
+  sha256: string,
+  headers = ['AA_ELEICAO', 'SQ_CANDIDATO', 'NR_ORDEM_REDE_SOCIAL', 'DS_URL'],
+): TseCkanClient {
+  const resource = definitions.find(
+    (definition) => definition.resource.kind === TseResourceKind.SOCIAL_MEDIA,
+  )!.resource
+  const bytes = archive('rede_social_candidato_2026_BRASIL.csv', csv(
+    headers,
+    rows,
+  ))
+  return {
+    discover: vi.fn().mockResolvedValue([resource]),
+    download: vi.fn().mockResolvedValue({ resource, bytes, sha256, fetchedAt }),
+  }
+}
+
 async function clearData() {
   await prisma.proposal.deleteMany()
   await prisma.assetDeclaration.deleteMany()
@@ -141,6 +160,10 @@ describe('runTseSupplementalSync', () => {
 
     const candidate = await prisma.candidate.findUniqueOrThrow({ where: { id: 'candidate-123' } })
     expect(candidate.officialStatusRaw).toBe('APTO')
+    expect(candidate.candidacyStatus).toBe('registro_solicitado')
+    expect(candidate.candidacyStatusSourceUrl).toBe('https://tse/complement.zip')
+    expect(candidate.candidacyStatusVerifiedAt).toEqual(new Date('2026-08-01T07:00:00.000Z'))
+    expect(candidate.materialUpdatedAt).toEqual(new Date('2026-08-01T07:00:00.000Z'))
     expect(candidate.coalitionName).toBe('Coligação Teste')
     expect(candidate.siteUrl).toBe('https://social.example/oficial')
 
@@ -149,6 +172,92 @@ describe('runTseSupplementalSync', () => {
     })
     expect(assets.totalValue.toString()).toBe('150000.75')
     expect((assets.assets as unknown[])).toHaveLength(2)
+  })
+
+  it('reconciles changed and removed official site URLs from the complete snapshot', async () => {
+    const candidate = await prisma.candidate.create({
+      data: {
+        id: 'candidate-site-reconciliation',
+        tseId: '123',
+        slug: 'candidata-site-px-sp-governador-2026',
+        name: 'Candidata Site',
+        party: 'PX',
+        state: 'SP',
+        position: Position.GOVERNADOR,
+        partyHistory: [],
+        electionYear: 2026,
+        isOfficial: true,
+        isPublished: true,
+        dataSource: DataSource.TSE,
+        siteUrl: 'https://social.example/antigo',
+      },
+    })
+    const changedAt = new Date('2026-08-04T07:00:00.000Z')
+    await runTseSupplementalSync({
+      prisma,
+      client: makeSocialClient(
+        [['2026', '123', '1', 'https://social.example/novo']],
+        changedAt,
+        'sha-social-site-changed',
+      ),
+    })
+
+    await expect(prisma.candidate.findUniqueOrThrow({
+      where: { id: candidate.id },
+      select: { siteUrl: true, materialUpdatedAt: true },
+    })).resolves.toEqual({
+      siteUrl: 'https://social.example/novo',
+      materialUpdatedAt: changedAt,
+    })
+
+    const removedAt = new Date('2026-08-05T07:00:00.000Z')
+    await runTseSupplementalSync({
+      prisma,
+      client: makeSocialClient([], removedAt, 'sha-social-site-removed'),
+    })
+
+    await expect(prisma.candidate.findUniqueOrThrow({
+      where: { id: candidate.id },
+      select: { siteUrl: true, materialUpdatedAt: true },
+    })).resolves.toEqual({
+      siteUrl: null,
+      materialUpdatedAt: removedAt,
+    })
+  })
+
+  it('rejects an invalid social snapshot schema without clearing stored sites', async () => {
+    const candidate = await prisma.candidate.create({
+      data: {
+        id: 'candidate-invalid-social-schema',
+        tseId: '123',
+        slug: 'candidata-schema-px-sp-governador-2026',
+        name: 'Candidata Schema',
+        party: 'PX',
+        state: 'SP',
+        position: Position.GOVERNADOR,
+        partyHistory: [],
+        electionYear: 2026,
+        isOfficial: true,
+        isPublished: true,
+        dataSource: DataSource.TSE,
+        siteUrl: 'https://social.example/preservado',
+      },
+    })
+
+    await expect(runTseSupplementalSync({
+      prisma,
+      client: makeSocialClient(
+        [['2026', '123', 'https://social.example/renomeado']],
+        new Date('2026-08-06T07:00:00.000Z'),
+        'sha-social-invalid-schema',
+        ['AA_ELEICAO', 'ID_CANDIDATO', 'URL_REDE_SOCIAL'],
+      ),
+    })).rejects.toThrow(/sem colunas obrigatórias/i)
+
+    await expect(prisma.candidate.findUniqueOrThrow({
+      where: { id: candidate.id },
+      select: { siteUrl: true },
+    })).resolves.toEqual({ siteUrl: 'https://social.example/preservado' })
   })
 
   it('repairs archive links when canonical candidacy arrives after supplemental data', async () => {
@@ -183,5 +292,45 @@ describe('runTseSupplementalSync', () => {
     expect(await prisma.officialDatasetRecord.count({
       where: { syncRunId: second.runId },
     })).toBe(6)
+  })
+
+  it('reopens material review when a public asset module changes', async () => {
+    const oldMaterialDate = new Date('2026-07-01T00:00:00.000Z')
+    const candidate = await prisma.candidate.create({
+      data: {
+        id: 'candidate-assets',
+        tseId: '123',
+        slug: 'candidata-bens-px-sp',
+        name: 'Candidata Bens',
+        party: 'PX',
+        state: 'SP',
+        position: Position.GOVERNADOR,
+        partyHistory: [],
+        electionYear: 2026,
+        isOfficial: true,
+        isPublished: true,
+        dataSource: DataSource.TSE,
+        materialUpdatedAt: oldMaterialDate,
+      },
+    })
+    const assetDefinition = definitions.find(
+      ({ resource }) => resource.kind === TseResourceKind.ASSETS,
+    )!
+    const client: TseCkanClient = {
+      discover: vi.fn().mockResolvedValue([assetDefinition.resource]),
+      download: vi.fn().mockResolvedValue({
+        resource: assetDefinition.resource,
+        bytes: assetDefinition.bytes,
+        sha256: 'sha-assets-material-change',
+        fetchedAt: new Date('2026-08-03T07:00:00.000Z'),
+      }),
+    }
+
+    await runTseSupplementalSync({ prisma, client })
+
+    const updated = await prisma.candidate.findUniqueOrThrow({
+      where: { id: candidate.id },
+    })
+    expect(updated.materialUpdatedAt).toEqual(new Date('2026-08-03T07:00:00.000Z'))
   })
 })

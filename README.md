@@ -44,7 +44,7 @@ raio-x-2026/
 
 ```bash
 # Clone o repositório
-git clone https://github.com/seu-usuario/raio-x-2026.git
+git clone https://github.com/phlima3/raio-x-2026.git
 cd raio-x-2026
 
 # Copie e preencha as variáveis de ambiente
@@ -75,6 +75,9 @@ pnpm dev:web
 
 # Scraper manual
 pnpm scraper:sync
+
+# Snapshot oficial TSE (candidaturas + julgamentos 2026)
+pnpm --filter @raiox/scraper sync:tse
 ```
 
 ### 4. Banco de dados
@@ -95,3 +98,27 @@ pnpm db:studio
 ## Licença
 
 MIT
+
+## SEO e qualidade editorial
+
+O sitemap e a diretiva `index` são controlados pelo mesmo gate editorial. Um
+perfil incompleto continua público, mas recebe `noindex,follow` até ter status
+com fonte, três módulos substantivos, autoria, revisão e aprovação auditáveis.
+
+```bash
+# Testes e builds
+pnpm --filter @raiox/api test
+pnpm --filter @raiox/web test
+pnpm --filter @raiox/web typecheck
+pnpm --filter @raiox/web lint
+pnpm -r build
+
+# Smoke local após o build, relatório e auditoria pós-deploy
+pnpm --filter @raiox/web seo:smoke
+pnpm --filter @raiox/web seo:quality-report
+pnpm --filter @raiox/web seo:audit
+```
+
+Consulte [o plano de SEO](docs/SEO_PLAN.md), [o runbook de lançamento](docs/runbooks/SEO_LAUNCH.md)
+e [o procedimento editorial](docs/runbooks/EDITORIAL_QUALITY_GATE.md) antes de
+aprovar ou enviar URLs ao Google.

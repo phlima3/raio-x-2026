@@ -1,6 +1,6 @@
 import { createScraperPrismaClient } from '../utils/prisma'
 import 'dotenv/config'
-import { DataSource, type PrismaClient } from '@prisma/client'
+import { DataSource, Position, type PrismaClient } from '@prisma/client'
 
 import {
   createPrismaSyncRunStore,
@@ -8,6 +8,8 @@ import {
   type CompletedSyncRun,
 } from '../sync/runDataSourceSync'
 import { logger } from '../utils/logger'
+import { invalidateApiCandidateCaches } from '../utils/invalidateApiCache'
+import { revalidateCandidatePages } from '../utils/revalidateWeb'
 import { parseTseCandidateArchive } from './tse/candidateArchive'
 import {
   createTseCkanClient,
@@ -15,6 +17,7 @@ import {
   type TseCkanClient,
 } from './tse/ckanClient'
 import { importTseCandidates } from './tse/importCandidates'
+import { parseTseTabularArchives } from './tse/tabularArchive'
 
 export interface RunTseCandidateSyncOptions {
   prisma: PrismaClient
@@ -41,7 +44,18 @@ export async function runTseCandidateSync(
         throw new Error(`Catálogo TSE candidatos-${year} não contém o recurso de candidaturas`)
       }
 
-      const downloaded = await client.download(resource)
+      const complementResource = resources.find(
+        (candidate) => candidate.kind === TseResourceKind.CANDIDATE_COMPLEMENT,
+      )
+      if (!complementResource) {
+        throw new Error(
+          `Catálogo TSE candidatos-${year} não contém o complemento obrigatório de julgamento`,
+        )
+      }
+      const [downloaded, complementDownload] = await Promise.all([
+        client.download(resource),
+        client.download(complementResource),
+      ])
       await options.prisma.dataSyncRun.update({
         where: { id: runId },
         data: {
@@ -51,10 +65,17 @@ export async function runTseCandidateSync(
       })
 
       const parsed = parseTseCandidateArchive(downloaded.bytes)
+      // O complemento de julgamento também pode vir dividido em vários CSVs
+      // dentro do mesmo ZIP; todos descrevem as mesmas colunas.
+      const complementRows = parseTseTabularArchives(complementDownload.bytes)
+        .flatMap((file) => file.rows)
       if (parsed.records.length === 0 && parsed.rejected.length > 0) {
         throw new Error(
           `Snapshot TSE sem registros válidos (${parsed.rejected.length} linhas rejeitadas)`,
         )
+      }
+      if (parsed.records.length > 0 && complementRows.length === 0) {
+        throw new Error('Snapshot TSE sem linhas válidas no complemento de julgamento')
       }
 
       const imported = await importTseCandidates(options.prisma, {
@@ -62,9 +83,26 @@ export async function runTseCandidateSync(
         sourceUrl: resource.url,
         checksum: downloaded.sha256,
         syncRunId: runId,
-        syncedAt: downloaded.fetchedAt,
+        syncedAt: complementDownload.fetchedAt,
         dryRun: options.dryRun,
+        complementRows,
+        complementSourceUrl: complementResource.url,
+        requireComplementJudgment: true,
       })
+      if (!options.dryRun && imported.created + imported.updated > 0) {
+        await invalidateApiCandidateCaches()
+        const touchedCandidates = await options.prisma.candidate.findMany({
+          where: {
+            syncRunId: runId,
+            position: { in: [Position.PRESIDENTE, Position.GOVERNADOR, Position.SENADOR] },
+            slug: { not: null },
+          },
+          select: { slug: true },
+        })
+        await revalidateCandidatePages(
+          touchedCandidates.flatMap((candidate) => candidate.slug ? [candidate.slug] : []),
+        )
+      }
 
       return {
         noop: parsed.records.length === 0,
@@ -75,6 +113,7 @@ export async function runTseCandidateSync(
           parsed: parsed.records.length,
           rejected: parsed.rejected.length,
           duplicates: parsed.duplicates,
+          complementRows: complementRows.length,
           created: imported.created,
           matched: imported.matched,
           updated: imported.updated,

@@ -1,5 +1,10 @@
 import Link from 'next/link'
-import { fetchCandidates, fetchCandidateStats } from '@/lib/api'
+import type { Metadata } from 'next'
+import {
+  fetchCandidates,
+  fetchCandidateSeoReport,
+  fetchCandidateStats,
+} from '@/lib/api'
 import { StatTicker } from '@/components/StatTicker'
 import {
   PresidentialIndex,
@@ -7,7 +12,12 @@ import {
 } from '@/components/PresidentialIndex'
 import { CommandPalette } from '@/components/CommandPalette'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 900
+
+export const metadata: Metadata = {
+  alternates: { canonical: '/' },
+  openGraph: { url: '/' },
+}
 
 const ELECTION_DATE = new Date('2026-10-04T00:00:00-03:00')
 
@@ -28,30 +38,36 @@ export default async function HomePage() {
   // 100 é o teto aceito por /api/candidates. A disputa presidencial cabe
   // inteira nesse limite; a paleta de comandos é um atalho de navegação e a
   // busca completa vive em /busca.
-  const [presidentsRes, statsRes, allRes] = await Promise.allSettled([
+  const [presidentsRes, statsRes, allRes, qualityReport] = await Promise.allSettled([
     fetchCandidates({ position: 'PRESIDENTE', limit: '100' }),
     fetchCandidateStats(),
     fetchCandidates({ limit: '100' }),
+    fetchCandidateSeoReport(),
   ])
 
   const presidents: PresidentialCandidate[] =
     presidentsRes.status === 'fulfilled' ? presidentsRes.value.data : []
-  const stats =
-    statsRes.status === 'fulfilled' ? statsRes.value.data : null
+  const stats = statsRes.status === 'fulfilled' ? statsRes.value.data : null
   const paletteItems =
     allRes.status === 'fulfilled'
-      ? allRes.value.data.map((c) => ({
-          id: c.id,
-          slug: c.slug,
-          name: c.name,
-          party: c.party,
-          state: c.state,
+      ? allRes.value.data.map((candidate) => ({
+          id: candidate.id,
+          slug: candidate.slug,
+          name: candidate.name,
+          party: candidate.party,
+          state: candidate.state,
         }))
       : []
 
-  const today = new Date()
   const daysLeft = daysUntilElection()
-  const publishedAt = formatLongDate(today)
+  const seoReport = qualityReport.status === 'fulfilled' ? qualityReport.value.data : []
+  const latestUpdate = seoReport.reduce<Date | null>((latest, candidate) => {
+    if (!candidate.materialUpdatedAt) return latest
+    const candidateDate = new Date(candidate.materialUpdatedAt)
+    if (Number.isNaN(candidateDate.getTime())) return latest
+    return !latest || candidateDate > latest ? candidateDate : latest
+  }, null)
+  const publishedAt = latestUpdate ? formatLongDate(latestUpdate) : null
 
   const statItems = stats
     ? [
@@ -78,7 +94,7 @@ export default async function HomePage() {
         <div className="container mx-auto px-4 md:px-6 py-2.5 flex items-center justify-between gap-3 font-mono text-[10px] md:text-[11px] uppercase tracking-[0.22em] text-ink-muted">
           <span className="whitespace-nowrap">Dossiê Eleitoral</span>
           <span className="hidden md:inline truncate">
-            Edição Nº 01 · Ano I · {publishedAt}
+            Edição Nº 01 · Ano I{publishedAt ? ` · Dados atualizados em ${publishedAt}` : ''}
           </span>
           <span className="flex items-center gap-2 whitespace-nowrap">
             <span
@@ -127,9 +143,9 @@ export default async function HomePage() {
             <dl className="space-y-7 text-sm">
               <div>
                 <dt className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-muted mb-1.5">
-                  Publicado em
+                  Dados atualizados em
                 </dt>
-                <dd className="font-serif text-xl">{publishedAt}</dd>
+                <dd className="font-serif text-xl">{publishedAt ?? 'Atualização em revisão'}</dd>
               </div>
               <div>
                 <dt className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-muted mb-1.5">
@@ -257,8 +273,8 @@ export default async function HomePage() {
               À Presidência da República
             </h2>
             <p className="mt-4 text-ink-muted max-w-md text-[15px] leading-relaxed">
-              Os nomes confirmados ou cotados para a disputa presidencial —
-              com biografia, propostas e histórico de votos.
+              Os nomes monitorados para a disputa presidencial, com situação
+              eleitoral identificada, biografia, propostas e histórico de votos.
             </p>
           </div>
           <Link

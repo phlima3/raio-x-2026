@@ -1,8 +1,10 @@
 name: Sync TSE Official Data
 
 on:
+  push:
+    branches: [main]
   schedule:
-    - cron: '0 7 * * *'
+    - cron: '15 */2 * * *'
   workflow_dispatch:
     inputs:
       dry_run:
@@ -23,14 +25,19 @@ jobs:
     timeout-minutes: 90
     env:
       DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+      REDIS_URL: ${{ secrets.PROD_REDIS_URL }}
+      REVALIDATION_SECRET: ${{ secrets.REVALIDATION_SECRET }}
       TSE_API_URL: https://dadosabertos.tse.jus.br
+      WEB_REVALIDATION_URL: https://raio-x-2026.com.br/api/revalidate
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-pipeline
       - uses: ./.github/actions/setup-veloz-db-tunnel
         with:
           api-key: ${{ secrets.VELOZ_API_KEY }}
-      - name: Sync canonical candidacies
+      - name: Apply database migrations before the sync
+        run: pnpm --filter @raiox/api exec prisma migrate deploy
+      - name: Sync canonical candidacies at workflow start
         run: pnpm --filter @raiox/scraper run sync:tse ${{ inputs.dry_run && '-- --dry-run' || '' }}
 
   supplemental:
@@ -40,7 +47,10 @@ jobs:
     timeout-minutes: 120
     env:
       DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+      REDIS_URL: ${{ secrets.PROD_REDIS_URL }}
+      REVALIDATION_SECRET: ${{ secrets.REVALIDATION_SECRET }}
       TSE_API_URL: https://dadosabertos.tse.jus.br
+      WEB_REVALIDATION_URL: https://raio-x-2026.com.br/api/revalidate
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-pipeline
