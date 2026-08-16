@@ -271,18 +271,30 @@ export async function getCandidateBySlug(slug: string) {
       })
       if (bySlug) return presentCandidate(bySlug, slug, readModel)
 
+      // Fallback para slugs legados, derivados de nome/partido/UF. A identidade
+      // é resolvida com uma projeção enxuta e só o registro vencedor carrega
+      // propostas, votos, bens e financiamento: com o país inteiro importado,
+      // aplicar `detailInclude` a todos os publicados custava milhares de
+      // linhas por acesso — e um slug inexistente devolve `null`, que por
+      // decisão do cache não é memorizado, então cada 404 repetia a varredura.
       const parsed = parseLegacySlug(slug)
-      const candidates = await prisma.candidate.findMany({
+      const identities = await prisma.candidate.findMany({
         where: {
           ...publicCandidateWhere(),
           ...(parsed && { state: parsed.state.toUpperCase() }),
         },
-        include: detailInclude,
+        select: { id: true, name: true, party: true, state: true },
       })
-      const match = candidates.find(
+      const match = identities.find(
         (candidate) => makeSlug(candidate.name, candidate.party, candidate.state) === slug,
       )
-      return match ? presentCandidate(match, slug, readModel) : null
+      if (!match) return null
+
+      const candidate = await prisma.candidate.findFirst({
+        where: { id: match.id, ...publicCandidateWhere() },
+        include: detailInclude,
+      })
+      return candidate ? presentCandidate(candidate, slug, readModel) : null
     },
   )
 }
