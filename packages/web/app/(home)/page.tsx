@@ -25,10 +25,13 @@ function formatLongDate(d: Date): string {
 }
 
 export default async function HomePage() {
+  // 100 é o teto aceito por /api/candidates. A disputa presidencial cabe
+  // inteira nesse limite; a paleta de comandos é um atalho de navegação e a
+  // busca completa vive em /busca.
   const [presidentsRes, statsRes, allRes] = await Promise.allSettled([
-    fetchCandidates({ position: 'PRESIDENTE', limit: '8' }),
+    fetchCandidates({ position: 'PRESIDENTE', limit: '100' }),
     fetchCandidateStats(),
-    fetchCandidates({ limit: '200' }),
+    fetchCandidates({ limit: '100' }),
   ])
 
   const presidents: PresidentialCandidate[] =
