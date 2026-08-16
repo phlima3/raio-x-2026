@@ -9,6 +9,7 @@ export enum TseResourceKind {
   CASSATIONS = 'CASSATIONS',
   SOCIAL_MEDIA = 'SOCIAL_MEDIA',
   CAMPAIGN_PROGRAMS = 'CAMPAIGN_PROGRAMS',
+  PHOTOS = 'PHOTOS',
   UNKNOWN = 'UNKNOWN',
 }
 
@@ -86,6 +87,9 @@ function classifyResource(name: string, url: string): TseResourceKind {
   if (token.includes('cassac')) return TseResourceKind.CASSATIONS
   if (token.includes('rede_social') || token.includes('redes sociais')) {
     return TseResourceKind.SOCIAL_MEDIA
+  }
+  if (token.includes('foto_cand') || token.includes('fotos de candidato')) {
+    return TseResourceKind.PHOTOS
   }
   if (token.includes('proposta') || token.includes('programa')) {
     return TseResourceKind.CAMPAIGN_PROGRAMS
