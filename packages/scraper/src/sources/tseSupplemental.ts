@@ -21,7 +21,7 @@ import {
   TseResourceKind,
   type TseCkanClient,
 } from './tse/ckanClient'
-import { parseTseTabularArchive } from './tse/tabularArchive'
+import { parseTseTabularArchives } from './tse/tabularArchive'
 
 const SUPPLEMENTAL_KINDS = new Set<TseResourceKind>([
   TseResourceKind.CANDIDATE_COMPLEMENT,
@@ -301,9 +301,18 @@ export async function runTseSupplementalSync(
 
       for (const resource of resources) {
         const downloaded = await client.download(resource)
-        const parsed = parseTseTabularArchive(downloaded.bytes)
-        recordCount += parsed.rows.length
+        const parsedFiles = parseTseTabularArchives(downloaded.bytes)
+        const archiveRows = parsedFiles.reduce((total, file) => total + file.rows.length, 0)
+        recordCount += archiveRows
         if (options.dryRun) continue
+
+        const archiveMetadata = {
+          fileName: parsedFiles[0].fileName,
+          fileNames: parsedFiles.map((file) => file.fileName),
+          encoding: parsedFiles[0].encoding,
+          recordCount: archiveRows,
+          columns: [...new Set(parsedFiles.flatMap((file) => file.columns))],
+        }
 
         const sourceDocument = await options.prisma.sourceDocument.upsert({
           where: { sha256: downloaded.sha256 },
@@ -315,10 +324,7 @@ export async function runTseSupplementalSync(
               resourceId: resource.id,
               resourceName: resource.name,
               datasetKind: resource.kind,
-              fileName: parsed.fileName,
-              encoding: parsed.encoding,
-              recordCount: parsed.rows.length,
-              columns: parsed.columns,
+              ...archiveMetadata,
             },
           },
           create: {
@@ -334,83 +340,84 @@ export async function runTseSupplementalSync(
               resourceId: resource.id,
               resourceName: resource.name,
               datasetKind: resource.kind,
-              fileName: parsed.fileName,
-              encoding: parsed.encoding,
-              recordCount: parsed.rows.length,
-              columns: parsed.columns,
+              ...archiveMetadata,
             },
           },
           select: { id: true },
         })
         createdDocuments++
 
-        for (let offset = 0; offset < parsed.rows.length; offset += batchSize) {
-          const batch = parsed.rows.slice(offset, offset + batchSize)
-          const records = batch.map((row) => ({
-            source: DataSource.TSE,
-            datasetKind: resource.kind,
-            externalId: stableExternalId(resource.kind, row),
-            electionYear: electionYear(row),
-            payload: row as Prisma.InputJsonObject,
-            candidateId: row.SQ_CANDIDATO ? candidateIds.get(row.SQ_CANDIDATO) ?? null : null,
-            sourceDocumentId: sourceDocument.id,
-            syncRunId: runId,
-          }))
-          await options.prisma.officialDatasetRecord.createMany({
-            data: records,
-            skipDuplicates: true,
-          })
-          const externalIds = records.map((record) => record.externalId)
-          await options.prisma.officialDatasetRecord.updateMany({
-            where: {
+        // Um recurso pode trazer um CSV consolidado ou um por UF. Percorrer
+        // arquivo a arquivo mantém o pico de memória no tamanho de um CSV.
+        for (const parsed of parsedFiles) {
+          for (let offset = 0; offset < parsed.rows.length; offset += batchSize) {
+            const batch = parsed.rows.slice(offset, offset + batchSize)
+            const records = batch.map((row) => ({
               source: DataSource.TSE,
               datasetKind: resource.kind,
-              externalId: { in: externalIds },
-            },
-            data: { sourceDocumentId: sourceDocument.id, syncRunId: runId },
-          })
+              externalId: stableExternalId(resource.kind, row),
+              electionYear: electionYear(row),
+              payload: row as Prisma.InputJsonObject,
+              candidateId: row.SQ_CANDIDATO ? candidateIds.get(row.SQ_CANDIDATO) ?? null : null,
+              sourceDocumentId: sourceDocument.id,
+              syncRunId: runId,
+            }))
+            await options.prisma.officialDatasetRecord.createMany({
+              data: records,
+              skipDuplicates: true,
+            })
+            const externalIds = records.map((record) => record.externalId)
+            await options.prisma.officialDatasetRecord.updateMany({
+              where: {
+                source: DataSource.TSE,
+                datasetKind: resource.kind,
+                externalId: { in: externalIds },
+              },
+              data: { sourceDocumentId: sourceDocument.id, syncRunId: runId },
+            })
 
-          // If supplemental data arrived before canonical candidacies, repair
-          // only archive rows that still have no Candidate link.
-          const unlinked = await options.prisma.officialDatasetRecord.findMany({
-            where: {
-              source: DataSource.TSE,
-              datasetKind: resource.kind,
-              externalId: { in: externalIds },
-              candidateId: null,
-            },
-            select: { externalId: true },
-          })
-          const candidateIdByExternalId = new Map(
-            records.flatMap((record) => record.candidateId
-              ? [[record.externalId, record.candidateId] as const]
-              : []),
-          )
-          const externalIdsByCandidate = new Map<string, string[]>()
-          for (const record of unlinked) {
-            const candidateId = candidateIdByExternalId.get(record.externalId)
-            if (!candidateId) continue
-            externalIdsByCandidate.set(candidateId, [
-              ...(externalIdsByCandidate.get(candidateId) ?? []),
-              record.externalId,
-            ])
+            // If supplemental data arrived before canonical candidacies, repair
+            // only archive rows that still have no Candidate link.
+            const unlinked = await options.prisma.officialDatasetRecord.findMany({
+              where: {
+                source: DataSource.TSE,
+                datasetKind: resource.kind,
+                externalId: { in: externalIds },
+                candidateId: null,
+              },
+              select: { externalId: true },
+            })
+            const candidateIdByExternalId = new Map(
+              records.flatMap((record) => record.candidateId
+                ? [[record.externalId, record.candidateId] as const]
+                : []),
+            )
+            const externalIdsByCandidate = new Map<string, string[]>()
+            for (const record of unlinked) {
+              const candidateId = candidateIdByExternalId.get(record.externalId)
+              if (!candidateId) continue
+              externalIdsByCandidate.set(candidateId, [
+                ...(externalIdsByCandidate.get(candidateId) ?? []),
+                record.externalId,
+              ])
+            }
+            await runTransactionsInBatches(
+              options.prisma,
+              [...externalIdsByCandidate].map(([candidateId, ids]) =>
+                options.prisma.officialDatasetRecord.updateMany({
+                  where: {
+                    source: DataSource.TSE,
+                    datasetKind: resource.kind,
+                    externalId: { in: ids },
+                    candidateId: null,
+                  },
+                  data: { candidateId },
+                }),
+              ),
+            )
           }
-          await runTransactionsInBatches(
-            options.prisma,
-            [...externalIdsByCandidate].map(([candidateId, ids]) =>
-              options.prisma.officialDatasetRecord.updateMany({
-                where: {
-                  source: DataSource.TSE,
-                  datasetKind: resource.kind,
-                  externalId: { in: ids },
-                  candidateId: null,
-                },
-                data: { candidateId },
-              }),
-            ),
-          )
+          await materializeResource(options.prisma, resource.kind, parsed.rows, resource.url, year)
         }
-        await materializeResource(options.prisma, resource.kind, parsed.rows, resource.url, year)
       }
 
       return {

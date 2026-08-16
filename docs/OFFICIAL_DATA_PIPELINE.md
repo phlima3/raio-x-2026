@@ -22,6 +22,18 @@ O importador aceita o conjunto completo de cargos eleitorais do TSE, inclusive
 os cargos municipais (`PREFEITO`, `VICE_PREFEITO` e `VEREADOR`). A allowlist
 pública continua restrita aos três cargos definidos para o lançamento.
 
+Os ZIPs do TSE não têm layout único: dependendo do pleito trazem um CSV
+nacional consolidado, um CSV por UF, um `_BR` só com a chapa presidencial, ou
+uma combinação. Todos os CSVs do recurso são lidos — candidaturas concatenadas
+e deduplicadas por `SQ_CANDIDATO`, recursos suplementares processados arquivo a
+arquivo para limitar o pico de memória. As métricas `archiveFiles`,
+`archiveFileNames` e `duplicates` do `DataSyncRun` mostram o que foi lido.
+
+O vínculo entre a candidatura oficial e a pré-candidatura editorial compara
+nome civil e nome de urna dos dois lados, normaliza a sigla partidária
+(`União Brasil` ≡ `UNIÃO`) e ignora a UF nos cargos de circunscrição nacional,
+onde o TSE grava `SG_UF = 'BR'` e o catálogo editorial guarda a UF de origem.
+
 O banco não armazena CPF nem título eleitoral. Os parsers removem essas colunas
 antes de criar payloads ou itens de revisão.
 
@@ -35,7 +47,15 @@ antes de criar payloads ou itens de revisão.
 
 Nos dois modos, a API só retorna `isPublished=true` nos cargos
 `PRESIDENTE`, `GOVERNADOR` e `SENADOR`. Deputados, suplentes e demais cargos
-ficam armazenados e ocultos. Lista, busca, detalhe, estatísticas, propostas,
+ficam armazenados e ocultos.
+
+A publicação exige `officialStatus` em `ELIGIBLE` ou `PENDING`. Nos dias
+seguintes ao prazo de registro a quase totalidade das candidaturas ainda está
+pendente de julgamento; exigir `ELIGIBLE` deixaria o site vazio até o TSE
+julgar os registros. `INELIGIBLE`, `CANCELLED` e `UNKNOWN` continuam ocultos.
+O parser lê `DS_SITUACAO_CANDIDATURA` e `DS_DETALHE_SITUACAO_CAND` — o detalhe
+tem precedência nos estados negativos (indeferimento, cassação, renúncia) — e
+grava os dois em `officialStatusRaw` no formato `SITUAÇÃO / DETALHE`. Lista, busca, detalhe, estatísticas, propostas,
 comparação, transparência, sitemap e caches respeitam essa política.
 
 Campos novos da API são opcionais: `isOfficial`, `officialStatus`, `dataSource`

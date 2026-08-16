@@ -56,8 +56,81 @@ const PUBLIC_POSITIONS = new Set<Position>([
   Position.SENADOR,
 ])
 
+// Cargos disputados na circunscrição nacional: o TSE grava SG_UF = 'BR', mas o
+// catálogo editorial guarda a UF de origem do político (Lula/SP, Caiado/GO).
+// A UF não distingue candidaturas aqui, só produz falso negativo no match.
+const NATIONAL_POSITIONS = new Set<Position>([
+  Position.PRESIDENTE,
+  Position.VICE_PRESIDENTE,
+])
+
+// Publicar exige candidatura registrada e não rejeitada. Logo após o prazo de
+// registro a quase totalidade das candidaturas fica pendente de julgamento —
+// tratá-las como não publicáveis esvaziaria o site por semanas.
+const PUBLISHABLE_STATUSES = new Set<OfficialCandidacyStatus>([
+  OfficialCandidacyStatus.ELIGIBLE,
+  OfficialCandidacyStatus.PENDING,
+])
+
+// O TSE publica a sigla registrada; o catálogo editorial usa o nome corrente.
+const PARTY_ALIASES: Readonly<Record<string, string>> = {
+  UNIAOBRASIL: 'UNIAO',
+  PARTIDONOVO: 'NOVO',
+}
+
 function normalizeComparable(value: string): string {
   return normalizePersonName(value)
+}
+
+function normalizeParty(value: string): string {
+  const token = value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, '')
+  return PARTY_ALIASES[token] ?? token
+}
+
+function identityTokens(...values: Array<string | null>): Set<string> {
+  return new Set(
+    values.flatMap((value) => {
+      if (!value) return []
+      const normalized = normalizeComparable(value)
+      return normalized ? [normalized] : []
+    }),
+  )
+}
+
+/**
+ * O seed editorial usa o nome pelo qual o candidato é conhecido — que é o
+ * `NM_URNA_CANDIDATO` do TSE, não o `NM_CANDIDATO` civil ("Flávio Bolsonaro"
+ * contra "FLÁVIO NANTES BOLSONARO"). Comparar os dois lados por nome civil e
+ * nome de urna evita duplicar a candidatura.
+ */
+function sharesIdentity(
+  candidate: { name: string; socialName: string | null },
+  record: TseCandidateRecord,
+): boolean {
+  const official = identityTokens(record.name, record.ballotName)
+  for (const token of identityTokens(candidate.name, candidate.socialName)) {
+    if (official.has(token)) return true
+  }
+  return false
+}
+
+function sharesElectoralUnit(
+  candidateState: string,
+  record: TseCandidateRecord,
+  position: Position,
+): boolean {
+  if (NATIONAL_POSITIONS.has(position)) return true
+  return candidateState.toUpperCase() === record.state.toUpperCase()
+}
+
+function statusRaw(record: TseCandidateRecord): string {
+  return record.rawStatusDetail && record.rawStatusDetail !== record.rawStatus
+    ? `${record.rawStatus} / ${record.rawStatusDetail}`
+    : record.rawStatus
 }
 
 function slugify(value: string): string {
@@ -80,7 +153,7 @@ function officialStatus(status: TseCandidateRecord['normalizedStatus']): Officia
 }
 
 function isPublicCandidate(position: Position, status: OfficialCandidacyStatus): boolean {
-  return PUBLIC_POSITIONS.has(position) && status === OfficialCandidacyStatus.ELIGIBLE
+  return PUBLIC_POSITIONS.has(position) && PUBLISHABLE_STATUSES.has(status)
 }
 
 async function availableSlug(
@@ -278,7 +351,7 @@ export async function importTseCandidates(
             electionId: record.electionId,
             isOfficial: true,
             officialStatus: status,
-            officialStatusRaw: record.rawStatus,
+            officialStatusRaw: statusRaw(record),
             isPublished,
             dataSource: DataSource.TSE,
             sourceUrl: input.sourceUrl,
@@ -313,17 +386,18 @@ export async function importTseCandidates(
           id: true,
           personId: true,
           name: true,
+          socialName: true,
           party: true,
           state: true,
         },
       })
       const sameName = candidatesForOffice.filter(
-        (candidate) => normalizeComparable(candidate.name) === normalizeComparable(record.name),
+        (candidate) => sharesIdentity(candidate, record),
       )
       const exactMatches = sameName.filter(
         (candidate) =>
-          normalizeComparable(candidate.party) === normalizeComparable(record.party) &&
-          candidate.state.toUpperCase() === record.state.toUpperCase(),
+          normalizeParty(candidate.party) === normalizeParty(record.party) &&
+          sharesElectoralUnit(candidate.state, record, position),
       )
 
       if (exactMatches.length === 1) {
@@ -343,7 +417,7 @@ export async function importTseCandidates(
             electionId: record.electionId,
             isOfficial: true,
             officialStatus: status,
-            officialStatusRaw: record.rawStatus,
+            officialStatusRaw: statusRaw(record),
             isPublished,
             dataSource: DataSource.TSE,
             sourceUrl: input.sourceUrl,
@@ -387,7 +461,7 @@ export async function importTseCandidates(
           electionId: record.electionId,
           isOfficial: true,
           officialStatus: status,
-          officialStatusRaw: record.rawStatus,
+          officialStatusRaw: statusRaw(record),
           isPublished: needsReview ? false : policyPublished,
           dataSource: DataSource.TSE,
           sourceUrl: input.sourceUrl,
