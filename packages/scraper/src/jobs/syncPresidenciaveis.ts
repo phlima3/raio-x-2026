@@ -1,12 +1,7 @@
+import { createScraperPrismaClient } from '../utils/prisma'
 import 'dotenv/config'
 import { createHash } from 'node:crypto'
-import {
-  Candidate,
-  Position,
-  PrismaClient,
-  ProposalOrigin,
-  ProposalStatus,
-} from '@prisma/client'
+import { Candidate, Position, ProposalOrigin, ProposalStatus } from '@prisma/client'
 import {
   PRESIDENTIAL_SOURCES,
   CANDIDATE_ALIASES,
@@ -21,7 +16,7 @@ import {
 import { closeBrowser } from '../utils/playwright'
 import { logger } from '../utils/logger'
 
-const prisma = new PrismaClient()
+const prisma = createScraperPrismaClient()
 
 // ── Name normalization / matching ─────────────────────────────────────────────
 

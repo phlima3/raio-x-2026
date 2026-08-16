@@ -1,8 +1,9 @@
-import { PrismaClient, ProposalOrigin, ProposalStatus } from '@prisma/client'
+import { createScraperPrismaClient } from '../utils/prisma'
+import { ProposalOrigin, ProposalStatus, type PrismaClient } from '@prisma/client'
 import { createProvider, ProposalsByTheme } from './llm'
 import { logger } from '../utils/logger'
 
-const prisma = new PrismaClient()
+const prisma = createScraperPrismaClient()
 
 // ── HTML → plain text ─────────────────────────────────────────────────────────
 

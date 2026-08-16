@@ -1,15 +1,9 @@
-import {
-  Position,
-  Prisma,
-  PrismaClient,
-  type Candidate,
-  type Person,
-} from '@prisma/client'
+import { prisma } from '../lib/prisma'
+import { Position, Prisma, type Candidate, type Person } from '@prisma/client'
 
 import type { CandidateFilters } from '../types/candidate'
 import { cacheKey, TTL, withCache } from './cacheService'
 
-const prisma = new PrismaClient()
 
 export type CandidateReadModel = 'legacy' | 'normalized'
 

@@ -1,13 +1,7 @@
+import { createScraperPrismaClient } from '../utils/prisma'
 import 'dotenv/config'
 import axios, { AxiosError, AxiosInstance } from 'axios'
-import {
-  DataSource,
-  MandateHouse,
-  Prisma,
-  PrismaClient,
-  ProposalStatus,
-  VoteType,
-} from '@prisma/client'
+import { DataSource, MandateHouse, Prisma, ProposalStatus, VoteType, type PrismaClient } from '@prisma/client'
 import { logger } from '../utils/logger'
 import { upsertLegislatorMandate, type LegislatorMandateIds } from '../legislative/persistence'
 import {
@@ -733,7 +727,7 @@ export async function syncCamara(
   votingFilters?: VotacoesFilters,
   proposalYear?: number,
 ): Promise<CompletedSyncRun> {
-  const prisma = new PrismaClient()
+  const prisma = createScraperPrismaClient()
   try {
     logger.info('[camara] Starting official legislative sync', votingFilters)
     const result = await runCamaraSync({ prisma, filters, votingFilters, proposalYear })

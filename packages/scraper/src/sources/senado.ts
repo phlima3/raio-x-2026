@@ -1,13 +1,7 @@
+import { createScraperPrismaClient } from '../utils/prisma'
 import 'dotenv/config'
 import axios, { AxiosError, type AxiosInstance } from 'axios'
-import {
-  DataSource,
-  MandateHouse,
-  Prisma,
-  PrismaClient,
-  ProposalStatus,
-  VoteType,
-} from '@prisma/client'
+import { DataSource, MandateHouse, Prisma, ProposalStatus, VoteType, type PrismaClient } from '@prisma/client'
 
 import { upsertLegislatorMandate, type LegislatorMandateIds } from '../legislative/persistence'
 import {
@@ -706,7 +700,7 @@ export async function syncSenado(
   dateFrom?: string,
   dateTo?: string,
 ): Promise<CompletedSyncRun> {
-  const prisma = new PrismaClient()
+  const prisma = createScraperPrismaClient()
   try {
     logger.info('[senado] Starting official legislative sync')
     const result = await runSenadoSync({ prisma, dateFrom, dateTo })

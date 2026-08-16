@@ -1,11 +1,4 @@
-import {
-  DataSource,
-  OfficialCandidacyStatus,
-  Position,
-  type PrismaClient,
-  ReviewItemKind,
-  ReviewItemStatus,
-} from '@prisma/client'
+import { DataSource, OfficialCandidacyStatus, Position, type PrismaClient, ReviewItemKind, ReviewItemStatus } from '@prisma/client'
 
 import { normalizePersonName } from '../../jobs/backfillPersons'
 import type { TseCandidateRecord } from './candidateCsv'

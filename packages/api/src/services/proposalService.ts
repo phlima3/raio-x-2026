@@ -1,9 +1,9 @@
-import { PrismaClient, Prisma } from '@prisma/client'
+import { prisma } from '../lib/prisma'
+import { Prisma } from '@prisma/client'
 import { ProposalFilters } from '../types/proposal'
 import { withCache, cacheKey, TTL } from './cacheService'
 import { publicCandidateWhere } from './candidateService'
 
-const prisma = new PrismaClient()
 
 // ── List proposals ────────────────────────────────────────────────────────────
 

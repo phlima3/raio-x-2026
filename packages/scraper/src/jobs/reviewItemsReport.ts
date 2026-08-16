@@ -1,7 +1,8 @@
+import { createScraperPrismaClient } from '../utils/prisma'
 import 'dotenv/config'
-import { PrismaClient, ReviewItemStatus } from '@prisma/client'
+import { ReviewItemStatus, type PrismaClient } from '@prisma/client'
 
-const prisma = new PrismaClient()
+const prisma = createScraperPrismaClient()
 
 export async function buildOpenReviewReport(db: PrismaClient = prisma) {
   const items = await db.reviewItem.findMany({
