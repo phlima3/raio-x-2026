@@ -11,6 +11,7 @@
     "sync:camara": "tsx src/sources/camara.ts",
     "sync:senado": "tsx src/sources/senado.ts",
     "sync:tse": "tsx src/sources/tse.ts",
+    "sync:tse:priority": "tsx src/jobs/syncTsePriorityOffices.ts",
     "sync:tse:supplemental": "tsx src/sources/tseSupplemental.ts",
     "sync:documents": "tsx src/sources/tseDocuments.ts",
     "sync:sites": "tsx src/jobs/weeklyProposals.ts",
