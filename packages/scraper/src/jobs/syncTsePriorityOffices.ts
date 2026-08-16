@@ -3,6 +3,9 @@ import { createTseCkanClient, TseResourceKind } from '../sources/tse/ckanClient'
 import { parseTseCandidateArchive } from '../sources/tse/candidateArchive'
 import { parseTseTabularArchives } from '../sources/tse/tabularArchive'
 import { importTseCandidates } from '../sources/tse/importCandidates'
+import { invalidateApiCandidateCaches } from '../utils/invalidateApiCache'
+import { revalidateCandidatePages } from '../utils/revalidateWeb'
+import { Position } from '@prisma/client'
 
 /**
  * Importação dirigida à disputa presidencial. O snapshot completo leva mais do
@@ -57,6 +60,25 @@ async function main(): Promise<void> {
       requireComplementJudgment: true,
     })
     console.info('[tse:priority] metrics', JSON.stringify(metrics))
+
+    // Sem isto o banco fica correto e o site continua servindo a lista antiga:
+    // a API guarda a listagem no Redis e o Next mantém a resposta no Data
+    // Cache por uma hora. É o mesmo encerramento que o sync completo faz.
+    if (!dryRun && metrics.created + metrics.updated + metrics.matched + metrics.unregistered > 0) {
+      await invalidateApiCandidateCaches()
+      const touched = await prisma.candidate.findMany({
+        where: {
+          position: { in: [Position.PRESIDENTE, Position.GOVERNADOR, Position.SENADOR] },
+          slug: { not: null },
+          isPublished: true,
+        },
+        select: { slug: true },
+      })
+      await revalidateCandidatePages(
+        touched.flatMap((candidate) => candidate.slug ? [candidate.slug] : []),
+      )
+      console.info(`[tse:priority] caches invalidados, ${touched.length} páginas revalidadas`)
+    }
   } finally {
     await prisma.$disconnect()
   }
