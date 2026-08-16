@@ -22,6 +22,7 @@ import {
   PUBLIC_VOTING_RECORD_WHERE,
 } from '../domain/publicationPolicy'
 import type { CandidateFilters } from '../types/candidate'
+import { toDisplayName, toDisplayNameOrNull } from '../domain/displayName'
 import { cacheKey, TTL, withCache } from './cacheService'
 
 
@@ -75,11 +76,21 @@ function publicDetailFields<T extends Candidate & { person: Person | null }>(
     syncRunId: _syncRunId,
     ...publicFields
   } = candidate
-  if (readModel !== 'normalized' || !person) return publicFields
+  // A conversão de caixa acontece na saída, depois de o slug já estar
+  // resolvido: o slug e a comparação de identidade dependem do texto cru.
+  if (readModel !== 'normalized' || !person) {
+    return {
+      ...publicFields,
+      name: toDisplayName(publicFields.name),
+      socialName: toDisplayNameOrNull(publicFields.socialName),
+      runningMateName: toDisplayNameOrNull(publicFields.runningMateName),
+    }
+  }
   return {
     ...publicFields,
-    name: person.name,
-    socialName: person.socialName ?? candidate.socialName,
+    name: toDisplayName(person.name),
+    socialName: toDisplayNameOrNull(person.socialName ?? candidate.socialName),
+    runningMateName: toDisplayNameOrNull(publicFields.runningMateName),
   }
 }
 
@@ -274,7 +285,11 @@ export async function listCandidates(filters: CandidateFilters): Promise<Candida
     const total = countRows[0]?.total ?? 0
 
     return {
-      data: rows,
+      data: rows.map((row) => ({
+        ...row,
+        name: toDisplayName(row.name),
+        socialName: toDisplayNameOrNull(row.socialName),
+      })),
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     }
   })
