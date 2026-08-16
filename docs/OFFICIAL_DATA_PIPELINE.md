@@ -173,6 +173,42 @@ revogar a chave de automação, substitua `VELOZ_API_KEY`. O job interrompe com
 código não zero se a chave estiver ausente, se o processo do túnel terminar ou
 se a porta local não ficar disponível em 90 segundos.
 
+> **O host da URL é do túnel, não da Veloz.** O painel da Veloz entrega a URL
+> com o endereço interno do serviço (`...@shared-br-se1-a-rw.veloz-db:5432/...`).
+> O runner do GitHub não resolve esse nome: ele só enxerga a ponta local do
+> túnel. Copie usuário, senha e nome do banco, mas troque host e porta por
+> `127.0.0.1:15432`. Manter o host interno é o erro mais comum ao renovar o
+> secret, e a falha resultante não é óbvia — o passo do túnel passa, e o job
+> quebra depois, na primeira escrita.
+
+#### Falha conhecida: sync TSE parado entre 11 e 16 de agosto de 2026
+
+Cinco execuções agendadas consecutivas falharam com
+`PrismaClientInitializationError` cerca de 40 segundos após iniciar. O túnel
+subia normalmente e o erro ocorria em `runDataSourceSync.ts`, na primeira
+escrita de `DataSyncRun` — antes de qualquer acesso ao TSE. A API e o site
+seguiam funcionando o tempo todo, porque a Veloz injeta `DATABASE_URL` nos
+serviços automaticamente enquanto `PROD_DATABASE_URL` é mantido à mão.
+
+Essa assimetria é o sinal a procurar: **produção no ar e job de dados
+quebrado ao mesmo tempo apontam para o secret, não para o banco.** Confirme
+abrindo o site antes de investigar a infraestrutura.
+
+O diagnóstico levou dias porque o log da falha trazia apenas
+`{"name":"PrismaClientInitializationError","clientVersion":"5.22.0"}`.
+`message`, `stack` e `cause` não são enumeráveis em `Error` e eram descartados
+por `JSON.stringify`. O logger do scraper passou a preservá-los; uma falha
+equivalente agora registra o motivo (`Can't reach database server at ...`).
+
+### Pendências de segurança
+
+- **Rotacionar a credencial do PostgreSQL de produção.** A URL de conexão foi
+  exposta em canal de chat em 16/08/2026. A rotação não é necessária para o
+  pipeline funcionar — o secret corrigido opera com a credencial atual — mas
+  deve ser feita assim que a ingestão estiver estabilizada. Ao rotacionar,
+  atualize `PROD_DATABASE_URL` e confirme que os serviços da Veloz receberam a
+  nova credencial.
+
 ## Revisão
 
 O relatório CLI lista apenas itens `OPEN`, agrupados por tipo, sem despejar
