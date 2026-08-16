@@ -285,6 +285,38 @@ GROUP BY "extractionStatus";
    identificados por `syncRunId`; nunca usar um snapshot vazio como sinal de
    exclusão.
 
+## Snapshot de 15 de agosto de 2026
+
+Encerrado o prazo de registro, o catálogo passou de 3.600 para **20.436
+candidaturas** em 29 CSVs (`consulta_cand_2026_BRASIL.csv`, `_BR.csv` e um por
+UF). `duplicates` acompanha `parsed` porque o consolidado nacional e os
+arquivos por UF descrevem as mesmas candidaturas; o dedupe por `SQ_CANDIDATO`
+descarta a segunda cópia. São **12 candidaturas presidenciais** registradas.
+
+Ensaio recomendado antes de rodar em produção: semear um banco local com o
+mesmo seed editorial e rodar `sync:tse` sem `--dry-run` contra ele. Foi assim
+que a duplicação do Zema e a rejeição total causada pelo marcador `#NE`
+apareceram antes de chegar a produção — o dry-run não as revela, porque não
+escreve candidaturas.
+
+Após a importação, conferir:
+
+~~~sql
+SELECT name, party, "ballotNumber", "isOfficial", slug
+FROM "Candidate"
+WHERE position = 'PRESIDENTE' AND "isPublished"
+ORDER BY "ballotNumber";
+
+SELECT name, "candidacyStatus"
+FROM "Candidate"
+WHERE position = 'PRESIDENTE' AND NOT "isPublished";
+~~~
+
+Candidato que troca de partido entre o seed e o registro ganha ficha oficial
+nova com slug novo, e a editorial é despublicada: as URLs antigas passam a 404
+até um `CandidateSlugAlias` ser criado na reconciliação apontada pelo
+`ReviewItem`.
+
 ## Limites atuais
 
 - OCR, publicação de deputados e novo painel de revisão estão fora do escopo.

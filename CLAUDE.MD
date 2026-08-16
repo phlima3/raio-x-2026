@@ -255,6 +255,39 @@ Produção usa `prisma migrate deploy` (não `dev`), executado automaticamente p
 
 Toda a infraestrutura (frontend, API, PostgreSQL, Redis) foi migrada para Veloz. Dados migrados via pg_dump/psql (163 candidatos, 7701 propostas, 43339 votos). Vercel e Railway podem ser desligados após confirmar que DNS propagou corretamente.
 
+### `#NE` é dado, `#NULO` é ausência (parser do TSE)
+
+O TSE emite os marcadores de ausência com e sem o `#` final, e eles **não são
+intercambiáveis**. Em `DS_SITUACAO_CANDIDATURA`, `#NE` significa "ainda sem
+julgamento" e é o sentinela do qual o resto do pipeline depende — tratá-lo como
+nulo **rejeita o snapshot inteiro** (40.872 linhas) enquanto o TSE não julga os
+registros. Só as colunas de nome (`NM_URNA_CANDIDATO`, `NM_SOCIAL_CANDIDATO`)
+podem nulificar `#NULO`/`#NE`; ali não há o que significar, e guardar o literal
+faz `Candidate.socialName` virar `"#NULO"` para quase toda candidatura.
+
+### Reconciliação editorial → oficial
+
+`sharesIdentity` compara nome civil **e** nome de urna dos dois lados. O seed
+editorial tem o campo `ballotName` (gravado em `Candidate.socialName`) para os
+casos em que o nome de urna não é derivável do nome de exibição — o de urna do
+Zema é só `ZEMA`, que nenhum token de "Romeu Zema" alcança. Preencher **apenas
+com valor verificado no snapshot**; identidade nunca se infere por nome.
+
+Um homônimo editorial **único** não oculta mais a candidatura oficial: deixa em
+aberto qual ficha é a mesma pessoa, não se a candidatura existe. É o caso de
+quem troca de partido entre o seed e o registro (Caiado, União Brasil → PSD).
+Ambiguidade real (mais de um homônimo, mandatos conflitantes, julgamento
+pendente) continua bloqueando a publicação, e o `ReviewItem` segue sendo criado
+para reconciliar ID e slug à mão.
+
+### `candidacyStatus = nao_registrado`
+
+Encerrado o prazo de registro, pré-candidatura editorial que o snapshot não
+reconciliou é despublicada e marcada `nao_registrado` — **nunca removida**. A
+varredura é limitada aos cargos/anos presentes no snapshot e não roda em
+dry-run, para um recorte parcial jamais despublicar um cargo que não cobriu.
+Métrica `unregistered` no `DataSyncRun`.
+
 ### Pipeline de dados official-first
 
 O runbook atual é `docs/OFFICIAL_DATA_PIPELINE.md`. Câmara e Senado gravam

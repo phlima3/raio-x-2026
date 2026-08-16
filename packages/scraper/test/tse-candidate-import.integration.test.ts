@@ -51,6 +51,188 @@ describe('importTseCandidates', () => {
     await prisma.$disconnect()
   })
 
+  it('reconciles the ballot name when the editorial profile records it', async () => {
+    // O nome de urna do Zema é apenas "ZEMA": nenhum token do nome civil
+    // alcança "Romeu Zema", então sem o nome de urna na ficha editorial a
+    // candidatura oficial entraria como uma segunda ficha do mesmo candidato.
+    await prisma.candidate.create({
+      data: {
+        id: 'editorial-zema',
+        slug: 'romeu-zema-novo-mg',
+        name: 'Romeu Zema',
+        socialName: 'Zema',
+        party: 'Novo',
+        state: 'MG',
+        position: Position.PRESIDENTE,
+        partyHistory: [],
+        dataSource: DataSource.EDITORIAL,
+        isPublished: true,
+      },
+    })
+
+    const metrics = await importTseCandidates(prisma, {
+      records: [officialCandidate({
+        tseId: '260000000900',
+        name: 'ROMEU ZEMA NETO',
+        ballotName: 'ZEMA',
+        party: 'NOVO',
+        state: 'BR',
+        ballotNumber: 30,
+      })],
+      sourceUrl: 'https://cdn.tse.jus.br/consulta_cand_2026.zip',
+      checksum: 'snapshot-sha',
+    })
+
+    expect(metrics).toEqual(expect.objectContaining({ matched: 1, created: 0 }))
+    await expect(prisma.candidate.count()).resolves.toBe(1)
+    const candidate = await prisma.candidate.findUniqueOrThrow({
+      where: { tseId: '260000000900' },
+    })
+    expect(candidate).toEqual(expect.objectContaining({
+      id: 'editorial-zema',
+      slug: 'romeu-zema-novo-mg',
+      ballotNumber: 30,
+      isOfficial: true,
+      isPublished: true,
+    }))
+  })
+
+  it('publishes an official candidacy whose only homonym changed party', async () => {
+    // Caiado registrou pelo PSD depois de o seed gravar União Brasil. Um único
+    // homônimo deixa em aberto qual ficha é a mesma pessoa, mas não se a
+    // candidatura existe — ela veio do TSE e precisa aparecer.
+    await prisma.candidate.create({
+      data: {
+        id: 'editorial-caiado',
+        slug: 'ronaldo-caiado-uniao-brasil-go',
+        name: 'Ronaldo Caiado',
+        party: 'União Brasil',
+        state: 'GO',
+        position: Position.PRESIDENTE,
+        partyHistory: [],
+        dataSource: DataSource.EDITORIAL,
+        isPublished: true,
+      },
+    })
+
+    const metrics = await importTseCandidates(prisma, {
+      records: [officialCandidate({
+        tseId: '260000000901',
+        name: 'RONALDO RAMOS CAIADO',
+        ballotName: 'RONALDO CAIADO',
+        party: 'PSD',
+        state: 'BR',
+        ballotNumber: 55,
+      })],
+      sourceUrl: 'https://cdn.tse.jus.br/consulta_cand_2026.zip',
+      checksum: 'snapshot-sha',
+    })
+
+    // A ficha oficial vai ao ar; a editorial homônima sai, sem ser apagada; e
+    // o item de revisão permanece para a reconciliação manual de ID e slug.
+    expect(metrics).toEqual(expect.objectContaining({ created: 1, reviewItems: 1 }))
+    const official = await prisma.candidate.findUniqueOrThrow({
+      where: { tseId: '260000000901' },
+    })
+    expect(official).toEqual(expect.objectContaining({ isOfficial: true, isPublished: true }))
+    const editorial = await prisma.candidate.findUniqueOrThrow({
+      where: { id: 'editorial-caiado' },
+    })
+    expect(editorial).toEqual(expect.objectContaining({
+      isPublished: false,
+      candidacyStatus: 'nao_registrado',
+    }))
+  })
+
+  it('unpublishes an editorial pre-candidate absent from the snapshot', async () => {
+    await prisma.candidate.create({
+      data: {
+        id: 'editorial-nao-registrou',
+        slug: 'simone-tebet-mdb-ms',
+        name: 'Simone Tebet',
+        party: 'MDB',
+        state: 'MS',
+        position: Position.PRESIDENTE,
+        partyHistory: [],
+        dataSource: DataSource.EDITORIAL,
+        isPublished: true,
+      },
+    })
+
+    const metrics = await importTseCandidates(prisma, {
+      records: [officialCandidate()],
+      sourceUrl: 'https://cdn.tse.jus.br/consulta_cand_2026.zip',
+      checksum: 'snapshot-sha',
+    })
+
+    expect(metrics.unregistered).toBe(1)
+    const editorial = await prisma.candidate.findUniqueOrThrow({
+      where: { id: 'editorial-nao-registrou' },
+    })
+    // Despublicada, nunca removida: o histórico editorial continua auditável.
+    expect(editorial).toEqual(expect.objectContaining({
+      isPublished: false,
+      candidacyStatus: 'nao_registrado',
+    }))
+  })
+
+  it('leaves offices the snapshot never covered untouched', async () => {
+    await prisma.candidate.create({
+      data: {
+        id: 'editorial-governador',
+        slug: 'candidato-governador-abc-sp',
+        name: 'Candidato Governador',
+        party: 'ABC',
+        state: 'SP',
+        position: Position.GOVERNADOR,
+        partyHistory: [],
+        dataSource: DataSource.EDITORIAL,
+        isPublished: true,
+      },
+    })
+
+    const metrics = await importTseCandidates(prisma, {
+      records: [officialCandidate()],
+      sourceUrl: 'https://cdn.tse.jus.br/consulta_cand_2026.zip',
+      checksum: 'snapshot-sha',
+    })
+
+    // O snapshot só trouxe PRESIDENTE; um recorte parcial não pode despublicar
+    // um cargo que ele nunca cobriu.
+    expect(metrics.unregistered).toBe(0)
+    await expect(
+      prisma.candidate.findUniqueOrThrow({ where: { id: 'editorial-governador' } }),
+    ).resolves.toEqual(expect.objectContaining({ isPublished: true }))
+  })
+
+  it('never unpublishes editorial pre-candidates on a dry run', async () => {
+    await prisma.candidate.create({
+      data: {
+        id: 'editorial-dry-run',
+        slug: 'candidato-dry-run-abc-ms',
+        name: 'Candidato Dry Run',
+        party: 'ABC',
+        state: 'MS',
+        position: Position.PRESIDENTE,
+        partyHistory: [],
+        dataSource: DataSource.EDITORIAL,
+        isPublished: true,
+      },
+    })
+
+    const metrics = await importTseCandidates(prisma, {
+      records: [officialCandidate()],
+      sourceUrl: 'https://cdn.tse.jus.br/consulta_cand_2026.zip',
+      checksum: 'snapshot-sha',
+      dryRun: true,
+    })
+
+    expect(metrics.unregistered).toBe(0)
+    await expect(
+      prisma.candidate.findUniqueOrThrow({ where: { id: 'editorial-dry-run' } }),
+    ).resolves.toEqual(expect.objectContaining({ isPublished: true }))
+  })
+
   it('reconciles an unequivocal editorial candidate and preserves its ID and slug', async () => {
     await prisma.candidate.create({
       data: {
