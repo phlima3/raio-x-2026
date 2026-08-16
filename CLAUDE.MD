@@ -320,6 +320,20 @@ Schedules são separados por fonte em `sync-tse.yml`, `sync-legislative.yml`,
 `sync-documents.yml`, `sync-sites.yml` e `sync-news.yml`. Jobs antigos ficam em
 `manual-data-jobs.yml`.
 
+### `PROD_DATABASE_URL` usa o host do túnel, não o da Veloz
+
+O painel da Veloz entrega a URL do Postgres com o host interno
+(`shared-br-se1-a-rw.veloz-db:5432`), que o runner do GitHub não resolve. O
+secret `PROD_DATABASE_URL` precisa das mesmas credenciais **com host e porta
+trocados por `127.0.0.1:15432`**, que é onde a action `setup-veloz-db-tunnel`
+escuta.
+
+Manter o host interno derrubou o sync do TSE entre 11 e 16 de agosto de 2026,
+com o site no ar o tempo todo — a API recebe `DATABASE_URL` auto-injetada pela
+Veloz, o Actions não. **Produção funcionando e job de dados falhando ao mesmo
+tempo é sintoma de secret desatualizado, não de banco fora.** Detalhes e
+pendência de rotação da credencial em `docs/OFFICIAL_DATA_PIPELINE.md`.
+
 ### Pipeline Gemini Deep Search (enriquecimento manual)
 
 Prompts otimizados por candidato em `packages/scraper/src/data/gemini-research/_prompts/`. Outputs JSON em `packages/scraper/src/data/gemini-research/outputs/` (12 arquivos, um por candidato). O script `importGeminiData.ts`:
