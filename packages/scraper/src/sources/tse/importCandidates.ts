@@ -34,6 +34,47 @@ export interface TseCandidateImportMetrics {
   unregistered: number
 }
 
+const EDITORIAL_SELECT = {
+  id: true,
+  personId: true,
+  name: true,
+  socialName: true,
+  party: true,
+  state: true,
+  candidacyStatus: true,
+} as const
+
+const OFFICIAL_SELECT = {
+  id: true,
+  personId: true,
+  name: true,
+  socialName: true,
+  party: true,
+  state: true,
+  position: true,
+  ballotNumber: true,
+  electionYear: true,
+  electionId: true,
+  isOfficial: true,
+  officialStatus: true,
+  officialStatusRaw: true,
+  isPublished: true,
+  candidacyStatus: true,
+  candidacyStatusSourceUrl: true,
+  dataSource: true,
+  sourceUrl: true,
+} as const
+
+type EditorialCandidate = {
+  id: string
+  personId: string | null
+  name: string
+  socialName: string | null
+  party: string
+  state: string
+  candidacyStatus: string | null
+}
+
 const POSITION_MAP: Readonly<Record<string, Position>> = {
   PRESIDENTE: Position.PRESIDENTE,
   VICE_PRESIDENTE: Position.VICE_PRESIDENTE,
@@ -176,13 +217,17 @@ function isPublicCandidate(position: Position, status: OfficialCandidacyStatus):
   return PUBLIC_POSITIONS.has(position) && PUBLISHABLE_STATUSES.has(status)
 }
 
-async function availableSlug(
-  prisma: PrismaClient,
-  record: TseCandidateRecord,
-): Promise<string> {
+/**
+ * Os slugs já usados são carregados uma vez e mantidos em memória: consultar o
+ * banco por candidatura criada custava outra ida e volta por linha do snapshot.
+ * O slug escolhido entra no conjunto para que duas candidaturas do mesmo run
+ * não reivindiquem o mesmo endereço.
+ */
+function availableSlug(taken: Set<string>, record: TseCandidateRecord): string {
   const base = makeOfficialCandidateSlug(record)
-  const existing = await prisma.candidate.findFirst({ where: { slug: base }, select: { id: true } })
-  return existing ? `${base}-${record.tseId.slice(-6)}` : base
+  const slug = taken.has(base) ? `${base}-${record.tseId.slice(-6)}` : base
+  taken.add(slug)
+  return slug
 }
 
 interface PersonResolution {
@@ -331,8 +376,64 @@ export async function importTseCandidates(
   const batchSize = Math.max(1, Math.min(input.batchSize ?? 250, 1_000))
   const judgments = resolveTseCandidateJudgments(input.complementRows ?? [])
 
+  // O laço consultava o banco uma vez por candidatura para achar o registro
+  // oficial e outra para listar as fichas editoriais do cargo — 20 mil idas e
+  // voltas de cada. Contra um Postgres local isso passa despercebido; pelo
+  // túnel do Actions cada ida custa dezenas de milissegundos e a importação
+  // não terminava dentro da hora de vida do túnel, morrendo em P1001 e
+  // deixando o snapshot metade aplicado. As duas leituras passam a ser feitas
+  // em lote, e a lista editorial vive em memória durante o run.
+  const officeKey = (electionYear: number, position: Position): string =>
+    `${electionYear}:${position}`
+
+  const takenSlugs = new Set(
+    (await prisma.candidate.findMany({
+      where: { slug: { not: null } },
+      select: { slug: true },
+    })).flatMap((candidate) => candidate.slug ? [candidate.slug] : []),
+  )
+
+  const editorialByOffice = new Map<string, EditorialCandidate[]>()
+  const offices = new Map<string, { electionYear: number; position: Position }>()
+  for (const record of input.records) {
+    const position = POSITION_MAP[record.position]
+    if (!position) continue
+    offices.set(officeKey(record.electionYear, position), {
+      electionYear: record.electionYear,
+      position,
+    })
+  }
+  for (const { electionYear, position } of offices.values()) {
+    editorialByOffice.set(
+      officeKey(electionYear, position),
+      await prisma.candidate.findMany({
+        where: { electionYear, position, tseId: null },
+        select: EDITORIAL_SELECT,
+      }),
+    )
+  }
+  // Uma ficha editorial reconciliada deixa de ter `tseId` nulo, então some da
+  // consulta original nas iterações seguintes. Em memória isso é explícito.
+  const dropReconciled = (
+    electionYear: number,
+    position: Position,
+    candidateId: string,
+  ): void => {
+    const key = officeKey(electionYear, position)
+    const bucket = editorialByOffice.get(key)
+    if (bucket) {
+      editorialByOffice.set(key, bucket.filter((candidate) => candidate.id !== candidateId))
+    }
+  }
+
   for (let offset = 0; offset < input.records.length; offset += batchSize) {
     const batch = input.records.slice(offset, offset + batchSize)
+    const existingByTseId = new Map(
+      (await prisma.candidate.findMany({
+        where: { tseId: { in: batch.map((record) => record.tseId) } },
+        select: { ...OFFICIAL_SELECT, tseId: true },
+      })).flatMap((candidate) => candidate.tseId ? [[candidate.tseId, candidate] as const] : []),
+    )
 
     for (const record of batch) {
       const position = POSITION_MAP[record.position]
@@ -359,29 +460,7 @@ export async function importTseCandidates(
         ? `Complemento TSE ausente para ${record.tseId}`
         : `Complemento TSE conflitante para ${record.tseId}`
       const policyPublished = isPublicCandidate(position, status)
-      const existingOfficial = await prisma.candidate.findUnique({
-        where: { tseId: record.tseId },
-        select: {
-          id: true,
-          personId: true,
-          name: true,
-          socialName: true,
-          party: true,
-          state: true,
-          position: true,
-          ballotNumber: true,
-          electionYear: true,
-          electionId: true,
-          isOfficial: true,
-          officialStatus: true,
-          officialStatusRaw: true,
-          isPublished: true,
-          candidacyStatus: true,
-          candidacyStatusSourceUrl: true,
-          dataSource: true,
-          sourceUrl: true,
-        },
-      })
+      const existingOfficial = existingByTseId.get(record.tseId) ?? null
 
       if (existingOfficial) {
         const openReview = await prisma.reviewItem.findFirst({
@@ -469,22 +548,8 @@ export async function importTseCandidates(
         continue
       }
 
-      const candidatesForOffice = await prisma.candidate.findMany({
-        where: {
-          electionYear: record.electionYear,
-          position,
-          tseId: null,
-        },
-        select: {
-          id: true,
-          personId: true,
-          name: true,
-          socialName: true,
-          party: true,
-          state: true,
-          candidacyStatus: true,
-        },
-      })
+      const candidatesForOffice =
+        editorialByOffice.get(officeKey(record.electionYear, position)) ?? []
       const sameName = candidatesForOffice.filter(
         (candidate) => sharesIdentity(candidate, record),
       )
@@ -539,6 +604,7 @@ export async function importTseCandidates(
           })) metrics.reviewItems++
           metrics.ambiguous++
         }
+        dropReconciled(record.electionYear, position, match.id)
         metrics.matched++
         isPublished ? metrics.published++ : metrics.hidden++
         continue
@@ -560,7 +626,7 @@ export async function importTseCandidates(
       // Ambiguidade real (mais de um homônimo, mandatos conflitantes) ou
       // julgamento pendente continuam bloqueando a publicação.
       const blocksPublication = identityAmbiguous || statusNeedsReview
-      const slug = await availableSlug(prisma, record)
+      const slug = availableSlug(takenSlugs, record)
       const created = await prisma.candidate.create({
         data: {
           personId: personResolution.personId,
