@@ -30,6 +30,8 @@ export interface TseCandidateImportMetrics {
   reviewItems: number
   published: number
   hidden: number
+  /** Pré-candidaturas editoriais despublicadas por não constarem no snapshot. */
+  unregistered: number
 }
 
 const POSITION_MAP: Readonly<Record<string, Position>> = {
@@ -316,6 +318,7 @@ export async function importTseCandidates(
     created: 0,
     matched: 0,
     updated: 0,
+    unregistered: 0,
     ambiguous: 0,
     conflicts: 0,
     reviewItems: 0,
@@ -548,6 +551,15 @@ export async function importTseCandidates(
       const needsEditorialReview = sameName.length > 0
       const identityAmbiguous = sameName.length > 1 || personResolution.ambiguousMandates
       const needsReview = needsEditorialReview || identityAmbiguous || statusNeedsReview
+      // Reconciliar identidade e existir como candidatura são perguntas
+      // diferentes. Um único homônimo editorial — o caso de quem trocou de
+      // partido entre o seed e o registro — deixa em aberto qual ficha é a
+      // mesma pessoa, não se a candidatura oficial existe: ela veio do TSE.
+      // Ocultá-la por isso apagaria do site um candidato registrado, ainda
+      // mais agora que a ficha editorial homônima é despublicada ao final.
+      // Ambiguidade real (mais de um homônimo, mandatos conflitantes) ou
+      // julgamento pendente continuam bloqueando a publicação.
+      const blocksPublication = identityAmbiguous || statusNeedsReview
       const slug = await availableSlug(prisma, record)
       const created = await prisma.candidate.create({
         data: {
@@ -569,7 +581,7 @@ export async function importTseCandidates(
           candidacyStatusSourceUrl: statusSourceUrl,
           candidacyStatusVerifiedAt: syncedAt,
           materialUpdatedAt: syncedAt,
-          isPublished: needsReview ? false : policyPublished,
+          isPublished: blocksPublication ? false : policyPublished,
           dataSource: DataSource.TSE,
           sourceUrl: input.sourceUrl,
           lastSyncedAt: syncedAt,
@@ -668,6 +680,43 @@ export async function importTseCandidates(
         materialUpdatedAt: syncedAt,
       },
     })
+  }
+
+  // Encerrado o prazo de registro, uma pré-candidatura editorial que o snapshot
+  // não reconciliou deixa de ser candidatura: continua armazenada, com o
+  // histórico intacto, mas sai do ar em vez de anunciar como concorrente quem
+  // não disputa. O corte é por cargo/ano efetivamente presentes no snapshot —
+  // um recorte parcial nunca pode despublicar um cargo que ele não cobriu, que
+  // é a garantia registrada no runbook.
+  if (!input.dryRun && input.records.length > 0) {
+    const covered = new Map<number, Set<Position>>()
+    for (const record of input.records) {
+      const position = POSITION_MAP[record.position]
+      if (!position) continue
+      const positions = covered.get(record.electionYear)
+      if (positions) positions.add(position)
+      else covered.set(record.electionYear, new Set([position]))
+    }
+
+    for (const [electionYear, positions] of covered) {
+      const { count } = await prisma.candidate.updateMany({
+        where: {
+          electionYear,
+          position: { in: [...positions] },
+          tseId: null,
+          isOfficial: false,
+          isPublished: true,
+        },
+        data: {
+          isPublished: false,
+          candidacyStatus: 'nao_registrado',
+          candidacyStatusSourceUrl: input.sourceUrl,
+          candidacyStatusVerifiedAt: syncedAt,
+          materialUpdatedAt: syncedAt,
+        },
+      })
+      metrics.unregistered += count
+    }
   }
 
   return metrics

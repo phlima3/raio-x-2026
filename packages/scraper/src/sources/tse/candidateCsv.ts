@@ -57,6 +57,22 @@ const NULL_MARKERS = new Set([
   '-3',
 ])
 
+/**
+ * O TSE também emite os marcadores sem o `#` final, mas eles não são
+ * intercambiáveis com ausência: em `DS_SITUACAO_CANDIDATURA`, `#NE` significa
+ * "ainda sem julgamento" e é o sentinela do qual o resto do pipeline depende —
+ * tratá-lo como nulo rejeita o snapshot inteiro enquanto o TSE não julga.
+ * Nas colunas de nome, porém, não há o que significar: `NM_SOCIAL_CANDIDATO`
+ * chega como "#NULO" para quase toda candidatura e, guardado literalmente,
+ * vira um token de identidade que casa com qualquer homônimo.
+ */
+const NAME_NULL_MARKERS = new Set(['#NULO', '#NULO#', '#NE', '#NE#'])
+
+function nullableName(value: string | null): string | null {
+  if (value == null) return null
+  return NAME_NULL_MARKERS.has(value.toUpperCase()) ? null : value
+}
+
 const VALID_STATES = new Set([
   'BR',
   'AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO',
@@ -219,8 +235,8 @@ export function parseTseCandidateCsv(
       position: normalizeToken(rawPosition),
       rawPosition,
       name,
-      ballotName: get('NM_URNA_CANDIDATO'),
-      socialName: get('NM_SOCIAL_CANDIDATO'),
+      ballotName: nullableName(get('NM_URNA_CANDIDATO')),
+      socialName: nullableName(get('NM_SOCIAL_CANDIDATO')),
       party,
       ballotNumber: parseInteger(get('NR_CANDIDATO')),
       rawStatus,

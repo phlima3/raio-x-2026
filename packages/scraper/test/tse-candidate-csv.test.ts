@@ -34,6 +34,29 @@ describe('parseTseCandidateCsv', () => {
     expect(result.records[0].raw).not.toHaveProperty('NR_CPF_CANDIDATO')
   })
 
+  it('nulls bare name placeholders while keeping #NE as a candidacy status', () => {
+    // O TSE emite os marcadores com e sem o `#` final. Nas colunas de nome não
+    // há o que significar; em DS_SITUACAO_CANDIDATURA, `#NE` quer dizer "ainda
+    // sem julgamento" — tratá-lo como ausente rejeitaria todo o snapshot
+    // enquanto o TSE não julga os registros.
+    const csv = [
+      'ANO_ELEICAO;CD_ELEICAO;SG_UF;DS_CARGO;SQ_CANDIDATO;NM_CANDIDATO;NM_URNA_CANDIDATO;NM_SOCIAL_CANDIDATO;SG_PARTIDO;NR_CANDIDATO;DS_SITUACAO_CANDIDATURA',
+      '2026;999;BR;PRESIDENTE;260000000003;ROMEU ZEMA NETO;ZEMA;#NULO;NOVO;30;#NE',
+    ].join('\n')
+
+    const result = parseTseCandidateCsv(Buffer.from(csv, 'utf8'), { encoding: 'utf8' })
+
+    expect(result.rejected).toEqual([])
+    expect(result.records).toEqual([
+      expect.objectContaining({
+        name: 'ROMEU ZEMA NETO',
+        ballotName: 'ZEMA',
+        socialName: null,
+        rawStatus: '#NE',
+      }),
+    ])
+  })
+
   it('auto-detects Latin-1 and maps official null markers without corrupting names', () => {
     const latin1Csv = [
       'ANO_ELEICAO;CD_ELEICAO;SG_UF;DS_CARGO;SQ_CANDIDATO;NM_CANDIDATO;NM_URNA_CANDIDATO;NM_SOCIAL_CANDIDATO;SG_PARTIDO;NR_CANDIDATO;DS_SITUACAO_CANDIDATURA',

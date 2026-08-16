@@ -26,6 +26,14 @@ interface SeedCandidate {
   party: string
   state: string
   position: Position
+  /**
+   * Nome de urna registrado no TSE, quando difere do nome pelo qual a ficha
+   * editorial chama o candidato. A reconciliação com o snapshot oficial compara
+   * nome civil e nome de urna dos dois lados; sem isso "ZEMA" não alcança
+   * "Romeu Zema" e a candidatura oficial entra como uma segunda ficha.
+   * Preencher apenas com o valor verificado no snapshot — nunca com um palpite.
+   */
+  ballotName?: string
   photoUrl?: string
   siteUrl?: string
   bio?: string
@@ -39,6 +47,7 @@ const PRESIDENTS: SeedCandidate[] = [
     party: 'PT',
     state: 'SP',
     position: Position.PRESIDENTE,
+    ballotName: 'Lula',
     photoUrl: '/images/candidates/lula.jpg',
     siteUrl: 'https://pt.org.br',
     bio: 'Presidente da República em exercício. Ex-presidente de 2003 a 2010. Metalúrgico e sindicalista, fundador do Partido dos Trabalhadores.',
@@ -72,6 +81,7 @@ const PRESIDENTS: SeedCandidate[] = [
     party: 'Novo',
     state: 'MG',
     position: Position.PRESIDENTE,
+    ballotName: 'Zema',
     photoUrl: '/images/candidates/romeu-zema.jpg',
     bio: 'Governador de Minas Gerais. Empresário e político filiado ao Partido Novo, conhecido pela gestão liberal do estado.',
     isIncumbent: false,
@@ -231,6 +241,9 @@ async function seed(): Promise<void> {
           siteUrl: existing.siteUrl ?? c.siteUrl ?? null,
           bio: existing.bio ?? c.bio ?? null,
           isIncumbent: c.isIncumbent ?? existing.isIncumbent,
+          // O nome de urna é dado de reconciliação, não de exibição: preencha
+          // quando faltar, mas nunca sobrescreva o que o TSE já gravou.
+          socialName: existing.socialName ?? c.ballotName ?? null,
           // Fill partyHistory if empty in DB; never overwrite if already populated
           partyHistory: (existing.partyHistory?.length ?? 0) > 0
             ? existing.partyHistory
@@ -244,6 +257,7 @@ async function seed(): Promise<void> {
         data: {
           slug,
           name: c.name,
+          socialName: c.ballotName ?? null,
           party: c.party,
           state: c.state,
           position: c.position,
