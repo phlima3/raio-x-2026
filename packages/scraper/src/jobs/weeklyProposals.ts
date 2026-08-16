@@ -1,5 +1,6 @@
+import { createScraperPrismaClient } from '../utils/prisma'
 import cron from 'node-cron'
-import { DataSource, PrismaClient } from '@prisma/client'
+import { DataSource } from '@prisma/client'
 
 import { syncCandidateSites, loadCandidateSiteConfigs } from '../sources/candidateSites'
 import {
@@ -9,7 +10,7 @@ import {
 } from '../sync/runDataSourceSync'
 import { logger } from '../utils/logger'
 
-const prisma = new PrismaClient()
+const prisma = createScraperPrismaClient()
 const CRON_SCHEDULE = '0 4 * * 1'
 
 export async function runWeeklyProposalsSync(): Promise<CompletedSyncRun> {

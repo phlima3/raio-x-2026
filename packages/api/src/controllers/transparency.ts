@@ -1,12 +1,12 @@
+import { prisma } from '../lib/prisma'
 import { Request, Response, NextFunction } from 'express'
-import { Prisma, PrismaClient, VoteType } from '@prisma/client'
+import { Prisma, VoteType } from '@prisma/client'
 import { z } from 'zod'
 import {
   getCandidateReadModel,
   publicCandidateWhere,
 } from '../services/candidateService'
 
-const prisma = new PrismaClient()
 
 async function publicCandidate(candidateId: string) {
   return prisma.candidate.findFirst({

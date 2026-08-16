@@ -1,12 +1,7 @@
+import { createScraperPrismaClient } from '../utils/prisma'
 import 'dotenv/config'
 import { createHash } from 'node:crypto'
-import {
-  DataSource,
-  DocumentExtractionStatus,
-  Prisma,
-  PrismaClient,
-  SourceDocumentType,
-} from '@prisma/client'
+import { DataSource, DocumentExtractionStatus, Prisma, SourceDocumentType, type PrismaClient } from '@prisma/client'
 import { unzipSync } from 'fflate'
 
 import { extractPdfText } from '../documents/pdfText'
@@ -247,7 +242,7 @@ export async function syncTseDocuments(
   year = 2026,
   dryRun = false,
 ): Promise<CompletedSyncRun> {
-  const prisma = new PrismaClient()
+  const prisma = createScraperPrismaClient()
   try {
     logger.info(`[tse-documents] Starting official document sync for ${year}`)
     const result = await runTseDocumentSync({ prisma, year, dryRun })

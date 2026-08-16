@@ -1,5 +1,6 @@
+import { createScraperPrismaClient } from '../utils/prisma'
 import 'dotenv/config'
-import { DataSource, PrismaClient } from '@prisma/client'
+import { DataSource, type PrismaClient } from '@prisma/client'
 
 import {
   createPrismaSyncRunStore,
@@ -89,7 +90,7 @@ export async function runTseCandidateSync(
 }
 
 export async function syncTse(year = 2026, dryRun = false): Promise<CompletedSyncRun> {
-  const prisma = new PrismaClient()
+  const prisma = createScraperPrismaClient()
   try {
     logger.info(`[tse] Starting official candidate sync for ${year}${dryRun ? ' (dry-run)' : ''}`)
     const result = await runTseCandidateSync({ prisma, year, dryRun })

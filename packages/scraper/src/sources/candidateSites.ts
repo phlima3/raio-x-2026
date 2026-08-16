@@ -1,11 +1,12 @@
+import { createScraperPrismaClient } from '../utils/prisma'
 import 'dotenv/config'
-import { Position, PrismaClient } from '@prisma/client'
+import { Position } from '@prisma/client'
 import { withPage } from '../utils/playwright'
 import { navigateForContent } from '../utils/siteNavigation'
 import { processProposalsFromSite } from '../processors/proposalExtractor'
 import { logger } from '../utils/logger'
 
-const prisma = new PrismaClient()
+const prisma = createScraperPrismaClient()
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

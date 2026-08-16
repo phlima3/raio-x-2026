@@ -1,9 +1,4 @@
-import {
-  type DataSource,
-  Prisma,
-  type PrismaClient,
-  SyncRunStatus,
-} from '@prisma/client'
+import { type DataSource, Prisma, type PrismaClient, SyncRunStatus } from '@prisma/client'
 
 export type SyncMetrics = Record<string, number | string | boolean | null>
 const SYNC_RUN_LEASE_MS = 6 * 60 * 60 * 1000

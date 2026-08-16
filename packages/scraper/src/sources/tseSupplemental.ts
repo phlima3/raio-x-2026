@@ -1,14 +1,7 @@
+import { createScraperPrismaClient } from '../utils/prisma'
 import 'dotenv/config'
 import { createHash } from 'node:crypto'
-import {
-  DataSource,
-  DocumentExtractionStatus,
-  OfficialCandidacyStatus,
-  Position,
-  Prisma,
-  PrismaClient,
-  SourceDocumentType,
-} from '@prisma/client'
+import { DataSource, DocumentExtractionStatus, OfficialCandidacyStatus, Position, Prisma, SourceDocumentType, type PrismaClient } from '@prisma/client'
 
 import {
   createPrismaSyncRunStore,
@@ -436,7 +429,7 @@ export async function syncTseSupplemental(
   year = 2026,
   dryRun = false,
 ): Promise<CompletedSyncRun> {
-  const prisma = new PrismaClient()
+  const prisma = createScraperPrismaClient()
   try {
     logger.info(`[tse-supplemental] Starting official supplemental sync for ${year}`)
     const result = await runTseSupplementalSync({ prisma, year, dryRun })
