@@ -30,7 +30,9 @@ function officialCandidate(overrides: Partial<TseCandidateRecord> = {}): TseCand
     party: 'ABC',
     ballotNumber: 10,
     rawStatus: 'APTO',
+    rawStatusDetail: null,
     normalizedStatus: 'ELIGIBLE',
+    isPendingJudgement: false,
     raw: {},
     ...overrides,
   }
@@ -90,6 +92,116 @@ describe('importTseCandidates', () => {
     expect(second.created).toBe(0)
     await expect(prisma.candidate.count()).resolves.toBe(1)
     await expect(prisma.person.count()).resolves.toBe(1)
+  })
+
+  it('reconciles a presidential pre-candidate registered under BR with a civil name', async () => {
+    await prisma.candidate.create({
+      data: {
+        id: 'editorial-presidenciavel',
+        slug: 'flavio-bolsonaro-pl-rj',
+        name: 'Flávio Bolsonaro',
+        party: 'PL',
+        state: 'RJ',
+        position: Position.PRESIDENTE,
+        partyHistory: [],
+        isPublished: true,
+      },
+    })
+
+    const metrics = await importTseCandidates(prisma, {
+      records: [officialCandidate({
+        tseId: '260000000300',
+        name: 'FLÁVIO NANTES BOLSONARO',
+        ballotName: 'FLÁVIO BOLSONARO',
+        party: 'PL',
+        state: 'BR',
+      })],
+      sourceUrl: 'https://cdn.tse.jus.br/consulta_cand_2026.zip',
+      checksum: 'presidential-snapshot',
+    })
+
+    const candidate = await prisma.candidate.findUniqueOrThrow({
+      where: { tseId: '260000000300' },
+    })
+    expect(candidate).toEqual(expect.objectContaining({
+      id: 'editorial-presidenciavel',
+      slug: 'flavio-bolsonaro-pl-rj',
+      state: 'BR',
+      isOfficial: true,
+      isPublished: true,
+    }))
+    expect(metrics).toEqual(expect.objectContaining({ matched: 1, created: 0, conflicts: 0 }))
+    await expect(prisma.candidate.count()).resolves.toBe(1)
+    await expect(prisma.reviewItem.count()).resolves.toBe(0)
+  })
+
+  it('reconciles an editorial party label with the sigla registered at the TSE', async () => {
+    await prisma.candidate.create({
+      data: {
+        id: 'editorial-caiado',
+        slug: 'ronaldo-caiado-uniao-brasil-go',
+        name: 'Ronaldo Caiado',
+        party: 'União Brasil',
+        state: 'GO',
+        position: Position.PRESIDENTE,
+        partyHistory: [],
+        isPublished: true,
+      },
+    })
+
+    const metrics = await importTseCandidates(prisma, {
+      records: [officialCandidate({
+        tseId: '260000000301',
+        name: 'RONALDO RAMOS CAIADO',
+        ballotName: 'RONALDO CAIADO',
+        party: 'UNIÃO',
+        state: 'BR',
+      })],
+      sourceUrl: 'https://cdn.tse.jus.br/consulta_cand_2026.zip',
+      checksum: 'presidential-snapshot',
+    })
+
+    expect(metrics).toEqual(expect.objectContaining({ matched: 1, created: 0 }))
+    await expect(prisma.candidate.count()).resolves.toBe(1)
+  })
+
+  it('publishes a registered candidacy that is still awaiting judgement', async () => {
+    const metrics = await importTseCandidates(prisma, {
+      records: [
+        officialCandidate({
+          tseId: '260000000310',
+          name: 'AGUARDANDO JULGAMENTO',
+          state: 'BR',
+          rawStatus: 'APTO',
+          rawStatusDetail: 'AGUARDANDO JULGAMENTO',
+          normalizedStatus: 'PENDING',
+          isPendingJudgement: true,
+        }),
+        officialCandidate({
+          tseId: '260000000311',
+          name: 'REGISTRO INDEFERIDO',
+          state: 'BR',
+          rawStatus: 'INAPTO',
+          rawStatusDetail: 'INDEFERIDO',
+          normalizedStatus: 'INELIGIBLE',
+        }),
+      ],
+      sourceUrl: 'https://cdn.tse.jus.br/consulta_cand_2026.zip',
+      checksum: 'pending-snapshot',
+    })
+
+    expect(metrics).toEqual(expect.objectContaining({ published: 1, hidden: 1 }))
+    await expect(prisma.candidate.findUniqueOrThrow({
+      where: { tseId: '260000000310' },
+      select: { isPublished: true, officialStatusRaw: true },
+    })).resolves.toEqual({
+      isPublished: true,
+      officialStatusRaw: 'APTO / AGUARDANDO JULGAMENTO',
+    })
+    await expect(prisma.candidate.findUniqueOrThrow({
+      where: { tseId: '260000000311' },
+      select: { isPublished: true },
+    })).resolves.toEqual({ isPublished: false })
   })
 
   it('creates a hidden official candidacy and review item for an ambiguous match', async () => {

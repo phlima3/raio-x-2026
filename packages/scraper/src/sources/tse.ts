@@ -69,8 +69,11 @@ export async function runTseCandidateSync(
         noop: parsed.records.length === 0,
         metrics: {
           catalogResources: resources.length,
+          archiveFiles: parsed.fileNames.length,
+          archiveFileNames: parsed.fileNames.join(', '),
           parsed: parsed.records.length,
           rejected: parsed.rejected.length,
+          duplicates: parsed.duplicates,
           created: imported.created,
           matched: imported.matched,
           updated: imported.updated,
