@@ -1,5 +1,6 @@
+import { prisma } from '../lib/prisma'
 import { Request, Response, NextFunction } from 'express'
-import { PrismaClient } from '@prisma/client'
+
 import { CandidateFiltersSchema } from '../types/candidate'
 import * as candidateService from '../services/candidateService'
 import * as consistencyService from '../services/consistencyService'
@@ -12,7 +13,6 @@ import {
   PUBLIC_NEWS_WHERE,
 } from '../domain/publicationPolicy'
 
-const prisma = new PrismaClient()
 
 export async function listCandidatesHandler(
   req: Request,

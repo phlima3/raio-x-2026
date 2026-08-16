@@ -1,11 +1,4 @@
-import {
-  DataSource,
-  type MandateHouse,
-  Position,
-  type PrismaClient,
-  ProposalOrigin,
-  ReviewItemKind,
-} from '@prisma/client'
+import { DataSource, type MandateHouse, Position, type PrismaClient, ProposalOrigin, ReviewItemKind } from '@prisma/client'
 
 import { normalizePersonName } from '../jobs/backfillPersons'
 

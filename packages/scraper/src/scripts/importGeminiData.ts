@@ -1,3 +1,4 @@
+import { createScraperPrismaClient } from '../utils/prisma'
 /**
  * importGeminiData.ts
  *
@@ -13,7 +14,7 @@
 import 'dotenv/config'
 import * as fs from 'fs'
 import * as path from 'path'
-import { PrismaClient, ProposalOrigin, ProposalStatus } from '@prisma/client'
+import { ProposalOrigin, ProposalStatus } from '@prisma/client'
 import { z } from 'zod'
 import {
   hasCandidateMaterialChange,
@@ -23,7 +24,7 @@ import {
 import { invalidateApiCandidateCaches } from '../utils/invalidateApiCache'
 import { revalidateCandidatePages } from '../utils/revalidateWeb'
 
-const prisma = new PrismaClient()
+const prisma = createScraperPrismaClient()
 const DRY_RUN = process.argv.includes('--dry-run')
 
 // ── Schema validation ─────────────────────────────────────────────────────────

@@ -4,9 +4,29 @@
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
+/**
+ * `message`, `stack` e `cause` de um `Error` não são enumeráveis, então
+ * `JSON.stringify` os descarta e sobra só o que a biblioteca anexou como
+ * propriedade própria — um `PrismaClientInitializationError` vira
+ * `{"name":...,"clientVersion":...}` e esconde a causa real da falha.
+ */
+export function serializeMeta(meta: unknown): unknown {
+  if (meta instanceof Error) {
+    return {
+      ...meta,
+      name: meta.name,
+      message: meta.message,
+      ...(meta.cause == null ? {} : { cause: serializeMeta(meta.cause) }),
+      ...(meta.stack == null ? {} : { stack: meta.stack }),
+    }
+  }
+  if (Array.isArray(meta)) return meta.map(serializeMeta)
+  return meta
+}
+
 function log(level: LogLevel, message: string, meta?: unknown): void {
   const timestamp = new Date().toISOString()
-  const metaStr = meta ? ` ${JSON.stringify(meta)}` : ''
+  const metaStr = meta ? ` ${JSON.stringify(serializeMeta(meta))}` : ''
   const line = `[${timestamp}] [${level.toUpperCase()}] ${message}${metaStr}`
 
   if (level === 'error') {

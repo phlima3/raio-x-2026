@@ -1,10 +1,11 @@
+import { prisma } from '../lib/prisma'
 /**
  * Consistency score service.
  * Cross-references a candidate's declared proposals against their actual
  * voting record to compute a 0–100 score per theme.
  */
 
-import { PrismaClient } from '@prisma/client'
+
 import { analyzeConsistency } from './geminiService'
 import { withCache, invalidate, TTL } from './cacheService'
 import {
@@ -17,7 +18,6 @@ import {
 } from '../domain/publicationPolicy'
 import { getCandidateReadModel, publicCandidateWhere } from './candidateService'
 
-const prisma = new PrismaClient()
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

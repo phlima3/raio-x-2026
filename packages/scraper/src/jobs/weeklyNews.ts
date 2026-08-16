@@ -1,6 +1,7 @@
+import { createScraperPrismaClient } from '../utils/prisma'
 import 'dotenv/config'
 import cron from 'node-cron'
-import { DataSource, Position, PrismaClient, ProposalStatus } from '@prisma/client'
+import { DataSource, Position, ProposalStatus } from '@prisma/client'
 import { fetchCandidateNews, TOPICS } from '../processors/newsProcessor'
 import { detectContradiction, TOPIC_TO_CATEGORY, type ProposalRef } from '../processors/contradictionDetector'
 import { logger } from '../utils/logger'
@@ -19,7 +20,7 @@ import {
 const CRON_SCHEDULE = '0 4 * * 3' // 04:00 UTC Wednesday = 01:00 BRT Wednesday
 const DELAY_BETWEEN_REQUESTS_MS = 2_000 // 2s between Gemini calls to respect rate limits
 
-const prisma = new PrismaClient()
+const prisma = createScraperPrismaClient()
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 

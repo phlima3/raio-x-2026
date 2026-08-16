@@ -35,25 +35,33 @@ function formatLongDate(d: Date): string {
 }
 
 export default async function HomePage() {
-  const [presidentsRes, statsRes, allRes, qualityReport] = await Promise.all([
-    fetchCandidates({ position: 'PRESIDENTE', limit: '8' }),
+  // 100 é o teto aceito por /api/candidates. A disputa presidencial cabe
+  // inteira nesse limite; a paleta de comandos é um atalho de navegação e a
+  // busca completa vive em /busca.
+  const [presidentsRes, statsRes, allRes, qualityReport] = await Promise.allSettled([
+    fetchCandidates({ position: 'PRESIDENTE', limit: '100' }),
     fetchCandidateStats(),
     fetchCandidates({ limit: '100' }),
     fetchCandidateSeoReport(),
   ])
 
-  const presidents: PresidentialCandidate[] = presidentsRes.data
-  const stats = statsRes.data
-  const paletteItems = allRes.data.map((candidate) => ({
-    id: candidate.id,
-    slug: candidate.slug,
-    name: candidate.name,
-    party: candidate.party,
-    state: candidate.state,
-  }))
+  const presidents: PresidentialCandidate[] =
+    presidentsRes.status === 'fulfilled' ? presidentsRes.value.data : []
+  const stats = statsRes.status === 'fulfilled' ? statsRes.value.data : null
+  const paletteItems =
+    allRes.status === 'fulfilled'
+      ? allRes.value.data.map((candidate) => ({
+          id: candidate.id,
+          slug: candidate.slug,
+          name: candidate.name,
+          party: candidate.party,
+          state: candidate.state,
+        }))
+      : []
 
   const daysLeft = daysUntilElection()
-  const latestUpdate = qualityReport.data.reduce<Date | null>((latest, candidate) => {
+  const seoReport = qualityReport.status === 'fulfilled' ? qualityReport.value.data : []
+  const latestUpdate = seoReport.reduce<Date | null>((latest, candidate) => {
     if (!candidate.materialUpdatedAt) return latest
     const candidateDate = new Date(candidate.materialUpdatedAt)
     if (Number.isNaN(candidateDate.getTime())) return latest

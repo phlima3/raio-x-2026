@@ -1,3 +1,4 @@
+import { createScraperPrismaClient } from '../utils/prisma'
 /**
  * importTseFinanciamento.ts
  *
@@ -18,7 +19,7 @@
  */
 
 import 'dotenv/config'
-import { Prisma, PrismaClient } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 import * as fs from 'fs'
 import * as https from 'https'
 import * as http from 'http'
@@ -29,7 +30,7 @@ import { spawn } from 'child_process'
 
 // ── Prisma ────────────────────────────────────────────────────────────────────
 
-const prisma = new PrismaClient()
+const prisma = createScraperPrismaClient()
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 

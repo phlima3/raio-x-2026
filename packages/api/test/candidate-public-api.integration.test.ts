@@ -211,6 +211,57 @@ describe('public candidate API', () => {
       .toEqual([2026])
   })
 
+  it('resolves a legacy name-party-state slug and still returns the full detail payload', async () => {
+    await prisma.candidate.createMany({
+      data: [
+        {
+          id: 'legacy-slugless-president',
+          name: 'Candidato Sem Slug',
+          party: 'ABC',
+          state: 'BR',
+          position: Position.PRESIDENTE,
+          partyHistory: [],
+          isPublished: true,
+        },
+        {
+          id: 'legacy-decoy-governor',
+          name: 'Candidato Sem Slug',
+          party: 'XYZ',
+          state: 'RJ',
+          position: Position.GOVERNADOR,
+          partyHistory: [],
+          isPublished: true,
+        },
+      ],
+    })
+    await prisma.proposal.create({
+      data: {
+        externalId: 'legacy-slug-proposal',
+        source: 'editorial',
+        title: 'Proposta do candidato sem slug',
+        tags: [],
+        candidateId: 'legacy-slugless-president',
+        origin: ProposalOrigin.EDITORIAL,
+        status: ProposalStatus.SUBMITTED,
+        url: 'https://example.org/proposta-sem-slug',
+        isPublished: true,
+      },
+    })
+
+    const response = await request(app)
+      .get('/api/candidates/candidato-sem-slug-abc-br')
+      .expect(200)
+
+    expect(response.body.data).toEqual(expect.objectContaining({
+      id: 'legacy-slugless-president',
+      slug: 'candidato-sem-slug-abc-br',
+    }))
+    expect(response.body.data.proposals).toEqual([
+      expect.objectContaining({ title: 'Proposta do candidato sem slug' }),
+    ])
+    await request(app).get('/api/candidates/candidato-inexistente-abc-br').expect(404)
+  })
+
   it('keeps the legacy ID and slug while normalized reads use Person identity', async () => {
     const person = await prisma.person.create({
       data: {

@@ -37,17 +37,29 @@ function csvNames(files: Record<string, Uint8Array>): string[] {
     })
 }
 
-export function parseTseTabularArchive(archive: Buffer): TseTabularArchive {
+/**
+ * Devolve um resultado por CSV do ZIP, na ordem de preferência (consolidado
+ * nacional primeiro, depois por UF). Os recursos suplementares seguem o mesmo
+ * layout variável do `consulta_cand`, então ler só o primeiro arquivo
+ * truncaria bens, redes sociais e coligações a uma única unidade eleitoral.
+ * A leitura é por arquivo — e não concatenada — para manter o pico de memória
+ * no tamanho de um CSV, já que bens tem centenas de milhares de linhas.
+ */
+export function parseTseTabularArchives(archive: Buffer): TseTabularArchive[] {
   let files: Record<string, Uint8Array>
   try {
     files = unzipSync(new Uint8Array(archive))
   } catch (cause) {
     throw new Error('O recurso tabular TSE não é um ZIP válido', { cause })
   }
-  const fileName = csvNames(files)[0]
-  if (!fileName) throw new Error('O ZIP tabular TSE não contém CSV')
+  const fileNames = csvNames(files)
+  if (fileNames.length === 0) throw new Error('O ZIP tabular TSE não contém CSV')
 
-  const decoded = decodeCsv(Buffer.from(files[fileName]))
+  return fileNames.map((fileName) => parseCsvEntry(fileName, Buffer.from(files[fileName])))
+}
+
+function parseCsvEntry(fileName: string, bytes: Buffer): TseTabularArchive {
+  const decoded = decodeCsv(bytes)
   const parsed = parse(decoded.text, {
     bom: true,
     columns: true,
@@ -57,11 +69,13 @@ export function parseTseTabularArchive(archive: Buffer): TseTabularArchive {
     relax_column_count: true,
     trim: true,
   }) as Array<Record<string, unknown>>
+  // Um ZIP pode trazer CSVs vazios (UF sem registros, cabeçalho ausente); ler
+  // todos os arquivos torna esse caso rotineiro em vez de excepcional.
+  const headerOnly: string[] =
+    parse(decoded.text, { bom: true, delimiter: ';', quote: '"', to_line: 1 })[0] ?? []
   const columns = parsed.length > 0
     ? Object.keys(parsed[0]).filter((column) => !isSensitiveColumn(column))
-    : parse(decoded.text, { bom: true, delimiter: ';', quote: '"', to_line: 1 })[0]
-        .map(String)
-        .filter((column: string) => !isSensitiveColumn(column))
+    : headerOnly.map(String).filter((column: string) => !isSensitiveColumn(column))
   const rows = parsed.map((row) => Object.fromEntries(
     Object.entries(row)
       .filter(([column]) => !isSensitiveColumn(column))

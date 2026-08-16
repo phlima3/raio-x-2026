@@ -23,7 +23,9 @@ export interface TseCandidateRecord {
   party: string
   ballotNumber: number | null
   rawStatus: string
+  rawStatusDetail: string | null
   normalizedStatus: OfficialCandidacyStatus
+  isPendingJudgement: boolean
   raw: Readonly<Record<string, string | null>>
 }
 
@@ -85,14 +87,42 @@ function normalizeToken(value: string): string {
     .replace(/^_|_$/g, '')
 }
 
-function normalizeStatus(rawStatus: string): OfficialCandidacyStatus {
+function isIneligible(status: string): boolean {
+  return status.includes('INAPTO') || status.includes('INDEFERIDO')
+}
+
+function isCancelled(status: string): boolean {
+  return status.includes('CANCELADO') || status.includes('CASSADO') ||
+    status.includes('RENUNCIA') || status.includes('FALECIDO')
+}
+
+function isPending(status: string): boolean {
+  return status.includes('PENDENTE') || status.includes('AGUARDANDO')
+}
+
+function isEligible(status: string): boolean {
+  return status === 'APTO' || status.includes('DEFERIDO')
+}
+
+/**
+ * O TSE divide a situação em duas colunas: `DS_SITUACAO_CANDIDATURA` (APTO /
+ * INAPTO) e `DS_DETALHE_SITUACAO_CAND`, que carrega o estado processual real
+ * (DEFERIDO, AGUARDANDO JULGAMENTO, INDEFERIDO COM RECURSO, RENÚNCIA…). Nos
+ * dias seguintes ao registro a coluna de detalhe é a única preenchida com
+ * informação útil, então as duas são consideradas — o detalhe tem precedência
+ * nos estados negativos, que são os que impedem publicação.
+ */
+function normalizeStatus(
+  rawStatus: string,
+  rawStatusDetail: string | null,
+): OfficialCandidacyStatus {
   const status = normalizeToken(rawStatus)
-  if (status.includes('INAPTO') || status.includes('INDEFERIDO')) return 'INELIGIBLE'
-  if (status.includes('CANCELADO') || status.includes('CASSADO') || status.includes('RENUNCIA')) {
-    return 'CANCELLED'
-  }
-  if (status.includes('PENDENTE') || status.includes('AGUARDANDO')) return 'PENDING'
-  if (status === 'APTO' || status.includes('DEFERIDO')) return 'ELIGIBLE'
+  const detail = rawStatusDetail ? normalizeToken(rawStatusDetail) : ''
+
+  if (isIneligible(detail) || isIneligible(status)) return 'INELIGIBLE'
+  if (isCancelled(detail) || isCancelled(status)) return 'CANCELLED'
+  if (isEligible(status) || isEligible(detail)) return 'ELIGIBLE'
+  if (isPending(detail) || isPending(status)) return 'PENDING'
   return 'UNKNOWN'
 }
 
@@ -152,6 +182,8 @@ export function parseTseCandidateCsv(
     const name = get('NM_CANDIDATO')
     const party = get('SG_PARTIDO')
     const rawStatus = get('DS_SITUACAO_CANDIDATURA')
+    const rawStatusDetail = get('DS_DETALHE_SITUACAO_CAND') ??
+      get('DS_DETALHE_SITUACAO_CANDIDATURA')
 
     if (
       electionYear == null || !tseId || !electionId || !state ||
@@ -192,7 +224,9 @@ export function parseTseCandidateCsv(
       party,
       ballotNumber: parseInteger(get('NR_CANDIDATO')),
       rawStatus,
-      normalizedStatus: normalizeStatus(rawStatus),
+      rawStatusDetail,
+      normalizedStatus: normalizeStatus(rawStatus, rawStatusDetail),
+      isPendingJudgement: isPending(normalizeToken(rawStatusDetail ?? rawStatus)),
       raw,
     })
   })

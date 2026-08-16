@@ -1,9 +1,6 @@
+import { createScraperPrismaClient } from '../utils/prisma'
 import 'dotenv/config'
-import {
-  DataSource,
-  PrismaClient,
-  ReviewItemKind,
-} from '@prisma/client'
+import { DataSource, ReviewItemKind, type PrismaClient } from '@prisma/client'
 
 import { logger } from '../utils/logger'
 
@@ -141,7 +138,7 @@ export async function backfillLegacyPeople(
 }
 
 async function main(): Promise<void> {
-  const prisma = new PrismaClient()
+  const prisma = createScraperPrismaClient()
   try {
     const metrics = await backfillLegacyPeople(prisma)
     logger.info('[backfill-persons] complete', metrics)

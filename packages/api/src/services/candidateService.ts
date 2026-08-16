@@ -1,10 +1,5 @@
-import {
-  Position,
-  Prisma,
-  PrismaClient,
-  type Candidate,
-  type Person,
-} from '@prisma/client'
+import { prisma } from '../lib/prisma'
+import { Position, Prisma, type Candidate, type Person } from '@prisma/client'
 
 import {
   chooseCanonicalCandidate,
@@ -29,7 +24,6 @@ import {
 import type { CandidateFilters } from '../types/candidate'
 import { cacheKey, TTL, withCache } from './cacheService'
 
-const prisma = new PrismaClient()
 
 export type CandidateReadModel = 'legacy' | 'normalized'
 
@@ -406,25 +400,52 @@ export async function getCandidateBySlug(slug: string): Promise<PresentedCandida
       })
       if (alias) return presentCanonicalCandidate(alias.candidate, readModel)
 
+      // Fallback para slugs legados, derivados de nome/partido/UF. A identidade
+      // é resolvida por uma projeção sem relações e só o registro vencedor
+      // carrega propostas, votos, bens e financiamento: com o país inteiro
+      // importado, aplicar `detailInclude` a todos os publicados custava
+      // milhares de linhas por acesso — e um slug inexistente devolve `null`,
+      // que por decisão do cache não é memorizado, então cada 404 repetia a
+      // varredura. A projeção ainda traz os escalares que decidem identidade e
+      // canonicidade; sem eles todo registro viraria um grupo isolado e o gate
+      // de ambiguidade devolveria 404 para homônimos legítimos.
       const parsed = parseCandidateSlug(slug)
       if (!parsed) return null
-      const candidates = await prisma.candidate.findMany({
+      const identities = await prisma.candidate.findMany({
         where: {
           ...publicCandidateWhere(),
           state: { equals: parsed.state },
         },
-        include: detailInclude,
+        select: {
+          id: true,
+          name: true,
+          party: true,
+          state: true,
+          position: true,
+          isOfficial: true,
+          tseId: true,
+          personKey: true,
+          electionYear: true,
+          candidacyStatus: true,
+          candidacyStatusSourceUrl: true,
+          candidacyStatusVerifiedAt: true,
+          materialUpdatedAt: true,
+          updatedAt: true,
+        },
       })
-      const matches = candidates.filter(
+      const matches = identities.filter(
         (candidate) => makeSlug(candidate.name, candidate.party, candidate.state) === slug,
       )
       if (matches.length === 0) return null
       const identityGroups = groupCandidateRecords(matches)
       if (identityGroups.length !== 1) return null
-      return presentCanonicalCandidate(
-        chooseCanonicalCandidate(identityGroups[0]),
-        readModel,
-      )
+
+      const winner = chooseCanonicalCandidate(identityGroups[0])
+      const candidate = await prisma.candidate.findFirst({
+        where: { id: winner.id, ...publicCandidateWhere() },
+        include: detailInclude,
+      })
+      return candidate ? presentCanonicalCandidate(candidate, readModel) : null
     },
   )
 }

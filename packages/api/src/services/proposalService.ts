@@ -1,11 +1,11 @@
-import { Prisma, PrismaClient } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 
+import { prisma } from '../lib/prisma'
 import { PUBLIC_PROPOSAL_WHERE } from '../domain/publicationPolicy'
 import type { ProposalFilters } from '../types/proposal'
 import { cacheKey, TTL, withCache } from './cacheService'
 import { publicCandidateWhere } from './candidateService'
 
-const prisma = new PrismaClient()
 
 export async function listProposals(filters: ProposalFilters) {
   const { candidateId, category, status, source, search, page, limit } = filters

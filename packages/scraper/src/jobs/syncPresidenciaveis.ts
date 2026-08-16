@@ -1,12 +1,13 @@
+import { createScraperPrismaClient } from '../utils/prisma'
 import 'dotenv/config'
 import { createHash } from 'node:crypto'
 import {
   Position,
-  PrismaClient,
   ProposalOrigin,
   ProposalStatus,
   type Candidate,
 } from '@prisma/client'
+
 
 import {
   CANDIDATE_ALIASES,
@@ -30,7 +31,7 @@ import { revalidateCandidatePages } from '../utils/revalidateWeb'
 
 export { isElectoralJusticeSource, shouldAcceptIncomingStatus }
 
-const prisma = new PrismaClient()
+const prisma = createScraperPrismaClient()
 
 export function normalizeName(name: string): string {
   return name

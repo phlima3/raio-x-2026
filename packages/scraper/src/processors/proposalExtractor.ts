@@ -1,11 +1,12 @@
-import { PrismaClient, ProposalOrigin, ProposalStatus } from '@prisma/client'
+import { ProposalOrigin, ProposalStatus, type PrismaClient } from '@prisma/client'
 
+import { createScraperPrismaClient } from '../utils/prisma'
 import { createProvider, type ProposalsByTheme } from './llm'
 import { invalidateApiCandidateCaches } from '../utils/invalidateApiCache'
 import { logger } from '../utils/logger'
 import { revalidateCandidatePages } from '../utils/revalidateWeb'
 
-const prisma = new PrismaClient()
+const prisma = createScraperPrismaClient()
 
 export function htmlToText(html: string): string {
   return html

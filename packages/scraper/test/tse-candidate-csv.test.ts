@@ -52,6 +52,36 @@ describe('parseTseCandidateCsv', () => {
     }))
   })
 
+  it('keeps a candidacy awaiting judgement eligible and flags it as pending', () => {
+    const csv = [
+      'ANO_ELEICAO;CD_ELEICAO;SG_UF;DS_CARGO;SQ_CANDIDATO;NM_CANDIDATO;SG_PARTIDO;DS_SITUACAO_CANDIDATURA;DS_DETALHE_SITUACAO_CAND',
+      '2026;999;BR;PRESIDENTE;260000000004;NOME TESTE;ABC;APTO;AGUARDANDO JULGAMENTO',
+    ].join('\n')
+
+    const result = parseTseCandidateCsv(Buffer.from(csv, 'utf8'))
+
+    expect(result.records[0]).toEqual(expect.objectContaining({
+      rawStatus: 'APTO',
+      rawStatusDetail: 'AGUARDANDO JULGAMENTO',
+      normalizedStatus: 'ELIGIBLE',
+      isPendingJudgement: true,
+    }))
+  })
+
+  it('falls back to the detail column when the coarse status carries no verdict', () => {
+    const csv = [
+      'ANO_ELEICAO;CD_ELEICAO;SG_UF;DS_CARGO;SQ_CANDIDATO;NM_CANDIDATO;SG_PARTIDO;DS_SITUACAO_CANDIDATURA;DS_DETALHE_SITUACAO_CAND',
+      '2026;999;BR;PRESIDENTE;260000000005;PENDENTE;ABC;PENDENTE DE JULGAMENTO;AGUARDANDO JULGAMENTO',
+      '2026;999;BR;PRESIDENTE;260000000006;RECUSADO;ABC;APTO;INDEFERIDO COM RECURSO',
+      '2026;999;BR;PRESIDENTE;260000000007;DESISTENTE;ABC;APTO;RENÚNCIA',
+    ].join('\n')
+
+    const result = parseTseCandidateCsv(Buffer.from(csv, 'utf8'))
+
+    expect(result.records.map((record) => record.normalizedStatus))
+      .toEqual(['PENDING', 'INELIGIBLE', 'CANCELLED'])
+  })
+
   it('rejects an invalid UF while tolerating columns added by the TSE', () => {
     const csv = [
       'ANO_ELEICAO;CD_ELEICAO;SG_UF;DS_CARGO;SQ_CANDIDATO;NM_CANDIDATO;SG_PARTIDO;DS_SITUACAO_CANDIDATURA;CAMPO_FUTURO;CPF_CANDIDATO_V2',

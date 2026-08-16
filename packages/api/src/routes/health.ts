@@ -1,9 +1,9 @@
+import { prisma } from '../lib/prisma'
 import { Router, type Router as RouterType, Request, Response } from 'express'
-import { PrismaClient } from '@prisma/client'
+
 import Redis from 'ioredis'
 
 const router: RouterType = Router()
-const prisma = new PrismaClient()
 
 function getRedis(): Redis {
   return new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379', {

@@ -1,5 +1,6 @@
+import { createScraperPrismaClient } from '../utils/prisma'
 import 'dotenv/config'
-import { DataSource, Position, PrismaClient } from '@prisma/client'
+import { DataSource, Position, type PrismaClient } from '@prisma/client'
 
 import {
   createPrismaSyncRunStore,
@@ -16,7 +17,7 @@ import {
   type TseCkanClient,
 } from './tse/ckanClient'
 import { importTseCandidates } from './tse/importCandidates'
-import { parseTseTabularArchive } from './tse/tabularArchive'
+import { parseTseTabularArchives } from './tse/tabularArchive'
 
 export interface RunTseCandidateSyncOptions {
   prisma: PrismaClient
@@ -64,13 +65,16 @@ export async function runTseCandidateSync(
       })
 
       const parsed = parseTseCandidateArchive(downloaded.bytes)
-      const complement = parseTseTabularArchive(complementDownload.bytes)
+      // O complemento de julgamento também pode vir dividido em vários CSVs
+      // dentro do mesmo ZIP; todos descrevem as mesmas colunas.
+      const complementRows = parseTseTabularArchives(complementDownload.bytes)
+        .flatMap((file) => file.rows)
       if (parsed.records.length === 0 && parsed.rejected.length > 0) {
         throw new Error(
           `Snapshot TSE sem registros válidos (${parsed.rejected.length} linhas rejeitadas)`,
         )
       }
-      if (parsed.records.length > 0 && complement.rows.length === 0) {
+      if (parsed.records.length > 0 && complementRows.length === 0) {
         throw new Error('Snapshot TSE sem linhas válidas no complemento de julgamento')
       }
 
@@ -81,7 +85,7 @@ export async function runTseCandidateSync(
         syncRunId: runId,
         syncedAt: complementDownload.fetchedAt,
         dryRun: options.dryRun,
-        complementRows: complement.rows,
+        complementRows,
         complementSourceUrl: complementResource.url,
         requireComplementJudgment: true,
       })
@@ -104,9 +108,12 @@ export async function runTseCandidateSync(
         noop: parsed.records.length === 0,
         metrics: {
           catalogResources: resources.length,
+          archiveFiles: parsed.fileNames.length,
+          archiveFileNames: parsed.fileNames.join(', '),
           parsed: parsed.records.length,
           rejected: parsed.rejected.length,
-          complementRows: complement.rows.length,
+          duplicates: parsed.duplicates,
+          complementRows: complementRows.length,
           created: imported.created,
           matched: imported.matched,
           updated: imported.updated,
@@ -122,7 +129,7 @@ export async function runTseCandidateSync(
 }
 
 export async function syncTse(year = 2026, dryRun = false): Promise<CompletedSyncRun> {
-  const prisma = new PrismaClient()
+  const prisma = createScraperPrismaClient()
   try {
     logger.info(`[tse] Starting official candidate sync for ${year}${dryRun ? ' (dry-run)' : ''}`)
     const result = await runTseCandidateSync({ prisma, year, dryRun })

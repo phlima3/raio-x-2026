@@ -1,11 +1,12 @@
+import { createScraperPrismaClient } from '../utils/prisma'
 import 'dotenv/config'
-import { PrismaClient } from '@prisma/client'
+
 
 import { syncCandidateSites, loadCandidateSiteConfigs } from '../sources/candidateSites'
 import { runSenadoSync } from '../sources/senado'
 import { logger } from '../utils/logger'
 
-const prisma = new PrismaClient()
+const prisma = createScraperPrismaClient()
 
 /**
  * Backward-compatible entry point for the old populate:senado command.
