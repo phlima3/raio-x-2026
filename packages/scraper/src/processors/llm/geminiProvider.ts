@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai'
+import { logger } from '../../utils/logger'
 import { BaseLLMProvider } from './baseProvider'
 
 /**
@@ -40,12 +41,50 @@ function getModel(): GenerativeModel {
   return model
 }
 
+/**
+ * O free tier tem dois tetos e eles pedem respostas opostas:
+ *
+ * - `PerModelPerMinute` (250 mil tokens de entrada por minuto) é uma janela que
+ *   passa sozinha, e o próprio erro diz em quantos segundos. Esperar resolve;
+ * - `PerDayPerProject` (20 requisições por dia) não passa dentro da execução.
+ *   Esperar aqui só atrasa a queda — quem cobre é o provider seguinte da cadeia.
+ *
+ * Tratar os dois como "429, tente de novo" desperdiça a janela num caso e trava
+ * a rodada no outro. Foi este teto que deixou dois presidenciáveis sem propostas
+ * numa execução que já tinha o documento em mãos.
+ */
+export function retryDelayMs(error: unknown): number | null {
+  const message = error instanceof Error ? error.message : String(error)
+  if (!message.includes('429')) return null
+  if (message.includes('PerDay')) return null
+
+  const asked = message.match(/"retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s"/)
+  if (asked) return Math.ceil(Number(asked[1]) * 1000) + 1_000
+  return 60_000
+}
+
+const MAX_RETRIES = 3
+
 export class GeminiProvider extends BaseLLMProvider {
   protected readonly providerName = 'gemini'
   readonly inputBudget = INPUT_BUDGET
 
+  constructor(private readonly sleep = (ms: number) =>
+    new Promise<void>((resolve) => setTimeout(resolve, ms))) {
+    super()
+  }
+
   async complete(prompt: string): Promise<string> {
-    const result = await getModel().generateContent(prompt)
-    return result.response.text()
+    for (let attempt = 1; ; attempt++) {
+      try {
+        const result = await getModel().generateContent(prompt)
+        return result.response.text()
+      } catch (error) {
+        const delay = attempt < MAX_RETRIES ? retryDelayMs(error) : null
+        if (delay === null) throw error
+        logger.warn(`[gemini] cota por minuto atingida; aguardando ${Math.round(delay / 1000)}s`)
+        await this.sleep(delay)
+      }
+    }
   }
 }

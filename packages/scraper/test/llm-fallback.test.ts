@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { FallbackLLMProvider } from '../src/processors/llm/fallbackProvider'
+import { retryDelayMs } from '../src/processors/llm/geminiProvider'
 import { BaseLLMProvider } from '../src/processors/llm/baseProvider'
 import type { LLMProvider } from '../src/processors/llm/types'
 
@@ -79,5 +80,31 @@ describe('BaseLLMProvider', () => {
     await wide.extractProposals(document)
 
     expect(spy.mock.calls[0]?.[0]).toContain(document)
+  })
+})
+
+describe('retryDelayMs', () => {
+  const perMinute = new Error(
+    '[429 Too Many Requests] Quota exceeded for metric: ..._input_token_count, ' +
+    '"quotaId":"GenerateContentInputTokensPerModelPerMinute-FreeTier" ' +
+    '{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"37.9s"}',
+  )
+  const perDay = new Error(
+    '[429 Too Many Requests] Quota exceeded for metric: ..._requests, limit: 20, ' +
+    '"quotaId":"GenerateRequestsPerDayPerProjectPerModel-FreeTier" ' +
+    '{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"37.4s"}',
+  )
+
+  it('espera o que o servidor pede quando a janela do minuto passa sozinha', () => {
+    // Foi este caso que deixou Caiado sem propostas com o PDF já em mãos.
+    expect(retryDelayMs(perMinute)).toBe(38_900)
+  })
+
+  it('não espera pela cota diária, que não passa dentro da execução', () => {
+    expect(retryDelayMs(perDay)).toBeNull()
+  })
+
+  it('ignora erro que não é de cota', () => {
+    expect(retryDelayMs(new Error('500 internal'))).toBeNull()
   })
 })
