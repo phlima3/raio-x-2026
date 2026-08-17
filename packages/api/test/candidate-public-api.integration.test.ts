@@ -211,6 +211,48 @@ describe('public candidate API', () => {
       .toEqual([2026])
   })
 
+  it('sends the year-over-year variation on the transparency payload the panel reads', async () => {
+    await prisma.candidate.create({
+      data: {
+        id: 'president-with-assets',
+        slug: 'presidente-com-bens-abc-br',
+        name: 'Presidente Com Bens',
+        party: 'ABC',
+        state: 'BR',
+        position: Position.PRESIDENTE,
+        partyHistory: [],
+        isPublished: true,
+      },
+    })
+    await prisma.assetDeclaration.createMany({
+      data: [
+        {
+          candidateId: 'president-with-assets',
+          year: 2026,
+          totalValue: 795089,
+          sourceUrl: 'https://tse.example/bens-2026',
+        },
+        {
+          candidateId: 'president-with-assets',
+          year: 2022,
+          totalValue: 28000,
+          sourceUrl: 'https://tse.example/bens-2022',
+        },
+      ],
+    })
+
+    // A ficha do candidato lê esta rota, não /api/transparency/:id/assets. Sem
+    // `variation` o painel renderizava "R$ NaN", porque `undefined !== null`.
+    const transparency = await request(app)
+      .get('/api/candidates/presidente-com-bens-abc-br/transparency')
+      .expect(200)
+
+    expect(transparency.body.data.assets.map(
+      (declaration: { year: number; variation: number | null }) =>
+        [declaration.year, declaration.variation],
+    )).toEqual([[2026, 767089], [2022, null]])
+  })
+
   it('resolves a legacy name-party-state slug and still returns the full detail payload', async () => {
     await prisma.candidate.createMany({
       data: [

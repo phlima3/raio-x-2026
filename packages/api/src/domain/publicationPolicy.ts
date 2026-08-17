@@ -43,6 +43,26 @@ export const PUBLIC_ASSET_DECLARATION_ORDER_BY = [
   { updatedAt: 'desc' as const },
 ] satisfies Prisma.AssetDeclarationOrderByWithRelationInput[]
 
+/**
+ * Anexa a variação anual do patrimônio. Depende de
+ * `PUBLIC_ASSET_DECLARATION_ORDER_BY` (ano decrescente), por isso mora ao lado
+ * dele: o item seguinte da lista é o ano anterior. O ano mais antigo não tem
+ * com o que comparar e recebe `null` — o front não deve renderizar a linha.
+ */
+export function withAssetVariation<T extends { totalValue: unknown }>(
+  declarations: T[],
+): Array<T & { variation: number | null }> {
+  return declarations.map((declaration, index) => {
+    const previous = declarations[index + 1]
+    return {
+      ...declaration,
+      variation: previous
+        ? Number(declaration.totalValue) - Number(previous.totalValue)
+        : null,
+    }
+  })
+}
+
 export const PUBLIC_CAMPAIGN_FINANCING_ORDER_BY = [
   { year: 'desc' as const },
   { updatedAt: 'desc' as const },

@@ -214,7 +214,8 @@ export function TransparencyPanel({ candidateSlug, initialData }: TransparencyPa
                         <p className="font-serif text-3xl md:text-4xl tabular-nums leading-none tracking-[-0.02em]">
                           {a.year}
                         </p>
-                        {a.variation !== null && (
+                        {/* `!== null` deixava passar `undefined` e imprimia "R$ NaN". */}
+                        {typeof a.variation === 'number' && (
                           <p
                             className={
                               'mt-2 font-mono text-[10px] uppercase tracking-[0.22em] ' +

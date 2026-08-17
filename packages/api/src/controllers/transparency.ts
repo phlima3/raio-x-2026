@@ -12,6 +12,7 @@ import {
   PUBLIC_VOTING_RECORD_LIMIT,
   PUBLIC_VOTING_RECORD_ORDER_BY,
   PUBLIC_VOTING_RECORD_WHERE,
+  withAssetVariation,
 } from '../domain/publicationPolicy'
 import {
   getCandidateReadModel,
@@ -119,18 +120,9 @@ export async function getAssetDeclarationsHandler(
       take: PUBLIC_ASSET_DECLARATION_LIMIT,
     })
 
-    // Year-over-year variation
-    const withVariation = declarations.map((d, i) => {
-      const prev = declarations[i + 1]
-      const variation = prev
-        ? Number(d.totalValue) - Number(prev.totalValue)
-        : null
-      return { ...d, variation }
-    })
-
     res.json({
       success: true,
-      data: withVariation,
+      data: withAssetVariation(declarations),
       meta: { candidateId, count: declarations.length },
     })
   } catch (err) {
