@@ -36,6 +36,12 @@ export type ConsistencyResult = z.infer<typeof ConsistencySchema>
  */
 export interface LLMProvider {
   /**
+   * Quantos caracteres de entrada este provider aguenta por chamada. Quem
+   * monta prompt a partir de documento longo deve respeitar este teto.
+   */
+  readonly inputBudget: number
+
+  /**
    * Sends a raw prompt and returns the model's text response.
    * Building block for custom extractions (see presidentialExtractor.ts).
    */

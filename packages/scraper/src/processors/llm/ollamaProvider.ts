@@ -1,10 +1,23 @@
 import axios from 'axios'
 import { BaseLLMProvider } from './baseProvider'
 
-const DEFAULT_BASE_URL = 'http://localhost:11434'
+// `localhost` resolve para ::1 no Node, e o Ollama escuta em IPv4: o endereço
+// literal evita um ECONNREFUSED que parece servidor fora do ar.
+const DEFAULT_BASE_URL = 'http://127.0.0.1:11434'
 const DEFAULT_MODEL = 'llama3.1:8b'
 const TEMPERATURE = 0.2
 const MAX_TOKENS = 2_048
+
+/**
+ * O Ollama não usa o contexto do modelo por padrão — usa o dele, bem menor, e
+ * descarta o começo do prompt em silêncio. Sem declarar `num_ctx`, mandar um
+ * plano de governo faz o modelo ler só o fim do texto e responder com cara de
+ * quem leu tudo. `qwen2.5` aguenta 32k; 16k equilibra leitura e memória.
+ */
+const DEFAULT_NUM_CTX = 16_384
+
+/** ~3,5 caracteres por token em PT-BR, menos a folga do prompt e da resposta. */
+const CHARS_PER_TOKEN = 3.5
 // Local models on consumer hardware can take minutes on long prompts
 const TIMEOUT_MS = 300_000
 
@@ -17,7 +30,7 @@ interface OllamaChatResponse {
  *
  * Env vars:
  *   LLM_PROVIDER=ollama
- *   OLLAMA_BASE_URL=http://localhost:11434   (default)
+ *   OLLAMA_BASE_URL=http://127.0.0.1:11434  (default)
  *   OLLAMA_MODEL=llama3.1:8b                 (default)
  *
  * Modelos recomendados para extração de propostas em PT-BR:
@@ -30,11 +43,18 @@ export class OllamaProvider extends BaseLLMProvider {
 
   private readonly baseUrl: string
   private readonly model: string
+  private readonly numCtx: number
+  readonly inputBudget: number
 
   constructor() {
     super()
     this.baseUrl = (process.env.OLLAMA_BASE_URL ?? DEFAULT_BASE_URL).replace(/\/$/, '')
     this.model = process.env.OLLAMA_MODEL ?? DEFAULT_MODEL
+    const configured = Number(process.env.OLLAMA_NUM_CTX)
+    this.numCtx = Number.isInteger(configured) && configured > 0 ? configured : DEFAULT_NUM_CTX
+    // O orçamento de entrada nasce da janela declarada: pedir mais texto do que
+    // cabe é o mesmo que truncar, só que sem saber onde.
+    this.inputBudget = Math.floor((this.numCtx - MAX_TOKENS) * CHARS_PER_TOKEN)
   }
 
   async complete(prompt: string): Promise<string> {
@@ -47,6 +67,7 @@ export class OllamaProvider extends BaseLLMProvider {
         options: {
           temperature: TEMPERATURE,
           num_predict: MAX_TOKENS,
+          num_ctx: this.numCtx,
         },
       },
       { timeout: TIMEOUT_MS },
