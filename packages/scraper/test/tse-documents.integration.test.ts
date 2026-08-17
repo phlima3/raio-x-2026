@@ -113,6 +113,37 @@ describe('runTseDocumentSync', () => {
     expect(document.extractionStatus).toBe(DocumentExtractionStatus.EXTRACTED)
   })
 
+  it('ignores the leiame.pdf every TSE archive ships and links a late candidacy', async () => {
+    const archive = Buffer.from(zipSync({
+      'BR/2026BR280002551932_01.pdf': Buffer.from('%PDF-1.4 caiado'),
+      'BR/leiame.pdf': Buffer.from('%PDF-1.4 readme'),
+    }))
+    const client = clientWith([resource], archive)
+    const extractText = vi.fn().mockResolvedValue('Plano de governo')
+
+    // Primeira passada: a candidatura ainda não foi importada.
+    const first = await runTseDocumentSync({ prisma, client, extractText })
+    expect(first.metrics.documents).toBe(1)
+    expect(await prisma.sourceDocument.findFirstOrThrow()).toMatchObject({ candidateId: null })
+
+    const candidate = await prisma.candidate.create({
+      data: {
+        name: 'Ronaldo Caiado',
+        party: 'PSD',
+        state: 'BR',
+        position: 'PRESIDENTE',
+        electionYear: 2026,
+        tseId: '280002551932',
+      },
+    })
+    await runTseDocumentSync({ prisma, client, extractText })
+
+    const documents = await prisma.sourceDocument.findMany()
+    expect(documents).toHaveLength(1)
+    expect(documents[0].candidateId).toBe(candidate.id)
+    expect(extractText).toHaveBeenCalledTimes(1)
+  })
+
   it('stores searchable text for a digital PDF', async () => {
     const client = clientWith(
       [{ ...resource, format: 'PDF', url: 'https://divulgacand.tse.jus.br/programa.pdf' }],
