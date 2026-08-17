@@ -1,4 +1,4 @@
-import { DataSource, Position, PrismaClient } from '@prisma/client'
+import { DataSource, OfficialCandidacyStatus, Position, PrismaClient } from '@prisma/client'
 import { zipSync } from 'fflate'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -109,6 +109,25 @@ function makeSocialClient(
   }
 }
 
+function clientWithComplementStatus(status: string): TseCkanClient {
+  const resource = definitions.find(
+    (definition) => definition.resource.kind === TseResourceKind.CANDIDATE_COMPLEMENT,
+  )!.resource
+  const bytes = archive('consulta_cand_complementar_2026_BRASIL.csv', csv(
+    ['ANO_ELEICAO', 'SQ_CANDIDATO', 'DS_SITUACAO_CANDIDATO_TOT', 'DS_DETALHE_SITUACAO_CAND'],
+    [['2026', '123', status, status]],
+  ))
+  return {
+    discover: vi.fn().mockResolvedValue([resource]),
+    download: vi.fn().mockResolvedValue({
+      resource,
+      bytes,
+      sha256: `sha-complement-${status}`,
+      fetchedAt: new Date('2026-08-16T07:00:00.000Z'),
+    }),
+  }
+}
+
 async function clearData() {
   await prisma.proposal.deleteMany()
   await prisma.assetDeclaration.deleteMany()
@@ -172,6 +191,63 @@ describe('runTseSupplementalSync', () => {
     })
     expect(assets.totalValue.toString()).toBe('150000.75')
     expect((assets.assets as unknown[])).toHaveLength(2)
+  })
+
+  it('keeps a candidacy awaiting judgment published', async () => {
+    await prisma.candidate.create({
+      data: {
+        id: 'candidate-pendente',
+        tseId: '123',
+        slug: 'pendente-px-sp-governador-2026',
+        name: 'Candidata Pendente',
+        party: 'PX',
+        state: 'SP',
+        position: Position.GOVERNADOR,
+        partyHistory: [],
+        electionYear: 2026,
+        isOfficial: true,
+        isPublished: true,
+        officialStatus: OfficialCandidacyStatus.PENDING,
+        dataSource: DataSource.TSE,
+      },
+    })
+    // Encerrado o prazo de registro, quase toda candidatura fica assim por
+    // semanas; despublicar aqui esvaziaria o site.
+    const client = clientWithComplementStatus('AGUARDANDO JULGAMENTO')
+
+    await runTseSupplementalSync({ prisma, client })
+
+    const candidate = await prisma.candidate.findUniqueOrThrow({
+      where: { id: 'candidate-pendente' },
+    })
+    expect(candidate.officialStatus).toBe(OfficialCandidacyStatus.PENDING)
+    expect(candidate.isPublished).toBe(true)
+  })
+
+  it('unpublishes a candidacy the TSE rejected', async () => {
+    await prisma.candidate.create({
+      data: {
+        id: 'candidate-indeferido',
+        tseId: '123',
+        slug: 'indeferido-px-sp-governador-2026',
+        name: 'Candidato Indeferido',
+        party: 'PX',
+        state: 'SP',
+        position: Position.GOVERNADOR,
+        partyHistory: [],
+        electionYear: 2026,
+        isOfficial: true,
+        isPublished: true,
+        dataSource: DataSource.TSE,
+      },
+    })
+
+    await runTseSupplementalSync({ prisma, client: clientWithComplementStatus('INDEFERIDO') })
+
+    const candidate = await prisma.candidate.findUniqueOrThrow({
+      where: { id: 'candidate-indeferido' },
+    })
+    expect(candidate.isPublished).toBe(false)
   })
 
   it('reconciles changed and removed official site URLs from the complete snapshot', async () => {

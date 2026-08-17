@@ -16,7 +16,7 @@ import {
   TseResourceKind,
   type TseCkanClient,
 } from './tse/ckanClient'
-import { resolveTseCandidateJudgments } from './tse/candidacyStatus'
+import { isPublishableStatus, resolveTseCandidateJudgments } from './tse/candidacyStatus'
 import { parseTseTabularArchives } from './tse/tabularArchive'
 
 const SUPPLEMENTAL_KINDS = new Set<TseResourceKind>([
@@ -192,9 +192,9 @@ async function materializeResource(
           candidacyStatus: judgment.candidacyStatus,
           candidacyStatusSourceUrl: sourceUrl,
           candidacyStatusVerifiedAt: verifiedAt,
-          ...(judgment.officialStatus !== OfficialCandidacyStatus.ELIGIBLE
-            ? { isPublished: false }
-            : {}),
+          ...(isPublishableStatus(judgment.officialStatus)
+            ? {}
+            : { isPublished: false }),
           ...(materialChanged ? { materialUpdatedAt: verifiedAt } : {}),
         },
       })]

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { extractPdfText } from '../src/documents/pdfText'
+import { extractPdfText, stripControlCharacters } from '../src/documents/pdfText'
 
 function makePdf(content: string): Buffer {
   const stream = `BT /F1 12 Tf 72 720 Td (${content}) Tj ET`
@@ -32,5 +32,11 @@ describe('extractPdfText', () => {
 
   it('returns an empty string for an image-only/blank PDF', async () => {
     await expect(extractPdfText(makePdf(''))).resolves.toBe('')
+  })
+
+  it('drops the control bytes broken PDF fonts emit, which PostgreSQL rejects', () => {
+    const raw = 'Plano de' + '\u0000' + ' governo' + '\u001f\u0007'
+    expect(stripControlCharacters(raw)).toBe('Plano de governo')
+    expect(stripControlCharacters('linha 1\nlinha\t2')).toBe('linha 1\nlinha\t2')
   })
 })

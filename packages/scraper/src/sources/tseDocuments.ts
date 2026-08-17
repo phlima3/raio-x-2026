@@ -78,6 +78,9 @@ function pdfEntries(
   const archive = unzipSync(new Uint8Array(bytes))
   return Object.entries(archive).flatMap(([filename, content]) => {
     if (!filename.toLowerCase().endsWith('.pdf')) return []
+    // Todo ZIP do TSE traz um `leiame.pdf` descrevendo o pacote; não é documento
+    // de candidatura.
+    if (filename.toLowerCase().split('/').pop() === 'leiame.pdf') return []
     return [{
       filename,
       bytes: Buffer.from(content),
@@ -130,103 +133,100 @@ export async function runTseDocumentSync(
         }
       }
 
-      const entries: PdfEntry[] = []
-      for (const resource of resources) {
-        const downloaded = await client.download(resource)
-        entries.push(...pdfEntries(resource, downloaded.bytes, downloaded.fetchedAt))
-      }
-      if (entries.length === 0) {
-        return {
-          noop: true,
-          metrics: {
-            resources: resources.length,
-            documents: 0,
-            created: 0,
-            deduplicated: 0,
-            extracted: 0,
-            needsOcr: 0,
-            failed: 0,
-          },
-        }
-      }
-
       const candidates = await options.prisma.candidate.findMany({
         where: { tseId: { not: null } },
         select: { id: true, tseId: true },
       })
+      let documents = 0
       let created = 0
       let deduplicated = 0
       let extracted = 0
       let needsOcr = 0
       let failed = 0
 
-      for (const entry of entries) {
-        const digest = sha256(entry.bytes)
-        const existing = await options.prisma.sourceDocument.findUnique({
-          where: { sha256: digest },
-        })
-        if (existing && existing.extractionStatus !== DocumentExtractionStatus.FAILED) {
-          deduplicated++
+      // Um recurso por vez: o TSE publica 28 arquivos (~195 MB comprimidos) e
+      // acumular todos os PDFs antes de processar estoura a memória do runner.
+      for (const resource of resources) {
+        const downloaded = await client.download(resource)
+        const entries = pdfEntries(resource, downloaded.bytes, downloaded.fetchedAt)
+        documents += entries.length
+
+        for (const entry of entries) {
+          const digest = sha256(entry.bytes)
+          const candidateId = linkedCandidateId(entry.filename, candidates)
+          const existing = await options.prisma.sourceDocument.findUnique({
+            where: { sha256: digest },
+          })
+          if (existing && existing.extractionStatus !== DocumentExtractionStatus.FAILED) {
+            deduplicated++
+            if (!options.dryRun) {
+              await options.prisma.sourceDocument.update({
+                where: { id: existing.id },
+                // Relinka: o PDF pode ter sido importado antes da candidatura.
+                data: {
+                  fetchedAt: entry.fetchedAt,
+                  sourceUrl: entry.sourceUrl,
+                  syncRunId: runId,
+                  ...(candidateId ? { candidateId } : {}),
+                },
+              })
+            }
+            continue
+          }
+
+          let text: string | null = null
+          let status: DocumentExtractionStatus
+          let extractionError: string | null = null
+          try {
+            const extractedText = (await extractText(entry.bytes)).trim()
+            if (extractedText.length === 0) {
+              status = DocumentExtractionStatus.NEEDS_OCR
+              needsOcr++
+            } else {
+              text = extractedText
+              status = DocumentExtractionStatus.EXTRACTED
+              extracted++
+            }
+          } catch (error) {
+            status = DocumentExtractionStatus.FAILED
+            extractionError = error instanceof Error ? error.message : String(error)
+            failed++
+          }
+
           if (!options.dryRun) {
-            await options.prisma.sourceDocument.update({
-              where: { id: existing.id },
-              data: { fetchedAt: entry.fetchedAt, sourceUrl: entry.sourceUrl, syncRunId: runId },
+            const documentData = {
+              source: DataSource.TSE,
+              type: SourceDocumentType.CAMPAIGN_PROGRAM,
+              sourceUrl: entry.sourceUrl,
+              contentType: 'application/pdf',
+              fetchedAt: entry.fetchedAt,
+              text,
+              extractionStatus: status,
+              extractionError,
+              candidateId,
+              syncRunId: runId,
+              metadata: {
+                resourceId: entry.resource.id,
+                resourceName: entry.resource.name,
+                filename: entry.filename,
+              } satisfies Prisma.InputJsonObject,
+            }
+            await options.prisma.sourceDocument.upsert({
+              where: { sha256: digest },
+              update: documentData,
+              create: { ...documentData, sha256: digest },
             })
           }
-          continue
+          created++
         }
-
-        let text: string | null = null
-        let status: DocumentExtractionStatus
-        let extractionError: string | null = null
-        try {
-          const extractedText = (await extractText(entry.bytes)).trim()
-          if (extractedText.length === 0) {
-            status = DocumentExtractionStatus.NEEDS_OCR
-            needsOcr++
-          } else {
-            text = extractedText
-            status = DocumentExtractionStatus.EXTRACTED
-            extracted++
-          }
-        } catch (error) {
-          status = DocumentExtractionStatus.FAILED
-          extractionError = error instanceof Error ? error.message : String(error)
-          failed++
-        }
-
-        if (!options.dryRun) {
-          const documentData = {
-            source: DataSource.TSE,
-            type: SourceDocumentType.CAMPAIGN_PROGRAM,
-            sourceUrl: entry.sourceUrl,
-            contentType: 'application/pdf',
-            fetchedAt: entry.fetchedAt,
-            text,
-            extractionStatus: status,
-            extractionError,
-            candidateId: linkedCandidateId(entry.filename, candidates),
-            syncRunId: runId,
-            metadata: {
-              resourceId: entry.resource.id,
-              resourceName: entry.resource.name,
-              filename: entry.filename,
-            } satisfies Prisma.InputJsonObject,
-          }
-          await options.prisma.sourceDocument.upsert({
-            where: { sha256: digest },
-            update: documentData,
-            create: { ...documentData, sha256: digest },
-          })
-        }
-        created++
       }
 
       if (failed > 0) throw new Error(`[tse-documents] ${failed} PDF extraction(s) failed`)
       return {
+        noop: documents === 0,
         metrics: {
           resources: resources.length,
-          documents: entries.length,
+          documents,
           created,
           deduplicated,
           extracted,

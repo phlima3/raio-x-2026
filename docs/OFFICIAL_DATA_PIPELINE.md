@@ -53,6 +53,12 @@ A publicação exige `officialStatus` em `ELIGIBLE` ou `PENDING`. Nos dias
 seguintes ao prazo de registro a quase totalidade das candidaturas ainda está
 pendente de julgamento; exigir `ELIGIBLE` deixaria o site vazio até o TSE
 julgar os registros. `INELIGIBLE`, `CANCELLED` e `UNKNOWN` continuam ocultos.
+
+Essa regra vive em `isPublishableStatus`, em `sources/tse/candidacyStatus.ts`.
+Tanto a importação canônica quanto o complementar decidem visibilidade, e
+enquanto a regra esteve duplicada os dois divergiram: o complementar seguiu
+exigindo `ELIGIBLE` e despublicaria 412 das 462 candidaturas publicadas.
+Qualquer novo caminho que decida `isPublished` deve ler essa função.
 O parser lê `DS_SITUACAO_CANDIDATURA` e `DS_DETALHE_SITUACAO_CAND` — o detalhe
 tem precedência nos estados negativos (indeferimento, cassação, renúncia) — e
 grava os dois em `officialStatusRaw` no formato `SITUAÇÃO / DETALHE`. Lista, busca, detalhe, estatísticas, propostas,
@@ -323,8 +329,31 @@ até um `CandidateSlugAlias` ser criado na reconciliação apontada pelo
 - O catálogo TSE revalidado em produção em 3 de agosto de 2026 tinha 3.600
   candidaturas, sem presidente/vice-presidente, e 26.762 linhas nos seis
   recursos suplementares.
-- Não havia recurso de programa de governo no catálogo naquele momento; o job
-  diário permanece habilitado para detectar sua disponibilização.
 - Texto oficial extraído fica em `SourceDocument`. Transformá-lo em propostas
   estruturadas exige extração e revisão; qualquer futura saída de IA deve
   seguir `DRAFT` + `isPublished=false` e não sobrescrever item já revisado.
+  Nenhuma superfície da API ou do site lê `SourceDocument` hoje.
+
+## Propostas de governo
+
+O recurso `proposta_governo` passou a existir no catálogo: 28 ZIPs, um por UF
+mais o nacional (`_BR`), ~195 MB somados. Cada PDF é nomeado
+`{UF}/{ANO}{UF}{SQ_CANDIDATO}_01.pdf`, então o vínculo com a candidatura sai do
+nome do arquivo — não há casamento por nome. `SQ_CANDIDATO` aparece sem zero à
+esquerda nas UFs de código menor que 10 (GO grava `90002540993`), exatamente
+como no CSV de candidaturas, então a comparação direta funciona.
+
+Só cargos executivos majoritários registram proposta; senador não tem nenhuma.
+Todo ZIP traz também um `leiame.pdf` descrevendo o pacote, que é ignorado.
+
+Importação de 16 de agosto de 2026: 203 PDFs, 185 armazenados, 181 com texto e
+4 aguardando OCR. Presidente 11 de 13, governador 164 de 194.
+
+Dois modos de falha que só aparecem contra o acervo real — o dry-run não os
+revela porque não grava:
+
+- fontes com codificação própria devolvem bytes de controle no texto extraído.
+  O `NUL` faz o PostgreSQL rejeitar a gravação inteira com o erro 22021 e
+  aborta o job. A limpeza fica em `extractPdfText`;
+- baixar os 28 recursos antes de processar mantém todos os PDFs em memória ao
+  mesmo tempo. O laço processa um recurso por vez.
