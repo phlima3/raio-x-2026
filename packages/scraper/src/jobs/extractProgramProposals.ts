@@ -3,6 +3,7 @@ import 'dotenv/config'
 import {
   DataSource,
   DocumentExtractionStatus,
+  Position,
   ProposalOrigin,
   ProposalStatus,
   SourceDocumentType,
@@ -35,6 +36,7 @@ export interface RunProgramProposalExtractionOptions {
   dryRun?: boolean
   limit?: number
   slug?: string
+  positions?: Position[]
 }
 
 interface ExtractedProposal {
@@ -93,7 +95,11 @@ export async function runProgramProposalExtraction(
           type: SourceDocumentType.CAMPAIGN_PROGRAM,
           extractionStatus: DocumentExtractionStatus.EXTRACTED,
           candidateId: { not: null },
-          ...(options.slug ? { candidate: { slug: options.slug } } : {}),
+          ...(options.slug
+            ? { candidate: { slug: options.slug } }
+            : options.positions
+              ? { candidate: { position: { in: options.positions } } }
+              : {}),
         },
         select: {
           id: true,
@@ -183,6 +189,14 @@ async function main(): Promise<void> {
   const dryRun = process.argv.includes('--dry-run')
   const limitArg = process.argv.find((argument) => /^--limit=\d+$/.test(argument))
   const slugArg = process.argv.find((argument) => argument.startsWith('--slug='))
+  const positionArg = process.argv.find((argument) => argument.startsWith('--position='))
+  const positions = positionArg
+    ? positionArg.split('=')[1].split(',').map((value) => {
+      const position = Position[value.trim().toUpperCase() as keyof typeof Position]
+      if (!position) throw new Error(`Cargo desconhecido: ${value}`)
+      return position
+    })
+    : undefined
   const prisma = createScraperPrismaClient()
   try {
     logger.info('[program-proposals] Extraindo propostas dos programas de governo')
@@ -191,6 +205,7 @@ async function main(): Promise<void> {
       dryRun,
       limit: limitArg ? Number(limitArg.split('=')[1]) : undefined,
       slug: slugArg ? slugArg.split('=')[1] : undefined,
+      positions,
     })
     logger.info('[program-proposals] Concluído', result)
   } finally {

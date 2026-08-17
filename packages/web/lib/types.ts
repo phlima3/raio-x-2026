@@ -47,11 +47,15 @@ export interface CandidateSummary {
   lastSyncedAt?: string | null
 }
 
+export type ProposalOrigin = 'EDITORIAL' | 'OFFICIAL_DOCUMENT' | 'AI_EXTRACTION' | 'LEGACY'
+
 export interface Proposal {
   id: string
   title: string
   category: string | null
   status: ProposalStatus
+  /** Procedência do texto. `AI_EXTRACTION` precisa ser dito ao leitor. */
+  origin?: ProposalOrigin
   source: string
   tags: string[]
   proposedAt: string | null

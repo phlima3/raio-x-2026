@@ -53,8 +53,20 @@ export function ProposalsSection({ proposals }: Props) {
     router.replace(`?${params}`, { scroll: false })
   }
 
+  const aiExtracted = proposals.some((p) => p.origin === 'AI_EXTRACTION')
+
   return (
     <div>
+      {/* Publicamos a extração sem revisão item a item. O leitor tem de saber
+          disso antes de ler, não depois. */}
+      {aiExtracted && (
+        <p className="mb-8 border-l-2 border-amber-800/50 pl-4 py-1 text-[15px] leading-[1.65] text-ink-muted text-pretty max-w-2xl">
+          Parte destas propostas foi <strong className="font-medium text-ink">resumida por IA</strong> a
+          partir do plano de governo que o candidato registrou no TSE, sem revisão humana item a item.
+          Cada entrada traz o link para o documento oficial — em caso de dúvida, ele é que vale.
+        </p>
+      )}
+
       {categories.length > 1 && (
         <div
           role="toolbar"

@@ -19,6 +19,7 @@ const SOURCE_LABELS: Record<string, string> = {
   camara: 'Câmara dos Deputados',
   senado: 'Senado Federal',
   candidate_site: 'Site do candidato',
+  tse_program: 'Plano de governo registrado no TSE',
 }
 
 interface ProposalBlockProps {
@@ -26,6 +27,7 @@ interface ProposalBlockProps {
   title: string
   category?: string | null
   status: string
+  origin?: string
   summary?: string | null
   description?: string | null
   source: string
@@ -36,6 +38,7 @@ interface ProposalBlockProps {
 export function ProposalBlock({
   title,
   status,
+  origin,
   summary,
   description,
   source,
@@ -88,6 +91,13 @@ export function ProposalBlock({
       {/* Meta line */}
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 mt-4 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-soft">
         <span>{SOURCE_LABELS[source] ?? source}</span>
+        {/* Texto de máquina não pode passar por texto conferido, item a item. */}
+        {origin === 'AI_EXTRACTION' && (
+          <>
+            <span aria-hidden>·</span>
+            <span className="text-amber-800">Resumo por IA</span>
+          </>
+        )}
         {proposedAt && (
           <>
             <span aria-hidden>·</span>
@@ -103,7 +113,9 @@ export function ProposalBlock({
             rel="noopener noreferrer"
             className="focus-editorial ml-auto text-ember hover:underline underline-offset-4"
           >
-            Ver original ↗
+            {/* O TSE publica os planos em ZIP por UF; dizer "original" faria o
+                leitor esperar uma página. */}
+            {source === 'tse_program' ? 'Baixar plano no TSE ↗' : 'Ver original ↗'}
           </a>
         )}
       </div>
