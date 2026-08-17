@@ -21,10 +21,10 @@ export function ProposalsSection({ proposals }: Props) {
     return (
       <div className="border border-dashed border-ink/30 py-14 px-6 text-center">
         <p className="font-serif italic text-xl text-ink-muted text-pretty max-w-md mx-auto">
-          Propostas serão adicionadas após as convenções partidárias (julho de 2026).
+          Nenhuma proposta revisada para este candidato ainda.
         </p>
         <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-soft">
-          Fonte: sites e programas de governo dos candidatos
+          Só publicamos proposta com fonte verificada
         </p>
       </div>
     )

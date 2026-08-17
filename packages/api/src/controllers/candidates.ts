@@ -11,6 +11,7 @@ import {
   PUBLIC_NEWS_LIMIT,
   PUBLIC_NEWS_ORDER_BY,
   PUBLIC_NEWS_WHERE,
+  withAssetVariation,
 } from '../domain/publicationPolicy'
 
 
@@ -140,7 +141,7 @@ export async function getCandidateTransparencyHandler(
       success: true,
       data: {
         voting: candidate.votingRecords,
-        assets: candidate.assetDeclarations,
+        assets: withAssetVariation(candidate.assetDeclarations),
         financing: candidate.campaignFinancings[0] ?? null,
       },
     })
