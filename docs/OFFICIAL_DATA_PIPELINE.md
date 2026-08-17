@@ -105,6 +105,12 @@ pnpm --filter @raiox/scraper run sync:tse:supplemental
 pnpm --filter @raiox/scraper run sync:documents -- --dry-run
 pnpm --filter @raiox/scraper run sync:documents
 
+# Propostas a partir dos programas (IA). A publicação é escopada por cargo e
+# hoje alcança apenas PRESIDENTE — ver "Extração das propostas".
+pnpm --filter @raiox/scraper run extract:programs -- --position=PRESIDENTE
+pnpm --filter @raiox/scraper run publish:programs -- --dry-run
+pnpm --filter @raiox/scraper run publish:programs
+
 # Legislativo — execute contra banco de staging para ensaio
 pnpm --filter @raiox/scraper run sync:camara
 pnpm --filter @raiox/scraper run sync:senado
