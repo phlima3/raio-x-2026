@@ -2,6 +2,7 @@ import { DataSource, OfficialCandidacyStatus, Position, type PrismaClient, Revie
 
 import { normalizePersonName } from '../../jobs/backfillPersons'
 import {
+  isPublishableStatus,
   resolveTseCandidateJudgments,
   type TseComplementRow,
 } from './candidacyStatus'
@@ -107,14 +108,6 @@ const NATIONAL_POSITIONS = new Set<Position>([
   Position.VICE_PRESIDENTE,
 ])
 
-// Publicar exige candidatura registrada e não rejeitada. Logo após o prazo de
-// registro a quase totalidade das candidaturas fica pendente de julgamento —
-// tratá-las como não publicáveis esvaziaria o site por semanas.
-const PUBLISHABLE_STATUSES = new Set<OfficialCandidacyStatus>([
-  OfficialCandidacyStatus.ELIGIBLE,
-  OfficialCandidacyStatus.PENDING,
-])
-
 // O TSE publica a sigla registrada; o catálogo editorial usa o nome corrente.
 const PARTY_ALIASES: Readonly<Record<string, string>> = {
   UNIAOBRASIL: 'UNIAO',
@@ -214,7 +207,7 @@ function legacyCandidacyStatus(record: TseCandidateRecord): string {
 }
 
 function isPublicCandidate(position: Position, status: OfficialCandidacyStatus): boolean {
-  return PUBLIC_POSITIONS.has(position) && PUBLISHABLE_STATUSES.has(status)
+  return PUBLIC_POSITIONS.has(position) && isPublishableStatus(status)
 }
 
 /**

@@ -39,6 +39,20 @@ function statusEvidence(row: TseComplementRow): string[] {
   ].flatMap((value) => clean(value) ? [clean(value)!] : [])
 }
 
+// Publicar exige candidatura registrada e não rejeitada. Logo após o prazo de
+// registro a quase totalidade das candidaturas fica pendente de julgamento —
+// tratá-las como não publicáveis esvaziaria o site por semanas. A regra mora
+// aqui porque tanto a importação canônica quanto o complementar decidem
+// visibilidade; quando estava duplicada as duas divergiram.
+const PUBLISHABLE_STATUSES = new Set<OfficialCandidacyStatus>([
+  OfficialCandidacyStatus.ELIGIBLE,
+  OfficialCandidacyStatus.PENDING,
+])
+
+export function isPublishableStatus(status: OfficialCandidacyStatus): boolean {
+  return PUBLISHABLE_STATUSES.has(status)
+}
+
 export function mapTseJudgmentStatus(row: TseComplementRow): CandidacyStatus {
   const substituted = normalizeToken(row.ST_SUBSTITUIDO ?? '') === 'S'
   const evidence = normalizeToken(statusEvidence(row).join(' '))
