@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Suspense } from 'react'
 import { fetchCandidates } from '@/lib/api'
 import { Comparator } from '@/components/Comparator'
+import { eligibleOpponents } from '@/lib/comparisons'
 import type { CandidateSummary } from '@/lib/types'
 
 interface Props {
@@ -55,7 +56,7 @@ export default async function CompararPage({ searchParams }: Props) {
           Comparar candidatos
         </h1>
         <p className="mt-2 font-serif italic text-ink-muted text-[15px] leading-relaxed">
-          Selecione dois candidatos para ver propostas, divergências e um resumo gerado por IA.
+          Selecione dois candidatos do mesmo cargo para ver as propostas de cada um, lado a lado.
         </p>
         <Link
           href="/comparacoes"
@@ -139,6 +140,12 @@ function ComparatorSkeleton() {
   )
 }
 
+const POSITION_LABELS: Record<string, string> = {
+  PRESIDENTE: 'Presidente da República',
+  GOVERNADOR: 'Governador(a)',
+  SENADOR: 'Senador(a) Federal',
+}
+
 interface CandidatePickerProps {
   candidates: CandidateSummary[]
   selectedA?: string
@@ -171,6 +178,12 @@ function CandidatePicker({ candidates, selectedA, selectedB }: CandidatePickerPr
 
   const selected = [selectedA, selectedB].filter(Boolean) as string[]
   const step = selected.length
+
+  // Escolhido o primeiro, só faz sentido oferecer quem disputa o mesmo cargo:
+  // comparar plano de governo de presidente com o de governador compara
+  // disputas diferentes.
+  const first = candidates.find((c) => c.slug === selectedA)
+  const eligible = eligibleOpponents(candidates, selectedA)
 
   return (
     <div>
@@ -209,9 +222,15 @@ function CandidatePicker({ candidates, selectedA, selectedB }: CandidatePickerPr
         </div>
       )}
 
+      {step === 1 && first && (
+        <p className="mb-5 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-soft">
+          Mostrando apenas quem disputa o mesmo cargo · {POSITION_LABELS[first.position] ?? first.position}
+        </p>
+      )}
+
       {/* Candidate grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8">
-        {candidates.map((c, i) => {
+        {eligible.map((c, i) => {
           const isSelected = selected.includes(c.slug)
           const href = buildPickerHref(c.slug, selectedA, selectedB)
 
