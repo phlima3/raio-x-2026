@@ -127,7 +127,6 @@ export interface ComparisonResult {
   theme: string
   proposalsA: Proposal[]
   proposalsB: Proposal[]
-  aiSummary: string
 }
 
 export interface ApiListResponse<T> {

@@ -8,14 +8,12 @@ type Section = {
   roman: string
 }
 
-const SECTIONS: Section[] = [
-  { id: 'propostas', label: 'Propostas', roman: 'I' },
-  { id: 'consistencia', label: 'Consistência', roman: 'II' },
-  { id: 'declaracoes', label: 'Declarações', roman: 'III' },
-  { id: 'transparencia', label: 'Transparência', roman: 'IV' },
-]
+interface SectionNavProps {
+  /** As seções realmente renderizadas na ficha, já numeradas. */
+  sections: Section[]
+}
 
-export function SectionNav() {
+export function SectionNav({ sections: SECTIONS }: SectionNavProps) {
   const [active, setActive] = useState<string>(SECTIONS[0].id)
 
   useEffect(() => {
@@ -41,7 +39,7 @@ export function SectionNav() {
 
     elements.forEach((el) => observer.observe(el))
     return () => observer.disconnect()
-  }, [])
+  }, [SECTIONS])
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
     e.preventDefault()

@@ -277,20 +277,6 @@ export function Comparator({ candidateSlugA, candidateSlugB, topic }: Comparator
         </div>
       )}
 
-      {/* AI summary */}
-      {activeComparison?.aiSummary && (
-        <div className="border-t border-b border-ember/30 py-5 bg-ember/[0.03] mb-8 px-4 sm:px-6">
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ember mb-2">
-            § Resumo IA · {activeComparison.theme}
-          </p>
-          <p className="font-serif italic text-[15px] sm:text-base leading-[1.7] text-ink-muted max-w-3xl text-pretty">
-            <span className="text-ember not-italic mr-0.5">&ldquo;</span>
-            {activeComparison.aiSummary}
-            <span className="text-ember not-italic ml-0.5">&rdquo;</span>
-          </p>
-        </div>
-      )}
-
       {/* Side-by-side proposals with cross-fade */}
       {activeComparison ? (
         <div

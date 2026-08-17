@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express'
 import { z } from 'zod'
 import * as candidateService from '../services/candidateService'
 import { getProposalsByCandidate, getProposalCategories } from '../services/proposalService'
-import { compareProposals as llmCompare } from '../services/geminiService'
 import { withCache, cacheKey, TTL } from '../services/cacheService'
 
 const ComparisonQuerySchema = z.object({
@@ -50,23 +49,11 @@ export async function compareHandler(
         : [...new Set([...Object.keys(proposalsA), ...Object.keys(proposalsB)])]
 
       return Promise.all(
-        themes.map(async (theme) => {
-          const textsA = (proposalsA[theme] ?? []).map((p) => p.description ?? p.title)
-          const textsB = (proposalsB[theme] ?? []).map((p) => p.description ?? p.title)
-
-          const aiSummary = await llmCompare(
-            theme,
-            textsA,
-            textsB,
-            candidateA.name,
-            candidateB.name,
-          )
-
+        themes.map((theme) => {
           return {
             theme,
             proposalsA: proposalsA[theme] ?? [],
             proposalsB: proposalsB[theme] ?? [],
-            aiSummary,
           }
         }),
       )

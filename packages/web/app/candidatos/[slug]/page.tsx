@@ -135,6 +135,23 @@ export default async function CandidatePage({ params }: Props): Promise<JSX.Elem
     fetchCandidateNews(candidate.slug).catch(() => ({ success: false, data: [] })),
   ])
 
+  // Consistência cruza proposta com voto no Congresso: quem não exerce mandato
+  // parlamentar nunca terá esse dado — 12 dos 13 presidenciáveis. Declarações
+  // dependem do rastreio de imprensa. Mostrar a seção vazia com um botão de
+  // "gerar análise" que não tem o que cruzar promete o que o site não entrega.
+  const hasVotingRecord = (candidate.votingRecords?.length ?? 0) > 0
+  const hasNews = newsResult.data.length > 0
+  const sections = [
+    { id: 'propostas', label: 'Propostas' },
+    ...(hasVotingRecord ? [{ id: 'consistencia', label: 'Consistência' }] : []),
+    ...(hasNews ? [{ id: 'declaracoes', label: 'Declarações' }] : []),
+    { id: 'transparencia', label: 'Transparência' },
+  ].map((section, index) => ({
+    ...section,
+    roman: ['I', 'II', 'III', 'IV'][index],
+  }))
+  const roman = (id: string) => sections.find((s) => s.id === id)?.roman ?? ''
+
   const initials = initialsFor(candidate.name)
   const photoUrl = absoluteImageUrl(candidate.photoUrl)
   const officeLabel =
@@ -406,7 +423,7 @@ export default async function CandidatePage({ params }: Props): Promise<JSX.Elem
       </section>
 
       {/* Sticky mini-TOC */}
-      <SectionNav />
+      <SectionNav sections={sections} />
 
       {/* ——— Seção I — Propostas ——— */}
       <section
@@ -418,7 +435,7 @@ export default async function CandidatePage({ params }: Props): Promise<JSX.Elem
           <header className="mb-10 md:mb-12">
             <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-ember mb-4">
               <span className="inline-block w-8 h-px bg-ember align-middle mr-3" />
-              Seção I
+              Seção {roman('propostas')}
             </p>
             <h2
               id="s-propostas"
@@ -439,61 +456,65 @@ export default async function CandidatePage({ params }: Props): Promise<JSX.Elem
         </div>
       </section>
 
-      {/* ——— Seção II — Consistência ——— */}
-      <section
-        id="consistencia"
-        aria-labelledby="s-consistencia"
-        className="border-t border-ink/25 cv-auto"
-      >
-        <div className="container mx-auto px-4 md:px-6 py-16 md:py-20">
-          <header className="mb-10 md:mb-12">
-            <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-ember mb-4">
-              <span className="inline-block w-8 h-px bg-ember align-middle mr-3" />
-              Seção II
-            </p>
-            <h2
-              id="s-consistencia"
-              className="font-serif text-3xl md:text-5xl leading-[0.98] tracking-[-0.015em]"
-            >
-              Consistência
-            </h2>
-            <p className="mt-3 font-serif italic text-ink-muted text-[15px] md:text-base max-w-xl text-pretty">
-              Cruzamento entre o que o candidato <em>propõe</em> e como{' '}
-              <em>vota</em> no Congresso. Síntese por IA, com contradições sinalizadas.
-            </p>
-          </header>
-          <ConsistencyPanel
-            candidateSlug={candidate.slug}
-            initialScores={consistencyResult.data}
-          />
-        </div>
-      </section>
+      {/* ——— Consistência — renderizada só quando há o que mostrar ——— */}
+      {hasVotingRecord && (
+        <section
+          id="consistencia"
+          aria-labelledby="s-consistencia"
+          className="border-t border-ink/25 cv-auto"
+        >
+          <div className="container mx-auto px-4 md:px-6 py-16 md:py-20">
+            <header className="mb-10 md:mb-12">
+              <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-ember mb-4">
+                <span className="inline-block w-8 h-px bg-ember align-middle mr-3" />
+                Seção {roman('consistencia')}
+              </p>
+              <h2
+                id="s-consistencia"
+                className="font-serif text-3xl md:text-5xl leading-[0.98] tracking-[-0.015em]"
+              >
+                Consistência
+              </h2>
+              <p className="mt-3 font-serif italic text-ink-muted text-[15px] md:text-base max-w-xl text-pretty">
+                Cruzamento entre o que o candidato <em>propõe</em> e como{' '}
+                <em>vota</em> no Congresso. Síntese por IA, com contradições sinalizadas.
+              </p>
+            </header>
+            <ConsistencyPanel
+              candidateSlug={candidate.slug}
+              initialScores={consistencyResult.data}
+            />
+          </div>
+        </section>
+      )}
 
-      {/* ——— Seção III — Declarações ——— */}
-      <section
-        id="declaracoes"
-        aria-labelledby="s-declaracoes"
-        className="border-t border-ink/25 cv-auto"
-      >
-        <div className="container mx-auto px-4 md:px-6 py-16 md:py-20">
-          <header className="mb-10 md:mb-12">
-            <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-ember mb-4">
-              <span className="inline-block w-8 h-px bg-ember align-middle mr-3" />
-              Seção III
-            </p>
-            <h2
-              id="s-declaracoes"
-              className="font-serif text-3xl md:text-5xl leading-[0.98] tracking-[-0.015em]"
-            >
-              Declarações recentes
-            </h2>
-            <p className="mt-3 font-serif italic text-ink-muted text-[15px] md:text-base max-w-xl">
-              Posições públicas rastreadas em veículos de imprensa. Checadas contra propostas.
-            </p>
-          </header>
-          <NewsPanel candidateSlug={candidate.slug} initialItems={newsResult.data} />
-        </div>
-      </section>
+      {/* ——— Declarações — renderizada só quando há o que mostrar ——— */}
+      {hasNews && (
+        <section
+          id="declaracoes"
+          aria-labelledby="s-declaracoes"
+          className="border-t border-ink/25 cv-auto"
+        >
+          <div className="container mx-auto px-4 md:px-6 py-16 md:py-20">
+            <header className="mb-10 md:mb-12">
+              <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-ember mb-4">
+                <span className="inline-block w-8 h-px bg-ember align-middle mr-3" />
+                Seção {roman('declaracoes')}
+              </p>
+              <h2
+                id="s-declaracoes"
+                className="font-serif text-3xl md:text-5xl leading-[0.98] tracking-[-0.015em]"
+              >
+                Declarações recentes
+              </h2>
+              <p className="mt-3 font-serif italic text-ink-muted text-[15px] md:text-base max-w-xl">
+                Posições públicas rastreadas em veículos de imprensa. Checadas contra propostas.
+              </p>
+            </header>
+            <NewsPanel candidateSlug={candidate.slug} initialItems={newsResult.data} />
+          </div>
+        </section>
+      )}
 
       {/* ——— Seção IV — Transparência ——— */}
       <section
@@ -505,7 +526,7 @@ export default async function CandidatePage({ params }: Props): Promise<JSX.Elem
           <header className="mb-10 md:mb-12">
             <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-ember mb-4">
               <span className="inline-block w-8 h-px bg-ember align-middle mr-3" />
-              Seção IV
+              Seção {roman('transparencia')}
             </p>
             <h2
               id="s-transparencia"

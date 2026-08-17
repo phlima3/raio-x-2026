@@ -48,3 +48,19 @@ export const EDITORIAL_COMPARISONS: EditorialComparison[] = []
 export function findEditorialComparison(slug: string) {
   return EDITORIAL_COMPARISONS.find((comparison) => comparison.slug === slug)
 }
+
+/**
+ * Quem pode ser o segundo candidato de uma comparação.
+ *
+ * Comparar plano de governo de presidente com o de governador compara disputas
+ * diferentes: o cargo define o que cada um promete governar. Antes da primeira
+ * escolha não há o que restringir.
+ */
+export function eligibleOpponents<T extends { slug: string; position: string }>(
+  candidates: T[],
+  selectedSlug: string | undefined,
+): T[] {
+  const first = candidates.find((candidate) => candidate.slug === selectedSlug)
+  if (!first) return candidates
+  return candidates.filter((candidate) => candidate.position === first.position)
+}
