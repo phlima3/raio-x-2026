@@ -125,6 +125,27 @@ describe('runProgramProposalExtraction', () => {
     expect(result.metrics.created).toBe(0)
   })
 
+  it('recusa documento que não cabe na janela do provider, em vez de ler pela metade', async () => {
+    const { candidate } = await seedProgram()
+    await prisma.sourceDocument.update({
+      where: { sha256: 'programa-sha' },
+      data: { text: 'PLANO DE GOVERNO. '.repeat(2_000) },
+    })
+    const provider = providerReturning({ economia: ['Não deveria ser chamado.'] })
+
+    const result = await runProgramProposalExtraction({
+      prisma,
+      // Janela menor que o documento: o caso do modelo local diante de um plano
+      // de 250 mil caracteres.
+      provider: { ...provider, inputBudget: 1_000 },
+    })
+
+    expect(result.metrics.oversized).toBe(1)
+    expect(result.metrics.extracted).toBe(0)
+    expect(provider.extractProposals).not.toHaveBeenCalled()
+    expect(await prisma.proposal.count({ where: { candidateId: candidate.id } })).toBe(0)
+  })
+
   it('não grava nada em dry-run', async () => {
     await seedProgram()
 
