@@ -10,9 +10,20 @@ import {
  * Shared prompt logic for all LLM providers.
  * Concrete providers (Groq, Gemini, Ollama) only implement `complete()`.
  */
+/**
+ * Quanto de texto vale mandar quando o provider não declara nada. É o corte
+ * histórico, dimensionado para janelas pequenas; um plano de governo do TSE tem
+ * de 16 mil a 320 mil caracteres, então aqui ele é truncado de verdade. Provider
+ * com janela grande deve declarar a sua (ver `GeminiProvider`).
+ */
+const DEFAULT_INPUT_BUDGET = 12_000
+
 export abstract class BaseLLMProvider implements LLMProvider {
   /** Short provider name used in log prefixes (e.g. "groq"). */
   protected abstract readonly providerName: string
+
+  /** Quantos caracteres de entrada este provider aguenta por chamada. */
+  readonly inputBudget: number = DEFAULT_INPUT_BUDGET
 
   /** Sends a raw prompt and returns the model's text response. */
   abstract complete(prompt: string): Promise<string>
@@ -47,7 +58,7 @@ Regras:
 - Não invente propostas que não estejam no texto
 
 TEXTO:
-${text.slice(0, 12_000)}`
+${text.slice(0, this.inputBudget)}`
 
     try {
       const raw = await this.complete(prompt)
