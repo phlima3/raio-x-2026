@@ -105,6 +105,12 @@ pnpm --filter @raiox/scraper run sync:tse:supplemental
 pnpm --filter @raiox/scraper run sync:documents -- --dry-run
 pnpm --filter @raiox/scraper run sync:documents
 
+# Propostas a partir dos programas (IA). A publicação é escopada por cargo e
+# hoje alcança apenas PRESIDENTE — ver "Extração das propostas".
+pnpm --filter @raiox/scraper run extract:programs -- --position=PRESIDENTE
+pnpm --filter @raiox/scraper run publish:programs -- --dry-run
+pnpm --filter @raiox/scraper run publish:programs
+
 # Legislativo — execute contra banco de staging para ensaio
 pnpm --filter @raiox/scraper run sync:camara
 pnpm --filter @raiox/scraper run sync:senado
@@ -348,6 +354,64 @@ Todo ZIP traz também um `leiame.pdf` descrevendo o pacote, que é ignorado.
 
 Importação de 16 de agosto de 2026: 203 PDFs, 185 armazenados, 181 com texto e
 4 aguardando OCR. Presidente 11 de 13, governador 164 de 194.
+
+### Extração das propostas
+
+`extract:programs` lê `SourceDocument` e grava `Proposal` sempre `DRAFT` +
+`isPublished=false` + `origin=AI_EXTRACTION`, com `sourceDocumentId` apontando
+para o PDF. `publish:programs` publica por escopo de cargo. Aceitam
+`--position`, `--slug`, `--limit` e `--dry-run`.
+
+Decisão editorial de 16 de agosto de 2026: a extração dos **presidenciáveis** é
+publicada sem revisão item a item. O que torna isso defensável é a procedência
+ficar visível — aviso no topo da seção de propostas, `Resumo por IA` em cada
+item e link para o plano no TSE. `origin` permanece `AI_EXTRACTION` porque é
+dele que o front tira a marcação, e `reviewedAt` permanece nulo porque ninguém
+conferiu; preenchê-lo faria a reextração pular a linha achando que houve
+revisão. Governadores e senadores continuam apenas em rascunho.
+
+#### Modelos e cota
+
+`gemini-1.5-pro`, que o provider pedia, **não existe mais** — a API responde
+`NOT_FOUND`. Os modelos Pro não têm free tier, e é essa a origem do `limit: 0`
+que este projeto registrou como bug de ativação. `gemini-2.5-flash` também já
+saiu para chaves novas. O padrão é `gemini-3.5-flash`, trocável por
+`GEMINI_MODEL`.
+
+O free tier concede **20 requisições por dia e 250 mil tokens de entrada por
+minuto, por modelo**. A cota diária é o teto que dói: 185 documentos levariam
+dez dias. Como ela é por modelo, alternar entre os Flash disponíveis multiplica
+o alcance — foi assim que dois presidenciáveis saíram no mesmo dia em que a
+cota do primeiro modelo acabou.
+
+Os Flash atuais raciocinam antes de responder e os tokens de pensamento saem do
+orçamento de saída: uma extração real gastou 4.840 pensando para escrever 1.891.
+Por isso `maxOutputTokens` é 32.768 e não 2.048.
+
+`LLM_PROVIDER` aceita lista (`gemini,ollama`): o primeiro atende e os seguintes
+cobrem a queda dele. O fallback é para indisponibilidade, não para resposta
+ruim.
+
+#### Leitura truncada é o modo de falha da casa
+
+Três defeitos independentes do mesmo tipo apareceram no mesmo dia, e todos
+produziam propostas plausíveis a partir de uma fração do documento sem nada no
+dado denunciando:
+
+- o prompt compartilhado cortava a entrada em 12 mil caracteres fixos — 4% de um
+  plano de 320 mil. O teto passou a ser declarado por provider;
+- o Ollama não usa o contexto do modelo, usa o dele, e descarta o começo do
+  prompt em silêncio. `num_ctx` passou a ser declarado, e o orçamento de entrada
+  deriva dele;
+- documento maior que a janela do provider era lido pela metade e gravado como
+  extração completa. Agora é recusado e contado em `oversized`.
+
+Ao mexer nesse caminho, a pergunta a fazer é sempre: **o modelo leu o documento
+inteiro, e se não leu, o dado registra isso?**
+
+Medida dos planos de governador pendentes: mediana 71.910 caracteres, p90
+254.453, maior 523.018. Com a janela de 16k do `qwen2.5:7b` (~50 mil
+caracteres), 62% não cabem.
 
 Dois modos de falha que só aparecem contra o acervo real — o dry-run não os
 revela porque não grava:

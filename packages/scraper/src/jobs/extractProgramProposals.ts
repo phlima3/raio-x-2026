@@ -116,9 +116,24 @@ export async function runProgramProposalExtraction(
       let created = 0
       let preserved = 0
       let failed = 0
+      let oversized = 0
 
       for (const document of documents) {
         if (!document.text || !document.candidateId) continue
+
+        // Ler metade de um plano e gravar o resultado como "as propostas do
+        // candidato" é pior do que não ler: no banco fica indistinguível de uma
+        // extração completa. Documento que não cabe na janela do provider fica
+        // para quem tiver janela maior.
+        if (document.text.length > provider.inputBudget) {
+          oversized++
+          logger.warn(
+            `[program-proposals] ${document.candidate?.name ?? document.candidateId} ignorado: ` +
+              `${document.text.length} caracteres não cabem no orçamento de ${provider.inputBudget}`,
+          )
+          continue
+        }
+
         let byTheme: ProposalsByTheme
         try {
           byTheme = await provider.extractProposals(document.text)
@@ -173,13 +188,16 @@ export async function runProgramProposalExtraction(
 
       // Nenhum documento com texto é ausência de trabalho, não sucesso vazio.
       if (documents.length === 0) {
-        return { noop: true, metrics: { documents: 0, extracted: 0, created: 0, preserved: 0, failed: 0 } }
+        return {
+          noop: true,
+          metrics: { documents: 0, extracted: 0, created: 0, preserved: 0, failed: 0, oversized: 0 },
+        }
       }
       if (failed > 0 && extracted === 0) {
         throw new Error(`[program-proposals] todas as ${failed} extrações falharam`)
       }
       return {
-        metrics: { documents: documents.length, extracted, created, preserved, failed },
+        metrics: { documents: documents.length, extracted, created, preserved, failed, oversized },
       }
     },
   })
