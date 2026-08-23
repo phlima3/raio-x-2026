@@ -1,0 +1,83 @@
+{
+  "registroTse": "BR-08602/2026",
+  "instituto": "AtlasIntel",
+  "contratanteRegistrado": "AtlasIntel Tecnologia de Dados Ltda.",
+  "publicacao": "AtlasIntel/Bloomberg",
+  "custoRegistradoBrl": 80000,
+  "abrangencia": "NACIONAL",
+  "cargo": "PRESIDENTE",
+  "campoInicio": "2026-07-22",
+  "campoFim": "2026-07-27",
+  "divulgacao": "2026-07-29",
+  "amostra": 5021,
+  "margemErroPp": 1,
+  "nivelConfianca": 95,
+  "metodo": "Recrutamento digital aleatório (Atlas RDR)",
+  "populacaoAlvo": "População adulta brasileira",
+  "anteriorAoRegistro": true,
+  "primeiroTurno": [
+    { "cenario": "1", "resultados": [
+      { "candidato": "Luiz Inácio Lula da Silva", "partido": "PT", "percentual": 44.9 },
+      { "candidato": "Flávio Bolsonaro", "partido": "PL", "percentual": 35.8 },
+      { "candidato": "Renan Santos", "partido": "Missão", "percentual": 7.8 },
+      { "candidato": "Ronaldo Caiado", "partido": "PSD", "percentual": 3.1 },
+      { "candidato": "Romeu Zema", "partido": "Novo", "percentual": 2.8 },
+      { "candidato": "Samara Martins", "partido": "UP", "percentual": 2.1 },
+      { "candidato": "Augusto Cury", "partido": "Avante", "percentual": 1.6 },
+      { "candidato": "Cabo Daciolo", "partido": "Mobiliza", "percentual": 0.1 },
+      { "candidato": "Hertz Dias", "partido": "PSTU", "percentual": 0.1 },
+      { "candidato": "Rui Costa Pimenta", "partido": "PCO", "percentual": 0.0 },
+      { "candidato": "Edmilson Costa", "partido": "PCB", "percentual": 0.0 },
+      { "candidato": "Branco/nulo", "partido": null, "percentual": 0.6 },
+      { "candidato": "Não sei", "partido": null, "percentual": 1.0 }
+    ]},
+    { "cenario": "2", "resultados": [
+      { "candidato": "Luiz Inácio Lula da Silva", "partido": "PT", "percentual": 47.4 },
+      { "candidato": "Flávio Bolsonaro", "partido": "PL", "percentual": 37.0 },
+      { "candidato": "Renan Santos", "partido": "Missão", "percentual": 7.8 },
+      { "candidato": "Ronaldo Caiado", "partido": "PSD", "percentual": 3.3 },
+      { "candidato": "Romeu Zema", "partido": "Novo", "percentual": 2.9 },
+      { "candidato": "Branco/nulo", "partido": null, "percentual": 1.2 },
+      { "candidato": "Não sei", "partido": null, "percentual": 0.4 }
+    ]},
+    { "cenario": "4 — sem Lula, com Haddad", "resultados": [
+      { "candidato": "Fernando Haddad", "partido": "PT", "percentual": 40.3 },
+      { "candidato": "Flávio Bolsonaro", "partido": "PL", "percentual": 36.9 },
+      { "candidato": "Renan Santos", "partido": "Missão", "percentual": 8.5 },
+      { "candidato": "Ronaldo Caiado", "partido": "PSD", "percentual": 4.2 },
+      { "candidato": "Romeu Zema", "partido": "Novo", "percentual": 3.0 },
+      { "candidato": "Branco/nulo", "partido": null, "percentual": 4.6 },
+      { "candidato": "Não sei", "partido": null, "percentual": 2.5 }
+    ]}
+  ],
+  "segundoTurno": [
+    { "cenario": "Lula x Flávio Bolsonaro", "a": 49.2, "b": 42.9, "brancoNuloNaoSei": 7.9 },
+    { "cenario": "Lula x Ronaldo Caiado", "a": 48.2, "b": 38.9, "brancoNuloNaoSei": 12.9 },
+    { "cenario": "Lula x Romeu Zema", "a": 48.6, "b": 39.6, "brancoNuloNaoSei": 11.8 },
+    { "cenario": "Lula x Renan Santos", "a": 47.6, "b": 30.2, "brancoNuloNaoSei": 22.2 },
+    { "cenario": "Lula x Michelle Bolsonaro", "a": 48.8, "b": 42.5, "brancoNuloNaoSei": 8.8 },
+    { "cenario": "Lula x Jair Bolsonaro", "a": 49.2, "b": 43.9, "brancoNuloNaoSei": 6.9 },
+    { "cenario": "Geraldo Alckmin x Flávio Bolsonaro", "a": 45.8, "b": 42.7, "brancoNuloNaoSei": 11.5 },
+    { "cenario": "Fernando Haddad x Flávio Bolsonaro", "a": 44.3, "b": 43.7, "brancoNuloNaoSei": 12.0 }
+  ],
+  "rejeicao": [
+    { "candidato": "Flávio Bolsonaro", "partido": "PL", "percentual": 52.9 },
+    { "candidato": "Luiz Inácio Lula da Silva", "partido": "PT", "percentual": 49.4 },
+    { "candidato": "Jair Bolsonaro", "partido": "PL", "percentual": 42.6 },
+    { "candidato": "Michelle Bolsonaro", "partido": "PL", "percentual": 39.2 },
+    { "candidato": "Renan Santos", "partido": "Missão", "percentual": 38.0 },
+    { "candidato": "Romeu Zema", "partido": "Novo", "percentual": 37.7 },
+    { "candidato": "Ronaldo Caiado", "partido": "PSD", "percentual": 33.3 },
+    { "candidato": "Fernando Haddad", "partido": "PT", "percentual": 32.6 },
+    { "candidato": "Nenhum destes", "partido": null, "percentual": 0.2 }
+  ],
+  "avaliacaoGovernoFederal": { "otimoBom": 37.9, "regular": 12.7, "ruimPessimo": 49.3 },
+  "aprovacaoDesempenhoPresidente": { "aprova": 47.6, "desaprova": 51.2, "naoSabe": 1.2 },
+  "_verificacao": {
+    "somaDosBlocos": "13 blocos fecham em 100 ±0,1",
+    "margemTeoricaParaN5021": "±1,38 pp a 95% — declarado ±1 pp, conferir ficha técnica do PDF",
+    "pesqEle": "console web devolveu Acesso Rejeitado; registro não conferido na fonte primária",
+    "coletadoEm": "2026-08-23",
+    "coletadoPor": "extração manual via GPT com busca, sobre o relatório íntegro da AtlasIntel"
+  }
+}
