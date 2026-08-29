@@ -20,6 +20,11 @@ import { invalidateApiCandidateCaches } from '../utils/invalidateApiCache'
 import { logger } from '../utils/logger'
 import { revalidateCandidatePages } from '../utils/revalidateWeb'
 import {
+  browserPortEnabled,
+  createBrowserDivulgaCandHttpPort,
+  type DisposableDivulgaCandHttpPort,
+} from './tse/divulgaCandBrowserPort'
+import {
   configuredElectionId,
   createDivulgaCandClient,
   DivulgaCandError,
@@ -465,17 +470,30 @@ export async function syncDivulgaCand(
   options: Omit<RunDivulgaCandSyncOptions, 'prisma'> = {},
 ): Promise<CompletedSyncRun> {
   const prisma = createScraperPrismaClient()
+  // Só na máquina de desenvolvimento, onde o TSE barra cliente automatizado.
+  // Em CI `browserPortEnabled()` é falso e o cliente cai no `fetch` puro.
+  const browserPort: DisposableDivulgaCandHttpPort | null =
+    !options.client && browserPortEnabled()
+      ? await createBrowserDivulgaCandHttpPort()
+      : null
   try {
     logger.info('[divulgacand] Iniciando anexação por candidatura', {
       year: options.year ?? 2026,
       electionId: options.electionId ?? configuredElectionId(),
       positions: options.positions,
       urls: options.urls?.length ?? 0,
+      transport: browserPort ? 'browser' : 'fetch',
     })
-    const result = await runDivulgaCandSync({ prisma, ...options })
+    const result = await runDivulgaCandSync({
+      prisma,
+      ...options,
+      client: options.client ??
+        (browserPort ? createDivulgaCandClient({ http: browserPort }) : undefined),
+    })
     logger.info('[divulgacand] Concluído', result)
     return result
   } finally {
+    await browserPort?.dispose()
     await prisma.$disconnect()
   }
 }

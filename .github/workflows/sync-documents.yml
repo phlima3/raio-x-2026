@@ -2,7 +2,9 @@ name: Sync TSE Official Documents
 
 on:
   schedule:
-    - cron: '0 8 * * *'
+    # Programa de governo é protocolado no registro e não muda depois; diário
+    # só reconfirmava PDF idêntico, que o dedupe por SHA-256 já descartava.
+    - cron: '0 8 * * 1'
   workflow_dispatch:
     inputs:
       dry_run:

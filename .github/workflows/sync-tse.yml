@@ -4,7 +4,11 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: '15 */2 * * *'
+    # Encerrado o prazo de registro (15/08), a lista de candidaturas está
+    # praticamente fechada: o que ainda muda é julgamento de registro, que se
+    # move em semanas. De 2 em 2 horas eram 12 downloads/dia do snapshot
+    # inteiro (20.436 candidaturas, 29 CSVs) para reler o mesmo dado.
+    - cron: '15 6 * * *'
   workflow_dispatch:
     inputs:
       dry_run:
