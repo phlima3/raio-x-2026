@@ -78,6 +78,30 @@ export function flattenProgramProposals(
  * já revisado nunca é sobrescrito: uma reextração pula a linha em vez de apagar
  * o trabalho de quem revisou.
  */
+/**
+ * A que endereço a proposta manda o leitor.
+ *
+ * Citar o PDF faz o clique virar um arquivo na pasta de downloads, e não uma
+ * fonte que a pessoa consiga ler e conferir. O sync do DivulgaCandContas
+ * guarda a página pública da candidatura em `metadata.candidatePage`: havendo
+ * página, é ela que se cita. O caminho do catálogo não tem equivalente — ali o
+ * recurso é o pacote inteiro — e nesse caso resta o `sourceUrl`.
+ */
+export function programCitationUrl(document: {
+  sourceUrl: string | null
+  metadata?: unknown
+}): string | null {
+  const metadata =
+    typeof document.metadata === 'object' &&
+    document.metadata !== null &&
+    !Array.isArray(document.metadata)
+      ? (document.metadata as Record<string, unknown>)
+      : null
+  const page = metadata?.candidatePage
+  if (typeof page === 'string' && /^https?:\/\//i.test(page)) return page
+  return document.sourceUrl
+}
+
 export async function runProgramProposalExtraction(
   options: RunProgramProposalExtractionOptions,
 ): Promise<CompletedSyncRun> {
@@ -105,6 +129,7 @@ export async function runProgramProposalExtraction(
           id: true,
           text: true,
           sourceUrl: true,
+          metadata: true,
           candidateId: true,
           candidate: { select: { name: true, slug: true } },
         },
@@ -173,7 +198,7 @@ export async function runProgramProposalExtraction(
             status: ProposalStatus.DRAFT,
             isPublished: false,
             origin: ProposalOrigin.AI_EXTRACTION,
-            url: document.sourceUrl,
+            url: programCitationUrl(document),
             sourceDocumentId: document.id,
             candidateId: document.candidateId,
           }

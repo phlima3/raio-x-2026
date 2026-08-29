@@ -17,6 +17,7 @@ import {
   type TseCkanClient,
 } from './tse/ckanClient'
 import { isPublishableStatus, resolveTseCandidateJudgments } from './tse/candidacyStatus'
+import { nullableName } from './tse/candidateCsv'
 import { parseTseTabularArchives } from './tse/tabularArchive'
 
 const SUPPLEMENTAL_KINDS = new Set<TseResourceKind>([
@@ -279,7 +280,11 @@ async function materializeResource(
     >()
     for (const row of rows) {
       const position = positionFromTse(row.DS_CARGO)
-      const coalitionName = row.NM_COLIGACAO
+      // `NM_COLIGACAO` é coluna de nome: quem concorre por partido isolado vem
+      // como "#NULO", que guardado literalmente vira "Coligação #NULO" na ficha.
+      // O marcador sem `#` final não é nulificado pelo leitor tabular, porque
+      // em `DS_SITUACAO_CANDIDATURA` ele significa "sem julgamento".
+      const coalitionName = nullableName(row.NM_COLIGACAO ?? null)
       if (!position || !coalitionName || !row.SG_UF || !row.SG_PARTIDO) continue
       const coalition = {
         electionYear: electionYear(row) ?? year,

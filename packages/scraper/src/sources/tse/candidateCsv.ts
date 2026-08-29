@@ -68,7 +68,7 @@ const NULL_MARKERS = new Set([
  */
 const NAME_NULL_MARKERS = new Set(['#NULO', '#NULO#', '#NE', '#NE#'])
 
-function nullableName(value: string | null): string | null {
+export function nullableName(value: string | null): string | null {
   if (value == null) return null
   return NAME_NULL_MARKERS.has(value.toUpperCase()) ? null : value
 }
