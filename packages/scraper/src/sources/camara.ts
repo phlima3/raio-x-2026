@@ -354,10 +354,13 @@ export async function getVotacoesByDeputado(
 
   for (const session of sessions) {
     try {
+      // Sem `itens`: a API responde 400 nesse recurso quando a votação não tem
+      // voto nominal (as simbólicas), e um 400 derrubava a sincronização
+      // inteira. Sem o parâmetro devolve 200 com lista vazia, e a paginação
+      // por `links.next` continua funcionando quando há votos.
       const votos = await collectCamaraPages<CamaraVotoDeputado>(
         client,
         `/votacoes/${session.id}/votos`,
-        { itens: 100 },
       )
       const voto = votos.find((candidateVote) => candidateVote.deputado_?.id === id)
       if (voto) {
@@ -402,10 +405,10 @@ async function getVotacoesByDeputados(
 
   for (const session of sessions) {
     try {
+      // Ver a nota acima: `itens` faz a API responder 400 em votação simbólica.
       const votes = await collectCamaraPages<CamaraVotoDeputado>(
         client,
         `/votacoes/${session.id}/votos`,
-        { itens: 100 },
       )
       for (const vote of votes) {
         const deputyId = vote.deputado_?.id

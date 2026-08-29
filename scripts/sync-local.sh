@@ -67,22 +67,46 @@ export TSE_BROWSER_TRANSPORT=1
 # O banco da Veloz só é alcançável por túnel: o host publicado
 # (shared-br-se1-a-rw.veloz-db) resolve dentro do cluster, não aqui. O .env
 # aponta para 127.0.0.1:15432, que é onde este túnel escuta.
-TUNEL_PID=""
-if ! (echo > /dev/tcp/127.0.0.1/15432) 2>/dev/null; then
-  echo "abrindo túnel para o Postgres da Veloz…"
-  veloz db tunnel raiox-postgres --project prj_rZISk51AmKMn --port 15432 >/dev/null 2>&1 &
-  TUNEL_PID=$!
-  for _ in $(seq 1 15); do
-    (echo > /dev/tcp/127.0.0.1/15432) 2>/dev/null && break
-    sleep 2
-  done
-  if ! (echo > /dev/tcp/127.0.0.1/15432) 2>/dev/null; then
-    echo "ERRO: o túnel não subiu em 30s. Sem ele nada alcança o banco." >&2
-    exit 1
-  fi
+# O projeto vive na organização "Pedro Lima" da Veloz, e o CLI não aceita
+# organização por comando — só o padrão global. Sem trocar, o túnel responde
+# FORBIDDEN ("este recurso pertence a outra organização"). Trocamos aqui e
+# devolvemos no fim, para não deixar a conta do usuário mexida.
+ORG_ALVO="org_I2dOgb1ZdXbH"
+ORG_ANTERIOR="$(veloz orgs list --format json 2>/dev/null   | python3 -c "import json,sys; print(next((o['id'] for o in json.load(sys.stdin)['items'] if o.get('isActive')), ''))" 2>/dev/null || true)"
+if [ -n "$ORG_ANTERIOR" ] && [ "$ORG_ANTERIOR" != "$ORG_ALVO" ]; then
+  echo "trocando o workspace da Veloz para Pedro Lima (volta para o anterior no fim)…"
+  veloz orgs use "$ORG_ALVO" >/dev/null 2>&1 || true
 fi
-# Fecha o túnel ao sair, inclusive se o script for interrompido.
-trap '[ -n "$TUNEL_PID" ] && kill "$TUNEL_PID" 2>/dev/null' EXIT
+
+# Túnel novo a cada execução, e este script é o dono dele.
+#
+# Checar só se a porta está aberta não basta: um túnel morto continua com a
+# porta em escuta e o Postgres responde P1017 ("server has closed the
+# connection"), derrubando todos os passos. Em 2026-08-29 oito processos de
+# túnel se acumularam assim, um por execução, todos zumbis.
+echo "derrubando túneis antigos…"
+powershell -NoProfile -Command "Get-CimInstance Win32_Process | Where-Object { \$_.CommandLine -match 'db tunnel' } | ForEach-Object { Stop-Process -Id \$_.ProcessId -Force -ErrorAction SilentlyContinue }" >/dev/null 2>&1 || true
+sleep 2
+
+echo "abrindo túnel para o Postgres da Veloz…"
+veloz db tunnel raiox-postgres --project prj_rZISk51AmKMn --port 15432 >/dev/null 2>&1 &
+TUNEL_PID=$!
+for _ in $(seq 1 15); do
+  (echo > /dev/tcp/127.0.0.1/15432) 2>/dev/null && break
+  sleep 2
+done
+if ! (echo > /dev/tcp/127.0.0.1/15432) 2>/dev/null; then
+  echo "ERRO: o túnel não subiu em 30s. Sem ele nada alcança o banco." >&2
+  exit 1
+fi
+
+limpar() {
+  [ -n "${TUNEL_PID:-}" ] && kill "$TUNEL_PID" 2>/dev/null
+  if [ -n "${ORG_ANTERIOR:-}" ] && [ "$ORG_ANTERIOR" != "$ORG_ALVO" ]; then
+    veloz orgs use "$ORG_ANTERIOR" >/dev/null 2>&1 || true
+  fi
+}
+trap limpar EXIT
 
 FALHAS=()
 
