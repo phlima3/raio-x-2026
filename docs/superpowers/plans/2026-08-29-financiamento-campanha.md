@@ -398,7 +398,7 @@ export function parseDivulgaCandAccounts(raw: unknown): DivulgaCandAccounts | nu
 - [ ] **Step 4: Rodar e confirmar que passa**
 
 Run: `npx vitest run packages/scraper/test/tse-divulgacand-accounts.test.ts`
-Expected: PASS, 9 testes.
+Expected: PASS, 10 testes (3 de `parseBrazilianDate`, 7 de `parseDivulgaCandAccounts`).
 
 - [ ] **Step 5: Commit**
 
