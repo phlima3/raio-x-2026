@@ -367,6 +367,14 @@ export async function runDivulgaCandSync(
                   sourceUrl: file.url,
                   syncRunId: runId,
                   candidateId: candidate.id,
+                  metadata: {
+                    datasetKind: DIVULGACAND_DATASET_KIND,
+                    electionId: target.electionId,
+                    filename: file.name,
+                    fileId: file.id,
+                    fileTypeLabel: file.typeLabel,
+                    candidatePage: detail.publicUrl,
+                  } satisfies Prisma.InputJsonObject,
                 },
               })
             }
