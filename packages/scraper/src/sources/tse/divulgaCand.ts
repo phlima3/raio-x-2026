@@ -1,3 +1,8 @@
+import {
+  parseDivulgaCandAccounts,
+  type DivulgaCandAccounts,
+} from './divulgaCandAccounts'
+
 /**
  * Cliente do DivulgaCandContas — a consulta pública de candidaturas do TSE.
  *
@@ -73,6 +78,10 @@ export interface DivulgaCandHttpPort {
 export interface DivulgaCandClient {
   fetchCandidate(target: DivulgaCandTarget): Promise<DivulgaCandCandidate>
   downloadFile(file: DivulgaCandFile): Promise<Buffer>
+  fetchAccounts(
+    target: DivulgaCandTarget,
+    ballotNumber: number,
+  ): Promise<DivulgaCandAccounts | null>
 }
 
 export interface CreateDivulgaCandClientOptions {
@@ -215,6 +224,27 @@ export function divulgaCandPublicUrl(
  */
 export function divulgaCandFileUrl(fileId: string, baseUrl = DIVULGACAND_BASE_URL): string {
   return `${trimBaseUrl(baseUrl)}/divulga/rest/arquivo/doc/${encodeURIComponent(fileId)}`
+}
+
+/**
+ * Endereço da prestação de contas. Os sete segmentos foram confirmados contra a
+ * própria página em 2026-08-29, comparando duas candidaturas: o quarto é o
+ * **turno** — o turno 2 devolve uma casca vazia enquanto não houver segundo
+ * turno — e não o `tpPrestador`, que vem "CA" no corpo.
+ *
+ * Na eleição majoritária o número do candidato é o do partido, e é por isso que
+ * o mesmo valor serve aos dois segmentos. Estender para deputado exige guardar
+ * o número do partido à parte.
+ */
+export function divulgaCandAccountsUrl(
+  target: DivulgaCandTarget,
+  ballotNumber: number,
+  round = 1,
+  baseUrl = DIVULGACAND_BASE_URL,
+): string {
+  return `${trimBaseUrl(baseUrl)}/divulga/rest/v1/prestador/consulta` +
+    `/${target.electionId}/${target.year}/${target.electoralUnit}/${round}` +
+    `/${ballotNumber}/${ballotNumber}/${target.candidateId}`
 }
 
 /**
@@ -439,6 +469,12 @@ export function createDivulgaCandClient(
     },
     async downloadFile(file) {
       return http.getBytes(file.url)
+    },
+    async fetchAccounts(target, ballotNumber) {
+      const payload = await http.getJson<unknown>(
+        divulgaCandAccountsUrl(target, ballotNumber, 1, baseUrl),
+      )
+      return parseDivulgaCandAccounts(payload)
     },
   }
 }

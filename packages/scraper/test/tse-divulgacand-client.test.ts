@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import {
   createDivulgaCandClient,
+  divulgaCandAccountsUrl,
   divulgaCandApiUrl,
   divulgaCandFileUrl,
   DivulgaCandError,
@@ -281,5 +282,58 @@ describe('DivulgaCand client', () => {
       'https://mirror.local/divulga/rest/v1/candidatura/buscar/2026/BR/20322002026/candidato/280002540694',
     )
     expect(detail.files[0].url).toBe('https://mirror.local/divulga/rest/arquivo/doc/7')
+  })
+})
+
+describe('divulgaCandAccountsUrl', () => {
+  const target = parseDivulgaCandUrl(CANDIDATE_URL)
+
+  it('builds the address the SPA actually calls', () => {
+    // Confirmado em 2026-08-29 observando a própria página: o quarto segmento
+    // é o turno, e não o `tpPrestador` — que vem "CA" no corpo.
+    expect(divulgaCandAccountsUrl(target, 14)).toBe(
+      'https://divulgacandcontas.tse.jus.br/divulga/rest/v1/prestador/consulta' +
+        '/20322002026/2026/BR/1/14/14/280002540694',
+    )
+  })
+
+  it('takes the round as a parameter, for when the second one exists', () => {
+    expect(divulgaCandAccountsUrl(target, 14, 2)).toContain('/BR/2/14/14/')
+  })
+})
+
+describe('DivulgaCand client accounts', () => {
+  const target = parseDivulgaCandUrl(CANDIDATE_URL)
+
+  it('parses the accounts of one candidacy', async () => {
+    const http: DivulgaCandHttpPort = {
+      getJson: vi.fn().mockResolvedValue({
+        dadosConsolidados: {
+          totalRecebido: 202062,
+          graphVrReceitaFinFefc: 50000,
+          totalProprios: 150000,
+          totalReceitaPF: 2062,
+        },
+        despesas: { valorLimiteDeGastos: 88944030.8, totalDespesasPagas: 0 },
+        rankingDoadores: [],
+        rankingFornecedores: [],
+      }),
+      getBytes: vi.fn(),
+    }
+
+    const accounts = await createDivulgaCandClient({ http }).fetchAccounts(target, 70)
+
+    expect(http.getJson).toHaveBeenCalledWith(divulgaCandAccountsUrl(target, 70))
+    expect(accounts?.fefcReceived).toBe(50000)
+    expect(accounts?.totalReceived).toBe(202062)
+  })
+
+  it('returns null for a candidacy with no accounts, like a running mate', async () => {
+    const http: DivulgaCandHttpPort = {
+      getJson: vi.fn().mockResolvedValue({ dadosConsolidados: { totalRecebido: null } }),
+      getBytes: vi.fn(),
+    }
+
+    expect(await createDivulgaCandClient({ http }).fetchAccounts(target, 14)).toBeNull()
   })
 })
