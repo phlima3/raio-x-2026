@@ -54,7 +54,7 @@ export interface RunDivulgaCandSyncOptions {
   extractText?: PdfTextExtractor
 }
 
-interface CandidateRow {
+export interface CandidateRow {
   id: string
   tseId: string | null
   name: string
@@ -62,6 +62,7 @@ interface CandidateRow {
   party: string
   state: string
   position: Position
+  ballotNumber: number | null
   siteUrl: string | null
   electionYear: number
 }
@@ -123,7 +124,7 @@ export function divulgaCandLinkPayload(
   }
 }
 
-async function resolveTargets(
+export async function resolveTargets(
   options: RunDivulgaCandSyncOptions,
   year: number,
   electionId: string,
@@ -136,6 +137,7 @@ async function resolveTargets(
     party: true,
     state: true,
     position: true,
+    ballotNumber: true,
     siteUrl: true,
     electionYear: true,
   } as const

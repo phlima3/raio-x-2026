@@ -63,3 +63,8 @@ jobs:
           api-key: ${{ secrets.VELOZ_API_KEY }}
       - name: Sync complementary official datasets
         run: pnpm --filter @raiox/scraper run sync:tse:supplemental ${{ inputs.dry_run && '-- --dry-run' || '' }}
+      # Prestação de contas da chapa presidencial. Muda ao longo da campanha,
+      # diferente do documento de registro, por isso acompanha o sync diário.
+      - name: Sync campaign financing
+        if: ${{ !cancelled() }}
+        run: pnpm --filter @raiox/scraper run sync:financiamento ${{ inputs.dry_run && '-- --dry-run' || '' }}
