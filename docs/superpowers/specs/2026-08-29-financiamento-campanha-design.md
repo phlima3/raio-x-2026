@@ -1,7 +1,7 @@
 # Financiamento de campanha na ficha do candidato
 
 Data: 2026-08-29
-Estado: proposta, aguardando revisão
+Estado: aprovada em 2026-08-29
 
 ## O problema
 
