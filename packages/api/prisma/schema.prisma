@@ -494,6 +494,25 @@ model CampaignFinancing {
   sourceUrl     String? // URL no TSE
   donors        Json? // Top doadores resumidos
 
+  // Composição da receita. Todas nulas: quem não recebeu fundão e quem não foi
+  // consultado não podem ficar iguais no banco.
+  fefcReceived         Decimal? @db.Decimal(18, 2)
+  partyFundReceived    Decimal? @db.Decimal(18, 2)
+  crowdfundingReceived Decimal? @db.Decimal(18, 2)
+  individualsReceived  Decimal? @db.Decimal(18, 2)
+  companiesReceived    Decimal? @db.Decimal(18, 2)
+  ownResourcesReceived Decimal? @db.Decimal(18, 2)
+  // `totalReceived` menos as seis acima: o TSE expõe onze categorias e só seis
+  // têm nome na tela. Sem isto a proporção exibida não fecharia.
+  otherReceived        Decimal? @db.Decimal(18, 2)
+
+  spendingLimit   Decimal? @db.Decimal(18, 2)
+  totalContracted Decimal? @db.Decimal(18, 2)
+
+  accountsUpdatedAt     DateTime?
+  deliveryControlNumber String?
+  suppliers             Json?
+
   candidateId String
   candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
 
