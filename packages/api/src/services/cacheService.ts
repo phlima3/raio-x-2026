@@ -47,6 +47,32 @@ export const TTL = {
  * Wraps an async function with Redis caching.
  * Falls back to calling fn() directly if Redis is unavailable.
  */
+/**
+ * Espera o Redis ficar pronto antes de mandar comando.
+ *
+ * O cliente usa `lazyConnect` com `enableOfflineQueue: false`, então comando
+ * emitido antes da conexão estabelecer é rejeitado na hora — não enfileirado.
+ * A invalidação do startup caía exatamente nisso e o `.catch` a engolia: em
+ * 2026-08-29 a API serviu por uma hora um `CampaignFinancing` sem as colunas
+ * novas, cacheado antes do deploy, porque a limpeza nunca chegou a rodar.
+ */
+export async function ensureRedisReady(timeoutMs = 5_000): Promise<void> {
+  const client = getRedis()
+  // Ler por função: `client.status` muda depois do `connect()`, e comparar a
+  // propriedade direto faz o TypeScript estreitar o tipo e descartar 'ready'.
+  const pronto = () => client.status === 'ready'
+  if (pronto()) return
+  if (client.status === 'wait' || client.status === 'end') {
+    await client.connect().catch(() => undefined)
+  }
+  if (pronto()) return
+  await new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Redis não ficou pronto a tempo')), timeoutMs)
+    client.once('ready', () => { clearTimeout(timer); resolve() })
+    client.once('error', (error) => { clearTimeout(timer); reject(error) })
+  })
+}
+
 export async function withCache<T>(
   key: string,
   ttlSeconds: number,

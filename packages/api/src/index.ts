@@ -3,7 +3,7 @@ import 'dotenv/config'
 import { Prisma } from '@prisma/client'
 
 import { createApp } from './app'
-import { invalidate } from './services/cacheService'
+import { ensureRedisReady, invalidate } from './services/cacheService'
 
 const PORT = process.env.PORT ?? process.env.API_PORT ?? 3001
 const app = createApp()
@@ -23,11 +23,22 @@ app.listen(PORT, () => {
   } catch {
     console.info('[api] não foi possível inspecionar o modelo Prisma')
   }
-  Promise.all([
-    invalidate('candidates:*'),
-    invalidate('proposals:*'),
-    invalidate('comparison:*'),
-  ]).catch(() => {})
+  // Falha aqui não pode ser silenciosa: cache velho depois de um deploy faz a
+  // API servir a forma antiga dos dados, que é indistinguível de dado ausente
+  // para quem lê a página.
+  void (async () => {
+    try {
+      await ensureRedisReady()
+      await Promise.all([
+        invalidate('candidates:*'),
+        invalidate('proposals:*'),
+        invalidate('comparison:*'),
+      ])
+      console.info('[api] cache invalidado no startup')
+    } catch (error) {
+      console.warn('[api] falha ao invalidar o cache no startup:', error)
+    }
+  })()
 })
 
 export default app
