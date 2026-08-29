@@ -1,5 +1,11 @@
 import { createHash } from 'node:crypto'
 
+import {
+  createTseBrowserTransport,
+  TseBrowserError,
+  tseBrowserEnabled,
+} from './browserTransport'
+
 export enum TseResourceKind {
   CANDIDATES = 'CANDIDATES',
   CANDIDATE_COMPLEMENT = 'CANDIDATE_COMPLEMENT',
@@ -150,13 +156,41 @@ export function createFetchTseHttpPort(timeoutMs = 30_000): TseHttpPort {
   }
 }
 
+/**
+ * Traduz o erro neutro do transporte pelo browser no erro que o resto do
+ * cliente já sabe tratar, para quem chama não precisar saber por qual caminho
+ * o dado veio.
+ */
+export function createBrowserTseHttpPort(): TseHttpPort {
+  const transport = createTseBrowserTransport()
+  async function mapped<T>(url: string, run: () => Promise<T>): Promise<T> {
+    try {
+      return await run()
+    } catch (error) {
+      if (error instanceof TseBrowserError) {
+        throw new TseCkanError('HTTP_ERROR', `TSE respondeu para ${url}: ${error.message}`)
+      }
+      throw error
+    }
+  }
+  return {
+    getJson: (url) => mapped(url, () => transport.getJson(url)),
+    getBytes: (url) => mapped(url, () => transport.getBytes(url)),
+  }
+}
+
+/** Browser só quando pedido; em CI o caminho segue sendo o `fetch` puro. */
+export function createDefaultTseHttpPort(): TseHttpPort {
+  return tseBrowserEnabled() ? createBrowserTseHttpPort() : createFetchTseHttpPort()
+}
+
 export function createTseCkanClient(
   options: CreateTseCkanClientOptions = {},
 ): TseCkanClient {
   const baseUrl = catalogBaseUrl(
     options.baseUrl ?? process.env.TSE_API_URL ?? 'https://dadosabertos.tse.jus.br',
   )
-  const http = options.http ?? createFetchTseHttpPort()
+  const http = options.http ?? createDefaultTseHttpPort()
 
   return {
     async discover(year) {

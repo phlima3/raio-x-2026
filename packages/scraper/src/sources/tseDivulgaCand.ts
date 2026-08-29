@@ -19,8 +19,8 @@ import {
 import { invalidateApiCandidateCaches } from '../utils/invalidateApiCache'
 import { logger } from '../utils/logger'
 import { revalidateCandidatePages } from '../utils/revalidateWeb'
+import { tseBrowserEnabled } from './tse/browserTransport'
 import {
-  browserPortEnabled,
   createBrowserDivulgaCandHttpPort,
   type DisposableDivulgaCandHttpPort,
 } from './tse/divulgaCandBrowserPort'
@@ -473,9 +473,7 @@ export async function syncDivulgaCand(
   // Só na máquina de desenvolvimento, onde o TSE barra cliente automatizado.
   // Em CI `browserPortEnabled()` é falso e o cliente cai no `fetch` puro.
   const browserPort: DisposableDivulgaCandHttpPort | null =
-    !options.client && browserPortEnabled()
-      ? await createBrowserDivulgaCandHttpPort()
-      : null
+    !options.client && tseBrowserEnabled() ? createBrowserDivulgaCandHttpPort() : null
   try {
     logger.info('[divulgacand] Iniciando anexação por candidatura', {
       year: options.year ?? 2026,
