@@ -52,6 +52,25 @@ const CURY = {
   rankingFornecedores: [],
 }
 
+// Fixture sintético: as seis categorias nomeadas NÃO fecham o total. Sobram
+// as cinco que o TSE expõe e o modelo não nomeia (comercialização, rendimento
+// de aplicação, bens móveis, doação de outro candidato, internet). Sem este
+// fixture, um `otherReceived` fixo em zero passaria despercebido.
+const WITH_OTHER = {
+  dadosConsolidados: {
+    totalRecebido: 1000,
+    graphVrReceitaFinFefc: 400,
+    graphVrReceitaFinFundo: 0,
+    totalDoacaoFcc: 0,
+    totalReceitaPF: 100,
+    totalReceitaPJ: 0,
+    totalProprios: 0,
+  },
+  despesas: { valorLimiteDeGastos: 0, totalDespesasContratadas: 0, totalDespesasPagas: 0 },
+  rankingDoadores: [],
+  rankingFornecedores: [],
+}
+
 describe('parseBrazilianDate', () => {
   it('reads dd/MM/yyyy, which is what the TSE sends', () => {
     expect(parseBrazilianDate('28/08/2026')?.toISOString()).toBe('2026-08-28T00:00:00.000Z')
@@ -96,6 +115,13 @@ describe('parseDivulgaCandAccounts', () => {
         a.individualsReceived! + a.companiesReceived! + a.ownResourcesReceived!
       expect(named + a.otherReceived!).toBeCloseTo(a.totalReceived!, 2)
     }
+  })
+
+  it('computes otherReceived as the actual remainder, not a fixed zero', () => {
+    // RENAN e CURY têm as seis categorias nomeadas somando o total, então
+    // `otherReceived` é 0 nos dois — não distingue a fórmula certa de um stub.
+    // Este fixture tem sobra real: 1000 - 400 - 100 = 500.
+    expect(parseDivulgaCandAccounts(WITH_OTHER)!.otherReceived).toBe(500)
   })
 
   it('reports the fundão, which is what separates one campaign from another', () => {
