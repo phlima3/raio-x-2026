@@ -1,14 +1,11 @@
 name: Sync TSE Official Data
 
 on:
-  push:
-    branches: [main]
-  schedule:
-    # Encerrado o prazo de registro (15/08), a lista de candidaturas está
-    # praticamente fechada: o que ainda muda é julgamento de registro, que se
-    # move em semanas. De 2 em 2 horas eram 12 downloads/dia do snapshot
-    # inteiro (20.436 candidaturas, 29 CSVs) para reler o mesmo dado.
-    - cron: '15 6 * * *'
+  # Agendamento desligado em 2026-08-29: a execução passou a ser local, pela
+  # automation do Orca, com o transporte de browser (TSE_BROWSER_TRANSPORT=1).
+  # `workflow_dispatch` fica de propósito — é o caminho de volta se o billing
+  # do GitHub voltar; basta reintroduzir o bloco `schedule` que está no
+  # histórico deste arquivo.
   workflow_dispatch:
     inputs:
       dry_run:

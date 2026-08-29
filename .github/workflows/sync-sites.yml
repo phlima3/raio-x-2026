@@ -1,8 +1,11 @@
 name: Enrich Candidate Sites
 
 on:
-  schedule:
-    - cron: '0 4 * * 1'
+  # Agendamento desligado em 2026-08-29: a execução passou a ser local, pela
+  # automation do Orca, com o transporte de browser (TSE_BROWSER_TRANSPORT=1).
+  # `workflow_dispatch` fica de propósito — é o caminho de volta se o billing
+  # do GitHub voltar; basta reintroduzir o bloco `schedule` que está no
+  # histórico deste arquivo.
   workflow_dispatch:
 
 permissions:
