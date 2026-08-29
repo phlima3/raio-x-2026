@@ -6,7 +6,8 @@ import type {
   AssetDeclaration,
   CampaignFinancing,
 } from '@/lib/types'
-import { financingComposition } from '@/lib/financing'
+import { financingComposition, filterValidParties } from '@/lib/financing'
+import { formatAccountsDate } from '@/lib/dates'
 
 type ActiveTab = 'voting' | 'assets' | 'financing'
 
@@ -72,6 +73,8 @@ export function TransparencyPanel({ candidateSlug, initialData }: TransparencyPa
     { key: 'assets', label: 'Patrimônio' },
     { key: 'financing', label: 'Financiamento' },
   ]
+
+  const compositionSlices = data?.financing ? financingComposition(data.financing) : []
 
   return (
     <div>
@@ -294,21 +297,23 @@ export function TransparencyPanel({ candidateSlug, initialData }: TransparencyPa
                       )}
                   </div>
 
-                  <div className="col-span-full p-6 md:p-8 border-t border-ink/20">
-                    <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-muted mb-4">
-                      De onde veio
-                    </p>
-                    <ul className="space-y-2">
-                      {financingComposition(data.financing).map((slice) => (
-                        <li key={slice.label} className="flex items-baseline justify-between gap-4">
-                          <span className="text-sm">{slice.label}</span>
-                          <span className="font-mono text-xs tabular-nums text-ink-muted">
-                            {fmtBRL(slice.value)} · {slice.share.toFixed(1)}%
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  {compositionSlices.length > 0 && (
+                    <div className="col-span-full p-6 md:p-8 border-t border-ink/20">
+                      <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-muted mb-4">
+                        De onde veio
+                      </p>
+                      <ul className="space-y-2">
+                        {compositionSlices.map((slice) => (
+                          <li key={slice.label} className="flex items-baseline justify-between gap-4">
+                            <span className="text-sm">{slice.label}</span>
+                            <span className="font-mono text-xs tabular-nums text-ink-muted">
+                              {fmtBRL(slice.value)} · {slice.share.toFixed(1)}%
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
                   {data.financing.spendingLimit && (
                     <div className="col-span-full p-6 md:p-8 border-t border-ink/20">
@@ -327,7 +332,7 @@ export function TransparencyPanel({ candidateSlug, initialData }: TransparencyPa
                   {data.financing.accountsUpdatedAt && (
                     <p className="col-span-full px-6 md:px-8 py-3 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-muted border-t border-ink/20">
                       Prestação atualizada em{' '}
-                      {new Date(data.financing.accountsUpdatedAt).toLocaleDateString('pt-BR')}
+                      {formatAccountsDate(data.financing.accountsUpdatedAt)}
                     </p>
                   )}
 
@@ -356,8 +361,8 @@ export function TransparencyPanel({ candidateSlug, initialData }: TransparencyPa
  * existe; pessoa física entra só com nome e valor, porque o CPF não é gravado.
  */
 function PartyList({ title, people }: { title: string; people: unknown }) {
-  if (!Array.isArray(people) || people.length === 0) return null
-  const parties = people as Array<{ name: string; amount: number; cnpj: string | null }>
+  const parties = filterValidParties(people)
+  if (parties.length === 0) return null
   return (
     <div className="col-span-full p-6 md:p-8 border-t border-ink/20">
       <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-muted mb-4">

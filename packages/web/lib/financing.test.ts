@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { financingComposition } from './financing'
+import { financingComposition, filterValidParties } from './financing'
 
 test('orders the buckets by size and skips the empty ones', () => {
   const parts = financingComposition({
@@ -85,4 +85,20 @@ test('reads the decimal strings Prisma returns without turning them into NaN', (
   })
   assert.equal(parts[0].label, 'Recursos próprios')
   assert.equal(parts[0].value, 150000)
+})
+
+test('filterValidParties discards legacy {name, value} rows and keeps the ones with a real amount', () => {
+  // `import:financiamento` (2018/2022) gravou doadores como `{ name, value }`,
+  // sem `amount`. Renderizar essa linha faria `fmtBRL` mostrar "R$ NaN".
+  const parties = filterValidParties([
+    { name: 'Legado sem amount', value: 5000 },
+    { name: 'Doador Real', amount: 1000, cnpj: '12345678000199' },
+    { name: 'Amount não numérico', amount: 'NaN' },
+  ])
+  assert.deepEqual(parties, [{ name: 'Doador Real', amount: 1000, cnpj: '12345678000199' }])
+})
+
+test('filterValidParties returns an empty list for anything that is not an array', () => {
+  assert.deepEqual(filterValidParties(null), [])
+  assert.deepEqual(filterValidParties(undefined), [])
 })

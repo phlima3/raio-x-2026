@@ -48,3 +48,25 @@ export function financingComposition(financing: FinancingComposable): FinancingS
     .filter((slice) => slice.value > 0)
     .sort((a, b) => b.value - a.value)
 }
+
+export interface PartyEntry {
+  name: string
+  amount: number
+  cnpj: string | null
+}
+
+/**
+ * `donors`/`suppliers` também podem ter sido gravados pelo importador
+ * histórico de financiamento (`import:financiamento`, cobrindo 2018/2022),
+ * cujo formato é `{ name, value }` — sem `amount`. Exibir uma linha dessas
+ * rende "R$ NaN" ao lado de um doador real; descartar em vez de mostrar.
+ */
+export function filterValidParties(people: unknown): PartyEntry[] {
+  if (!Array.isArray(people)) return []
+  return people.filter(
+    (party): party is PartyEntry =>
+      typeof party === 'object' &&
+      party !== null &&
+      Number.isFinite((party as { amount?: unknown }).amount),
+  )
+}
