@@ -62,6 +62,29 @@ if [ -z "${DATABASE_URL:-}" ]; then
   exit 1
 fi
 
+# Trava contra execução concorrente.
+#
+# As duas automations caem no mesmo domingo, com 90 minutos entre elas, e o
+# lote semanal pode passar disso. Sem trava a diária começaria por cima da
+# semanal — e como este script derruba os túneis antigos ao iniciar, mataria o
+# túnel de quem está no meio do trabalho, que morreria com P1017. Some a isso
+# um segundo Chrome aberto ao mesmo tempo, que foi o cenário do crash.
+#
+# Pular é o comportamento certo aqui, não um erro: sai com 0 para a automation
+# não reportar falha por ter respeitado a vez do outro.
+TRAVA=".sync-logs/sync.lock"
+mkdir -p .sync-logs
+if [ -f "$TRAVA" ]; then
+  DONO="$(cat "$TRAVA" 2>/dev/null)"
+  IDADE_H=$(( ( $(date +%s) - $(stat -c %Y "$TRAVA" 2>/dev/null || echo 0) ) / 3600 ))
+  if [ -n "$DONO" ] && kill -0 "$DONO" 2>/dev/null && [ "$IDADE_H" -lt 6 ]; then
+    echo "Já há um sync em andamento (PID $DONO, há ${IDADE_H}h). Saindo sem fazer nada."
+    exit 0
+  fi
+  echo "trava órfã (PID $DONO, ${IDADE_H}h); assumindo"
+fi
+echo $$ > "$TRAVA"
+
 export TSE_BROWSER_TRANSPORT=1
 
 # O banco da Veloz só é alcançável por túnel: o host publicado
@@ -101,6 +124,7 @@ if ! (echo > /dev/tcp/127.0.0.1/15432) 2>/dev/null; then
 fi
 
 limpar() {
+  rm -f "${TRAVA:-}" 2>/dev/null
   [ -n "${TUNEL_PID:-}" ] && kill "$TUNEL_PID" 2>/dev/null
   if [ -n "${ORG_ANTERIOR:-}" ] && [ "$ORG_ANTERIOR" != "$ORG_ALVO" ]; then
     veloz orgs use "$ORG_ANTERIOR" >/dev/null 2>&1 || true
