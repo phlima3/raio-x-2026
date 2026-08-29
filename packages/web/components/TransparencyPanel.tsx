@@ -6,6 +6,7 @@ import type {
   AssetDeclaration,
   CampaignFinancing,
 } from '@/lib/types'
+import { financingComposition } from '@/lib/financing'
 
 type ActiveTab = 'voting' | 'assets' | 'financing'
 
@@ -276,7 +277,60 @@ export function TransparencyPanel({ candidateSlug, initialData }: TransparencyPa
                     <p className="font-serif text-4xl md:text-5xl tabular-nums leading-none tracking-[-0.02em] text-ember">
                       {fmtBRL(data.financing.totalSpent)}
                     </p>
+                    <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-muted">
+                      Pago
+                    </p>
+                    {/* `totalContracted` (comprometido) pode superar o pago — caso do
+                        candidato que já empenhou despesa mas ainda não quitou. Omitir
+                        essa linha faria a ficha mentir por omissão. */}
+                    {data.financing.totalContracted != null &&
+                      Number(data.financing.totalContracted) > Number(data.financing.totalSpent) && (
+                        <p className="mt-4 font-mono text-xs tabular-nums text-ink-muted">
+                          <span className="uppercase tracking-[0.22em] text-[10px]">
+                            Contratado
+                          </span>{' '}
+                          {fmtBRL(data.financing.totalContracted)}
+                        </p>
+                      )}
                   </div>
+
+                  <div className="col-span-full p-6 md:p-8 border-t border-ink/20">
+                    <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-muted mb-4">
+                      De onde veio
+                    </p>
+                    <ul className="space-y-2">
+                      {financingComposition(data.financing).map((slice) => (
+                        <li key={slice.label} className="flex items-baseline justify-between gap-4">
+                          <span className="text-sm">{slice.label}</span>
+                          <span className="font-mono text-xs tabular-nums text-ink-muted">
+                            {fmtBRL(slice.value)} · {slice.share.toFixed(1)}%
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {data.financing.spendingLimit && (
+                    <div className="col-span-full p-6 md:p-8 border-t border-ink/20">
+                      <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-muted mb-3">
+                        Limite legal de gastos
+                      </p>
+                      <p className="font-serif text-2xl tabular-nums">
+                        {fmtBRL(data.financing.spendingLimit)}
+                      </p>
+                    </div>
+                  )}
+
+                  <PartyList title="Maiores doadores" people={data.financing.donors} />
+                  <PartyList title="Maiores fornecedores" people={data.financing.suppliers} />
+
+                  {data.financing.accountsUpdatedAt && (
+                    <p className="col-span-full px-6 md:px-8 py-3 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-muted border-t border-ink/20">
+                      Prestação atualizada em{' '}
+                      {new Date(data.financing.accountsUpdatedAt).toLocaleDateString('pt-BR')}
+                    </p>
+                  )}
+
                   {data.financing.sourceUrl && (
                     <a
                       href={data.financing.sourceUrl}
@@ -284,7 +338,7 @@ export function TransparencyPanel({ candidateSlug, initialData }: TransparencyPa
                       rel="noopener noreferrer"
                       className="focus-editorial col-span-full px-6 md:px-8 py-3 font-mono text-[10px] uppercase tracking-[0.22em] text-ember hover:underline underline-offset-4 border-t border-ink/20"
                     >
-                      Dados completos no TSE ↗
+                      Ver no TSE ↗
                     </a>
                   )}
                 </div>
@@ -293,6 +347,42 @@ export function TransparencyPanel({ candidateSlug, initialData }: TransparencyPa
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+/**
+ * Doadores e fornecedores compartilham o mesmo formato. O CNPJ aparece quando
+ * existe; pessoa física entra só com nome e valor, porque o CPF não é gravado.
+ */
+function PartyList({ title, people }: { title: string; people: unknown }) {
+  if (!Array.isArray(people) || people.length === 0) return null
+  const parties = people as Array<{ name: string; amount: number; cnpj: string | null }>
+  return (
+    <div className="col-span-full p-6 md:p-8 border-t border-ink/20">
+      <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-muted mb-4">
+        {title}
+      </p>
+      <ul className="space-y-2">
+        {parties.map((party) => (
+          <li
+            key={`${party.name}-${party.amount}`}
+            className="flex items-baseline justify-between gap-4"
+          >
+            <span className="text-sm">
+              {party.name}
+              {party.cnpj && (
+                <span className="font-mono text-[10px] text-ink-muted ml-2">
+                  CNPJ {party.cnpj}
+                </span>
+              )}
+            </span>
+            <span className="font-mono text-xs tabular-nums text-ink-muted">
+              {fmtBRL(party.amount)}
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }
