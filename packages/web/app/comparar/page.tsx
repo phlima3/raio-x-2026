@@ -8,15 +8,16 @@ import { eligibleOpponents } from '@/lib/comparisons'
 import type { CandidateSummary } from '@/lib/types'
 
 interface Props {
-  searchParams: {
+  searchParams: Promise<{
     a?: string
     b?: string
     topic?: string
     [key: string]: string | string[] | undefined
-  }
+  }>
 }
 
-export function generateMetadata({ searchParams }: Props): Metadata {
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const searchParams = await props.searchParams;
   const hasParameters = Object.keys(searchParams).length > 0
 
   return {
@@ -30,7 +31,8 @@ export function generateMetadata({ searchParams }: Props): Metadata {
   }
 }
 
-export default async function CompararPage({ searchParams }: Props) {
+export default async function CompararPage(props: Props) {
+  const searchParams = await props.searchParams;
   const { a, b, topic } = searchParams
 
   const [presidentsRes, governorsRes, senatorsRes] = await Promise.allSettled([
