@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 import {
   assertNavigationStatus,
+  comPrazo,
   TseBrowserError,
   tseBrowserEnabled,
 } from '../src/sources/tse/browserTransport'
@@ -77,5 +78,33 @@ describe('asDivulgaCandError', () => {
     // Um bug de programação não pode virar "candidatura sem registro".
     const bug = new TypeError('leitura de undefined')
     expect(asDivulgaCandError(URL_ANEXO, bug)).toBe(bug)
+  })
+})
+
+describe('comPrazo', () => {
+  it('lets a task that finishes in time through untouched', async () => {
+    await expect(comPrazo(Promise.resolve('pronto'), 1000, 'a tarefa')).resolves.toBe('pronto')
+  })
+
+  it('gives up on a task that never settles, instead of waiting forever', async () => {
+    // É o caso real: o Chrome caiu e a chamada CDP não resolveu nem rejeitou.
+    // Sem prazo, o sync ficou 55 minutos parado em 2026-08-29.
+    const nuncaResolve = new Promise<string>(() => {})
+    await expect(comPrazo(nuncaResolve, 50, 'a consulta ao TSE'))
+      .rejects.toMatchObject({ name: 'TseBrowserError' })
+  })
+
+  it('names what timed out, so o log diz onde travou', async () => {
+    await expect(comPrazo(new Promise<string>(() => {}), 50, 'a consulta a X'))
+      .rejects.toThrow(/a consulta a X passou de/)
+  })
+
+  it('does not leave a timer holding the process after the task wins', async () => {
+    // Um timer não cancelado segura o laço de eventos e o script não termina
+    // — foi o mesmo tipo de defeito que travou a espera de download.
+    const antes = process.getActiveResourcesInfo?.().filter((r) => r === 'Timeout').length ?? 0
+    await comPrazo(Promise.resolve(1), 30_000, 'tarefa rápida')
+    const depois = process.getActiveResourcesInfo?.().filter((r) => r === 'Timeout').length ?? 0
+    expect(depois).toBeLessThanOrEqual(antes)
   })
 })

@@ -71,6 +71,9 @@ function isDownloadInterruption(error: unknown): boolean {
   return message.includes('Download is starting') || message.includes('ERR_ABORTED')
 }
 
+/** Acima disto o corpo vai para o disco pelo download, não pela ponte CDP. */
+const CORPO_MAXIMO = 64 * 1024 * 1024
+
 let browser: Browser | null = null
 let context: BrowserContext | null = null
 let page: Page | null = null
@@ -93,9 +96,30 @@ async function launchChrome(): Promise<Browser> {
   }
 }
 
+/**
+ * O Chrome cai. Quando isso acontece no meio de uma chamada CDP, a promessa
+ * pendente nunca resolve nem rejeita — e o job fica pendurado calado, que é
+ * pior do que falhar. Medido em 2026-08-29: o Chrome crashou e o sync ficou
+ * 55 minutos parado, com 1,3s de CPU acumulada.
+ *
+ * Esta promessa rejeita assim que o browser desconecta, e é corrida contra
+ * toda requisição.
+ */
+let quedaDoBrowser: Promise<never> | null = null
+
 async function activePage(): Promise<Page> {
-  if (page && !page.isClosed()) return page
+  if (page && !page.isClosed() && browser?.isConnected()) return page
+  await closeTseBrowserTransport()
   browser = await launchChrome()
+  const vivo = browser
+  quedaDoBrowser = new Promise<never>((_, reject) => {
+    vivo.once('disconnected', () => {
+      reject(new TseBrowserError(null, 'o Chrome caiu no meio da consulta'))
+    })
+  })
+  // Sem isto, a rejeição acima vira unhandledRejection quando ninguém está
+  // no meio de uma requisição.
+  quedaDoBrowser.catch(() => undefined)
   context = await browser.newContext({ acceptDownloads: true, locale: 'pt-BR' })
   page = await context.newPage()
   page.on('download', (download) => {
@@ -148,15 +172,49 @@ async function readDownload(download: Download, url: string): Promise<Buffer> {
   }
 }
 
+/**
+ * Prazo sobre a etapa inteira. `page.goto` e a espera de download já têm o
+ * seu, mas `response.body()` não tem nenhum: é uma chamada CDP que, se o
+ * browser sumir, não volta nunca.
+ */
+export async function comPrazo<T>(tarefa: Promise<T>, ms: number, oQue: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const estouro = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new TseBrowserError(null, `${oQue} passou de ${Math.round(ms / 1000)}s`)),
+      ms,
+    )
+  })
+  try {
+    return await Promise.race(
+      quedaDoBrowser ? [tarefa, estouro, quedaDoBrowser] : [tarefa, estouro],
+    )
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 export function createTseBrowserTransport(timeoutMs = 180_000): TseBrowserTransport {
-  async function request(url: string): Promise<Buffer> {
-    const target = await activePage()
+  async function requisitar(url: string, target: Page): Promise<Buffer> {
     try {
       const response = await target.goto(url, { timeout: timeoutMs, waitUntil: 'commit' })
       if (!response) {
         throw new TseBrowserError(null, `Navegação sem resposta para ${url}`)
       }
       assertNavigationStatus(url, response.status())
+      // Corpo grande não pode atravessar a ponte CDP: é buffer inteiro na
+      // memória do Chrome e na do Node ao mesmo tempo. ZIP o Chrome baixa
+      // para o disco (o outro ramo); se algum dia servir um pacote como
+      // conteúdo exibível, é melhor falhar dizendo o porquê do que derrubar
+      // o browser e travar o job.
+      const tamanho = Number(response.headers()['content-length'] ?? 0)
+      if (tamanho > CORPO_MAXIMO) {
+        throw new TseBrowserError(
+          null,
+          `${url} devolveu ${Math.round(tamanho / 1024 / 1024)}MB como conteúdo exibível; ` +
+            'grande demais para a ponte com o Chrome',
+        )
+      }
       return await response.body()
     } catch (error) {
       if (error instanceof TseBrowserError) throw error
@@ -168,6 +226,21 @@ export function createTseBrowserTransport(timeoutMs = 180_000): TseBrowserTransp
         throw new TseBrowserError(null, `O Chrome abortou a navegação sem baixar ${url}`)
       }
       return readDownload(download, url)
+    }
+  }
+
+  async function request(url: string): Promise<Buffer> {
+    const target = await activePage()
+    try {
+      return await comPrazo(requisitar(url, target), timeoutMs, `a consulta a ${url}`)
+    } catch (error) {
+      // Browser caído ou prazo estourado deixam a aba inútil e a chamada CDP
+      // pendurada, o que segura o processo na saída. Derrubar aqui garante
+      // que a próxima consulta comece limpa e que o job consiga terminar.
+      if (error instanceof TseBrowserError && !browser?.isConnected()) {
+        await closeTseBrowserTransport()
+      }
+      throw error
     }
   }
 
