@@ -147,6 +147,28 @@ describe('parseDivulgaCandAccounts', () => {
     expect(individual.amount).toBe(4014.14)
   })
 
+  it('rejects a CPF padded with leading zeros to 14 digits, even though it matches the CNPJ length', () => {
+    // CNPJ real nunca começa com "000" — os 8 primeiros dígitos são o número
+    // de inscrição, e "00000000" não é emitido. Um CPF acolchoado até 14
+    // dígitos (11 dígitos + "000" à esquerda) não pode virar CNPJ publicado.
+    const padded = parseDivulgaCandAccounts({
+      ...RENAN,
+      rankingDoadores: [
+        { cpfCnpj: '00012345678901', nome: 'PESSOA FISICA ACOLCHOADA', qntd: 1, valor: 100 },
+      ],
+    })!
+    expect(padded.donors[0].cnpj).toBeNull()
+
+    // Um CNPJ de verdade continua passando.
+    const real = parseDivulgaCandAccounts({
+      ...RENAN,
+      rankingDoadores: [
+        { cpfCnpj: '12345678000190', nome: 'EMPRESA REAL LTDA', qntd: 1, valor: 100 },
+      ],
+    })!
+    expect(real.donors[0].cnpj).toBe('12345678000190')
+  })
+
   it('treats a candidacy with no accounts as absent, not as zero', () => {
     // É o caso do vice: responde 200, mas com `totalRecebido` nulo.
     expect(parseDivulgaCandAccounts({ dadosConsolidados: { totalRecebido: null } })).toBeNull()

@@ -86,8 +86,15 @@ function parseParties(value: unknown): DivulgaCandParty[] {
       amount,
       count: numberField(record, 'qntd') ?? 0,
       // 14 dígitos é CNPJ e fica; 11 é CPF e é descartado aqui, antes de
-      // qualquer gravação.
-      cnpj: document && /^\d{14}$/.test(document) ? document : null,
+      // qualquer gravação. Também descarta um CPF que o TSE tenha
+      // acolchoado com zeros à esquerda até 14 dígitos: CNPJ real nunca
+      // começa com "000" (os 8 primeiros dígitos são o número de inscrição,
+      // e "00000000" não é emitido), então "000" no início é sempre CPF
+      // disfarçado, nunca um CNPJ legítimo perdido. Perder um CNPJ
+      // improvável é preferível a publicar o documento de uma pessoa física.
+      cnpj: document && /^\d{14}$/.test(document) && !document.startsWith('000')
+        ? document
+        : null,
       crowdfunding: record?.stFinanciamentoColetivo === true,
     }]
   })
