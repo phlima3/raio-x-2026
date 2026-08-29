@@ -220,6 +220,23 @@ describe('parseDivulgaCandAccounts', () => {
     }
   })
 
+  it('puts the unnamed categories into otherReceived, by value', () => {
+    // O teste acima não basta sozinho: nos dois payloads medidos o resto é
+    // zero, e ele deriva o esperado da mesma fórmula do código — passaria
+    // com `otherReceived: 0` fixo. Este afere o número, que é o que mata o
+    // stub. Os 500 representam as cinco categorias que o TSE expõe e o
+    // modelo não nomeia (comercialização, rendimento de aplicação, bens
+    // móveis, doação de outro candidato, internet).
+    const accounts = parseDivulgaCandAccounts({
+      dadosConsolidados: {
+        totalRecebido: 1000,
+        graphVrReceitaFinFefc: 400,
+        totalReceitaPF: 100,
+      },
+    })!
+    expect(accounts.otherReceived).toBe(500)
+  })
+
   it('reports the fundão, which is what separates one campaign from another', () => {
     expect(parseDivulgaCandAccounts(CURY)!.fefcReceived).toBe(50000)
     expect(parseDivulgaCandAccounts(RENAN)!.fefcReceived).toBe(0)
@@ -398,7 +415,7 @@ export function parseDivulgaCandAccounts(raw: unknown): DivulgaCandAccounts | nu
 - [ ] **Step 4: Rodar e confirmar que passa**
 
 Run: `npx vitest run packages/scraper/test/tse-divulgacand-accounts.test.ts`
-Expected: PASS, 10 testes (3 de `parseBrazilianDate`, 7 de `parseDivulgaCandAccounts`).
+Expected: PASS, 11 testes (3 de `parseBrazilianDate`, 8 de `parseDivulgaCandAccounts`).
 
 - [ ] **Step 5: Commit**
 
