@@ -40,7 +40,7 @@ export interface DivulgaCandTarget {
 }
 
 export interface DivulgaCandFile {
-  id: string | null
+  id: string
   name: string
   typeCode: string | null
   typeLabel: string | null
@@ -203,13 +203,18 @@ export function divulgaCandPublicUrl(
     `/${target.electionId}/${target.candidateId}/${target.year}/${target.uf}`
 }
 
-export function divulgaCandFileUrl(
-  target: DivulgaCandTarget,
-  filename: string,
-  baseUrl = DIVULGACAND_BASE_URL,
-): string {
-  return `${trimBaseUrl(baseUrl)}/candidaturas/oficial/${target.year}/${target.uf}` +
-    `/${target.electoralUnit}/${target.electionId}/${target.candidateId}/${encodeURIComponent(filename)}`
+/**
+ * O anexo é servido pelo id do arquivo, e não por um caminho montado a partir
+ * da candidatura: `GET /divulga/rest/arquivo/doc/{idArquivo}` responde 200 com
+ * `Content-Type: application/pdf`.
+ *
+ * O payload traz um campo `url` em cada anexo
+ * (`candidaturas/oficial/2026/BR/BR/6257/candidatos/151/`), que é caminho
+ * interno de armazenamento: concatenado com o nome do arquivo responde 403.
+ * Não usar — nem ele, nem qualquer caminho derivado da candidatura.
+ */
+export function divulgaCandFileUrl(fileId: string, baseUrl = DIVULGACAND_BASE_URL): string {
+  return `${trimBaseUrl(baseUrl)}/divulga/rest/arquivo/doc/${encodeURIComponent(fileId)}`
 }
 
 /**
@@ -243,7 +248,34 @@ export function targetForCandidate(input: {
   }
 }
 
-function classifyFile(name: string, typeLabel: string | null): DivulgaCandFileKind {
+/** `codTipo` da proposta de governo no mapa de tipos do DivulgaCandContas. */
+const CAMPAIGN_PROGRAM_TYPE_CODE = '5'
+
+/**
+ * Rótulos lidos do mapa de tipos do próprio DivulgaCandContas. Só os
+ * confirmados entram: o anexo traz `tipo`, mas ali vem a extensão do arquivo
+ * (`"pdf"`, `"do 1.pdf"`), não a descrição do documento.
+ */
+const FILE_TYPE_LABELS: Record<string, string> = {
+  '1': 'Certidão',
+  '5': 'Proposta de Governo',
+  '13': 'Certidão criminal da Justiça Estadual de 1º grau',
+  '14': 'Certidão criminal da Justiça Estadual de 2º grau',
+}
+
+/**
+ * O `codTipo` é o que o TSE usa para montar a aba "Propostas" da página, e é o
+ * sinal confiável: o nome do arquivo é livre e vem como o candidato enviou
+ * (`"ilovepdfmerged 1compressed.pdf"`). O nome só decide quando o código é
+ * desconhecido, para um tipo novo não sumir da coleta.
+ */
+function classifyFile(
+  name: string,
+  typeCode: string | null,
+  typeLabel: string | null,
+): DivulgaCandFileKind {
+  if (typeCode === CAMPAIGN_PROGRAM_TYPE_CODE) return 'CAMPAIGN_PROGRAM'
+  if (typeCode && typeCode in FILE_TYPE_LABELS) return 'ATTACHMENT'
   const token = normalizeToken(`${name} ${typeLabel ?? ''}`)
   const isProgram = token.includes('proposta') ||
     token.includes('programa de governo') ||
@@ -285,7 +317,6 @@ function stringList(value: unknown, ...keys: string[]): string[] {
 
 function parseFiles(
   payload: Record<string, unknown>,
-  target: DivulgaCandTarget,
   baseUrl: string,
 ): DivulgaCandFile[] {
   const raw = [
@@ -296,20 +327,24 @@ function parseFiles(
     const record = asRecord(entry)
     if (!record) return []
     const name = textField(record, 'nomeArquivo', 'nome', 'arquivo')
-    if (!name) return []
-    const typeLabel = textField(record, 'descricaoTipo', 'dsTipo', 'tipo')
+    const id = textField(record, 'idArquivo', 'id')
+    // Sem id não há como baixar: o download é por `arquivo/doc/{idArquivo}`.
+    if (!name || !id) return []
+    const typeCode = textField(record, 'codTipo', 'cdTipo')
+    const typeLabel = textField(record, 'descricaoTipo', 'dsTipo') ??
+      (typeCode ? FILE_TYPE_LABELS[typeCode] ?? null : null)
     return [{
-      id: textField(record, 'idArquivo', 'id'),
+      id,
       name,
-      typeCode: textField(record, 'codTipo', 'cdTipo'),
+      typeCode,
       typeLabel,
-      kind: classifyFile(name, typeLabel),
-      url: divulgaCandFileUrl(target, name, baseUrl),
+      kind: classifyFile(name, typeCode, typeLabel),
+      url: divulgaCandFileUrl(id, baseUrl),
     }]
   })
-  // O TSE repete o mesmo anexo em consultas diferentes; a URL é a identidade.
-  const byUrl = new Map(files.map((file) => [file.url, file]))
-  return [...byUrl.values()]
+  // O TSE repete o mesmo anexo em consultas diferentes; o id é a identidade.
+  const byId = new Map(files.map((file) => [file.id, file]))
+  return [...byId.values()]
 }
 
 export function parseDivulgaCandPayload(
@@ -354,7 +389,7 @@ export function parseDivulgaCandPayload(
       (site) => /^https?:\/\//i.test(site),
     ),
     emails: stringList(payload.emails, 'email', 'endereco'),
-    files: parseFiles(payload, target, baseUrl),
+    files: parseFiles(payload, baseUrl),
   }
 }
 
