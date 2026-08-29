@@ -7,7 +7,11 @@ O runbook canônico é [OFFICIAL_DATA_PIPELINE.md](OFFICIAL_DATA_PIPELINE.md).
 - `sources/tse.ts`: candidatura canônica TSE;
 - `sources/tseSupplemental.ts`: complementares, bens, coligações, vagas,
   cassações e redes sociais;
-- `sources/tseDocuments.ts`: programas/documentos oficiais;
+- `sources/tseDocuments.ts`: programas/documentos oficiais, pelo pacote do
+  catálogo de dados abertos;
+- `sources/tseDivulgaCand.ts` (+ `sources/tse/divulgaCand.ts`): anexos de uma
+  candidatura por vez — proposta de governo, sites e e-mails — pela consulta
+  pública DivulgaCandContas; é o caminho dos presidenciáveis;
 - `sources/camara.ts` e `sources/senado.ts`: pessoas, mandatos, projetos e votos;
 - `sources/candidateSites.ts` e jobs de notícias: enriquecimento não canônico.
 
@@ -22,6 +26,7 @@ sobrescrever uma decisão de revisão em reprocessamentos.
 pnpm --filter @raiox/scraper run sync:tse -- --dry-run
 pnpm --filter @raiox/scraper run sync:tse:supplemental -- --dry-run
 pnpm --filter @raiox/scraper run sync:documents -- --dry-run
+pnpm --filter @raiox/scraper run sync:divulgacand -- --dry-run
 pnpm --filter @raiox/scraper run sync:camara
 pnpm --filter @raiox/scraper run sync:senado
 pnpm --filter @raiox/scraper run process:proposals
