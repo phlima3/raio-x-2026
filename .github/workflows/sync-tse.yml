@@ -1,10 +1,11 @@
 name: Sync TSE Official Data
 
 on:
-  push:
-    branches: [main]
-  schedule:
-    - cron: '15 */2 * * *'
+  # Agendamento desligado em 2026-08-29: a execução passou a ser local, pela
+  # automation do Orca, com o transporte de browser (TSE_BROWSER_TRANSPORT=1).
+  # `workflow_dispatch` fica de propósito — é o caminho de volta se o billing
+  # do GitHub voltar; basta reintroduzir o bloco `schedule` que está no
+  # histórico deste arquivo.
   workflow_dispatch:
     inputs:
       dry_run:
@@ -59,3 +60,8 @@ jobs:
           api-key: ${{ secrets.VELOZ_API_KEY }}
       - name: Sync complementary official datasets
         run: pnpm --filter @raiox/scraper run sync:tse:supplemental ${{ inputs.dry_run && '-- --dry-run' || '' }}
+      # Prestação de contas da chapa presidencial. Muda ao longo da campanha,
+      # diferente do documento de registro, por isso acompanha o sync diário.
+      - name: Sync campaign financing
+        if: ${{ !cancelled() }}
+        run: pnpm --filter @raiox/scraper run sync:financiamento ${{ inputs.dry_run && '-- --dry-run' || '' }}

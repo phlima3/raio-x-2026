@@ -35,6 +35,8 @@ interface ProposalBlockProps {
   proposedAt?: string | null
 }
 
+const FILE_URL = /\.(pdf|zip)(\?|#|$)/i
+
 export function ProposalBlock({
   title,
   status,
@@ -113,9 +115,15 @@ export function ProposalBlock({
             rel="noopener noreferrer"
             className="focus-editorial ml-auto text-ember hover:underline underline-offset-4"
           >
-            {/* O TSE publica os planos em ZIP por UF; dizer "original" faria o
-                leitor esperar uma página. */}
-            {source === 'tse_program' ? 'Baixar plano no TSE ↗' : 'Ver original ↗'}
+            {/* O rótulo tem de dizer a verdade sobre o clique. A página da
+                candidatura no DivulgaCandContas abre para leitura; o pacote do
+                catálogo, que é o caminho de quem não passou por lá, continua
+                sendo um arquivo que cai nos downloads. */}
+            {source === 'tse_program'
+              ? FILE_URL.test(url)
+                ? 'Baixar plano no TSE ↗'
+                : 'Ver no TSE ↗'
+              : 'Ver original ↗'}
           </a>
         )}
       </div>

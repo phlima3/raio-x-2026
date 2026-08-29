@@ -1,14 +1,21 @@
 name: Sync TSE Official Documents
 
 on:
-  schedule:
-    - cron: '0 8 * * *'
+  # Agendamento desligado em 2026-08-29: a execução passou a ser local, pela
+  # automation do Orca, com o transporte de browser (TSE_BROWSER_TRANSPORT=1).
+  # `workflow_dispatch` fica de propósito — é o caminho de volta se o billing
+  # do GitHub voltar; basta reintroduzir o bloco `schedule` que está no
+  # histórico deste arquivo.
   workflow_dispatch:
     inputs:
       dry_run:
         description: Download and extract without persisting documents
         type: boolean
         default: false
+      election_id:
+        description: idEleicao do DivulgaCandContas (padrão 20322002026)
+        type: string
+        required: false
 
 permissions:
   contents: read
@@ -23,11 +30,19 @@ jobs:
     env:
       DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
       TSE_API_URL: https://dadosabertos.tse.jus.br
+      TSE_DIVULGACAND_ELECTION_ID: ${{ inputs.election_id || '20322002026' }}
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-pipeline
       - uses: ./.github/actions/setup-veloz-db-tunnel
         with:
           api-key: ${{ secrets.VELOZ_API_KEY }}
+      # Caminho por candidatura: baixa só a proposta de governo de quem disputa
+      # a Presidência, sem depender do pacote de ~195 MB do catálogo.
+      - name: Attach presidential candidacy documents (DivulgaCandContas)
+        run: pnpm --filter @raiox/scraper run sync:divulgacand ${{ inputs.dry_run && '-- --dry-run' || '' }}
+      # O catálogo cobre os demais cargos; roda mesmo se o passo acima falhar,
+      # para não perder a varredura ampla por causa de uma candidatura.
       - name: Sync campaign documents
+        if: ${{ !cancelled() }}
         run: pnpm --filter @raiox/scraper run sync:documents ${{ inputs.dry_run && '-- --dry-run' || '' }}

@@ -52,3 +52,4 @@ packages/scraper/test-results/
 
 # Session notes with potentially sensitive data — keep local only
 NEXT_SESSION.md
+.sync-logs/

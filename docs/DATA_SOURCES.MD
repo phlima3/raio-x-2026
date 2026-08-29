@@ -117,6 +117,30 @@ https://cdn.tse.jus.br/estatistica/sead/odsele/consulta_cand/consulta_cand_2022_
 https://cdn.tse.jus.br/estatistica/sead/odsele/bem_candidato/bem_candidato_2022_BR.zip
 ```
 
+### DivulgaCandContas — consulta por candidatura
+
+**Portal:** `https://divulgacandcontas.tse.jus.br`
+
+O catálogo acima entrega um ZIP por unidade eleitoral. Para anexar os links de
+poucas candidaturas — os presidenciáveis — a consulta pública responde uma
+candidatura por vez, com sites declarados, e-mails e anexos protocolados
+(entre eles a proposta de governo).
+
+```
+# Página pública da candidatura
+https://divulgacandcontas.tse.jus.br/divulga/#/candidato/{uf}/{ue}/{idEleicao}/{idCandidato}/{ano}/{uf}
+
+# JSON de detalhe consumido pelo scraper
+https://divulgacandcontas.tse.jus.br/divulga/rest/v1/candidatura/buscar/{ano}/{ue}/{idEleicao}/candidato/{idCandidato}
+
+# Anexo protocolado
+https://divulgacandcontas.tse.jus.br/candidaturas/oficial/{ano}/{uf}/{ue}/{idEleicao}/{idCandidato}/{nomeArquivo}
+```
+
+`idCandidato` é o `SQ_CANDIDATO` dos dados abertos (`Candidate.tseId`), e
+`idEleicao` da eleição geral de 2026 é `20322002026`. Coletado por
+`sync:divulgacand` — ver o runbook do pipeline.
+
 ---
 
 ## 4. Portal da Transparência

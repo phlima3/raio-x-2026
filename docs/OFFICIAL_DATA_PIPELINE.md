@@ -101,9 +101,16 @@ pnpm --filter @raiox/scraper run sync:tse
 pnpm --filter @raiox/scraper run sync:tse:supplemental -- --dry-run
 pnpm --filter @raiox/scraper run sync:tse:supplemental
 
-# Programas/documentos oficiais
+# Programas/documentos oficiais (pacote do catálogo, todos os cargos)
 pnpm --filter @raiox/scraper run sync:documents -- --dry-run
 pnpm --filter @raiox/scraper run sync:documents
+
+# Anexos por candidatura no DivulgaCandContas. Sem flag, varre a chapa
+# presidencial publicada; --url anexa candidaturas avulsas.
+pnpm --filter @raiox/scraper run sync:divulgacand -- --dry-run
+pnpm --filter @raiox/scraper run sync:divulgacand
+pnpm --filter @raiox/scraper run sync:divulgacand -- --position=GOVERNADOR
+pnpm --filter @raiox/scraper run sync:divulgacand -- '--url=https://divulgacandcontas.tse.jus.br/divulga/#/candidato/BR/BR/20322002026/280002540694/2026/BR'
 
 # Propostas a partir dos programas (IA). A publicação é escopada por cargo e
 # hoje alcança apenas PRESIDENTE — ver "Extração das propostas".
@@ -134,8 +141,43 @@ despublicam pré-candidaturas editoriais. Um PDF repetido não é extraído de n
 PDF sem texto vira `NEEDS_OCR`; ausência de PDF termina como `NOOP`.
 O catálogo CKAN informa como fonte CAND/Candex/DivulgaCand e o coletor aceita
 recursos PDF diretos ou ZIP, seguindo o padrão publicado pelo TSE em eleições
-anteriores. Enquanto os PDFs de 2026 não aparecem como recursos, o job não
-tenta adivinhar IDs de um endpoint DivulgaCand não documentado.
+anteriores.
+
+### Anexos por candidatura (DivulgaCandContas)
+
+O catálogo publica um ZIP por unidade eleitoral: para anexar a proposta de um
+presidenciável era preciso baixar o pacote inteiro. O `sync:divulgacand` usa a
+consulta pública, que responde uma candidatura por vez, com os sites
+declarados, os e-mails e os anexos protocolados. Nenhum ID é adivinhado — os
+quatro valores que endereçam uma candidatura estão na URL que o TSE divulga:
+
+~~~
+https://divulgacandcontas.tse.jus.br/divulga/#/candidato/BR/BR/20322002026/280002540694/2026/BR
+                                                         ↑  ↑  ↑           ↑            ↑
+                                                         UF UE idEleicao   idCandidato  ano
+~~~
+
+`idCandidato` é o `SQ_CANDIDATO` dos dados abertos, ou seja, o `Candidate.tseId`
+já importado. Basta o `idEleicao` — em `TSE_DIVULGACAND_ELECTION_ID`, hoje
+`20322002026` — para montar a URL de qualquer candidatura do snapshot, e é
+assim que o job varre a chapa presidencial sem lista curada. A rota antiga
+(`#/candidato/{ano}/{idEleicao}/{ue}/{id}`) continua sendo aceita.
+
+Cada execução grava, por candidatura: a proposta de governo como
+`SourceDocument` `CAMPAIGN_PROGRAM` já vinculado ao candidato — de onde o
+`extract:programs` parte —, um snapshot dos links como `TSE_RESOURCE` mais um
+`OfficialDatasetRecord` de tipo `DIVULGACAND_CANDIDATURA`, e o primeiro site
+declarado em `Candidate.siteUrl` **apenas quando o campo está vazio**: a
+reconciliação das redes sociais (`sync:tse:supplemental`) continua dona desse
+campo. Anexos que não são programa de governo (certidões, por exemplo) são
+contados e ignorados.
+
+Os dois caminhos convergem sem duplicar: o PDF é identificado pelo SHA-256, de
+modo que um programa já trazido pelo ZIP só tem o vínculo com a candidatura
+refeito. Candidatura sem página no DivulgaCandContas conta como `missing` e não
+falha a execução; erro de rede ou HTTP conta como `failed` e falha, porque um
+presidenciável sem programa por falha de rede é indistinguível de um que não
+protocolou nada.
 
 ## Agenda UTC
 
@@ -143,7 +185,7 @@ tenta adivinhar IDs de um endpoint DivulgaCand não documentado.
 |---|---:|---|
 | Câmara e Senado | diariamente 03:00 | `sync-legislative.yml` |
 | TSE candidaturas + complementares | ao atualizar `main` e a cada 2h, no minuto 15 | `sync-tse.yml` |
-| Documentos oficiais | diariamente 08:00 | `sync-documents.yml` |
+| Documentos oficiais (catálogo + DivulgaCandContas) | diariamente 08:00 | `sync-documents.yml` |
 | Sites de candidatos | segunda-feira 04:00 | `sync-sites.yml` |
 | Notícias/contexto | quarta-feira 04:00 | `sync-news.yml` |
 

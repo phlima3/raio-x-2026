@@ -91,9 +91,23 @@ export interface CampaignFinancing {
   year: number
   totalReceived: string
   totalSpent: string
+  totalContracted: string | null
+  spendingLimit: string | null
   currency: string
   sourceUrl: string | null
   donors: unknown
+  suppliers: unknown
+  // Composição da receita — nula para quem não recebeu a categoria ou não
+  // foi consultado; ver `financingComposition` em `lib/financing.ts`.
+  fefcReceived: string | null
+  partyFundReceived: string | null
+  crowdfundingReceived: string | null
+  individualsReceived: string | null
+  companiesReceived: string | null
+  ownResourcesReceived: string | null
+  otherReceived: string | null
+  accountsUpdatedAt: string | null
+  deliveryControlNumber: string | null
 }
 
 export interface CandidateDetail extends CandidateSummary {
