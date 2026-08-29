@@ -3,10 +3,11 @@ import { fetchCandidates } from '@/lib/api'
 import { BuscaClient } from '@/components/BuscaClient'
 
 interface Props {
-  searchParams: { q?: string; position?: string; state?: string }
+  searchParams: Promise<{ q?: string; position?: string; state?: string }>
 }
 
-export function generateMetadata({ searchParams }: Props): Metadata {
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const searchParams = await props.searchParams;
   const q = searchParams.q ?? ''
   return {
     title: q ? `Busca: "${q}"` : 'Buscar Candidatos',
@@ -35,7 +36,8 @@ const STATE_OPTIONS = [
   ...STATES.map((s) => ({ value: s, label: s })),
 ]
 
-export default async function BuscaPage({ searchParams }: Props) {
+export default async function BuscaPage(props: Props) {
+  const searchParams = await props.searchParams;
   const { q = '', position = '', state = '' } = searchParams
 
   const params: Record<string, string> = { limit: '50' }

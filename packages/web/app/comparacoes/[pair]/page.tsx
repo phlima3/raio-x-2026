@@ -11,7 +11,9 @@ import {
 import { fetchCandidateSeoQualification } from '@/lib/api'
 import { buildBreadcrumbList, buildEditorialWebPageSchema } from '@/lib/structured-data'
 
-interface Props { params: { pair: string } }
+import type { JSX } from "react";
+
+interface Props { params: Promise<{ pair: string }> }
 
 export const dynamicParams = false
 
@@ -33,7 +35,8 @@ async function eligibility(
   return { comparison, indexable: Boolean(candidateA?.indexable && candidateB?.indexable) }
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const params = await props.params;
   const data = await eligibility(params.pair)
   if (!data) return { robots: { index: false, follow: false } }
   return {
@@ -44,7 +47,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function EditorialComparisonPage({ params }: Props): Promise<JSX.Element> {
+export default async function EditorialComparisonPage(props: Props): Promise<JSX.Element> {
+  const params = await props.params;
   const data = await eligibility(params.pair)
   if (!data) notFound()
   const { comparison } = data

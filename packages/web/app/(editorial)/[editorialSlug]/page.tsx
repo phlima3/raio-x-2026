@@ -4,7 +4,7 @@ import { EditorialDocument } from '@/components/EditorialDocument'
 import { EDITORIAL_PAGES, findEditorialPage } from '@/lib/editorial-pages'
 
 interface Props {
-  params: { editorialSlug: string }
+  params: Promise<{ editorialSlug: string }>
 }
 
 export const dynamicParams = false
@@ -13,7 +13,8 @@ export function generateStaticParams() {
   return EDITORIAL_PAGES.map((page) => ({ editorialSlug: page.slug }))
 }
 
-export function generateMetadata({ params }: Props): Metadata {
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const params = await props.params;
   const page = findEditorialPage(params.editorialSlug)
   if (!page) return { robots: { index: false, follow: false } }
   return {
@@ -28,7 +29,8 @@ export function generateMetadata({ params }: Props): Metadata {
   }
 }
 
-export default function EditorialPage({ params }: Props) {
+export default async function EditorialPage(props: Props) {
+  const params = await props.params;
   const page = findEditorialPage(params.editorialSlug)
   if (!page) notFound()
   return <EditorialDocument page={page} />

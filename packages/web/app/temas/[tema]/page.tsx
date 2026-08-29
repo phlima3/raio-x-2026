@@ -13,7 +13,9 @@ import {
 } from '@/lib/landing'
 import type { CandidateSeoReportItem } from '@/lib/types'
 
-interface Props { params: { tema: string } }
+import type { JSX } from "react";
+
+interface Props { params: Promise<{ tema: string }> }
 
 export const dynamicParams = false
 export const revalidate = 900
@@ -39,7 +41,8 @@ async function pageData(slug: string): Promise<ThemePageData | null> {
   }
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const params = await props.params;
   const data = await pageData(params.tema)
   if (!data) return { robots: { index: false, follow: false } }
   const title = `Propostas dos candidatos sobre ${data.theme.label} em 2026`
@@ -52,7 +55,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function ThemePage({ params }: Props): Promise<JSX.Element> {
+export default async function ThemePage(props: Props): Promise<JSX.Element> {
+  const params = await props.params;
   const data = await pageData(params.tema)
   if (!data) notFound()
   const title = `Propostas dos candidatos sobre ${data.theme.label} em 2026`

@@ -9,7 +9,9 @@ import { fetchCandidateSeoReport } from '@/lib/api'
 import { BRAZIL_STATES, filterQualifiedCandidates } from '@/lib/landing'
 import type { CandidateSeoReportItem } from '@/lib/types'
 
-interface Props { params: { uf: string } }
+import type { JSX } from "react";
+
+interface Props { params: Promise<{ uf: string }> }
 
 export const dynamicParams = false
 export const revalidate = 900
@@ -36,7 +38,8 @@ async function pageData(uf: string): Promise<StatePageData | null> {
   }
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const params = await props.params;
   const data = await pageData(params.uf)
   if (!data) return { robots: { index: false, follow: false } }
   const title = `Candidatos ao Senado por ${data.stateName} em 2026`
@@ -49,7 +52,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function SenatorPage({ params }: Props): Promise<JSX.Element> {
+export default async function SenatorPage(props: Props): Promise<JSX.Element> {
+  const params = await props.params;
   const data = await pageData(params.uf)
   if (!data) notFound()
   const title = `Candidatos ao Senado por ${data.stateName} em 2026`

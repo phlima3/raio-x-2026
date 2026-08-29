@@ -6,6 +6,8 @@ import { fetchCandidateSeoReport, fetchCandidateStats } from '@/lib/api'
 import { canonicalUrl } from '@/lib/seo'
 import { buildBreadcrumbList } from '@/lib/structured-data'
 
+import type { JSX } from "react";
+
 const PATH = '/graficos/perfis-por-partido'
 const TITLE = 'Perfis monitorados por partido nas Eleições 2026'
 const DESCRIPTION =

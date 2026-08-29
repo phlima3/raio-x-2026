@@ -8,6 +8,8 @@ import { fetchCandidateSeoReport } from '@/lib/api'
 import { filterQualifiedCandidates } from '@/lib/landing'
 import type { CandidateSeoReportItem } from '@/lib/types'
 
+import type { JSX } from "react";
+
 const description =
   'Veja os candidatos à Presidência nas Eleições 2026 com situação eleitoral, partido, propostas, histórico e fontes.'
 

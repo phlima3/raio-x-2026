@@ -24,8 +24,10 @@ import {
   buildCandidateWebPageSchema,
 } from '@/lib/structured-data'
 
+import type { JSX } from "react";
+
 interface Props {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }
 
 const POSITION_LABELS: Record<string, string> = {
@@ -65,7 +67,8 @@ function formatDate(value: string | null | undefined): string | null {
   }).format(date)
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const params = await props.params;
   try {
     const [res, qualification] = await Promise.all([
       fetchCandidate(params.slug),
@@ -112,7 +115,8 @@ function initialsFor(name: string): string {
     .toUpperCase()
 }
 
-export default async function CandidatePage({ params }: Props): Promise<JSX.Element> {
+export default async function CandidatePage(props: Props): Promise<JSX.Element> {
+  const params = await props.params;
   let candidate
   try {
     const res = await fetchCandidate(params.slug)
