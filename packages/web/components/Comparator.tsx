@@ -3,14 +3,21 @@
 import Image from 'next/image'
 import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import type { CandidateSummary, ComparisonResult } from '@/lib/types'
+import type {
+  CandidateSummary,
+  ComparisonFinancing,
+  ComparisonResult,
+} from '@/lib/types'
 import { absoluteImageUrl } from '@/lib/seo'
 import { ProposalBlock } from './ProposalBlock'
+import { FinancingComparison } from './FinancingComparison'
 
 interface ComparisonData {
   candidateA: CandidateSummary
   candidateB: CandidateSummary
   comparisons: ComparisonResult[]
+  financingA: ComparisonFinancing | null
+  financingB: ComparisonFinancing | null
 }
 
 interface ComparatorProps {
@@ -238,6 +245,15 @@ export function Comparator({ candidateSlugA, candidateSlugB, topic }: Comparator
           )
         })}
       </div>
+
+      {/* Dinheiro público antes das propostas: vale para qualquer tema, e não
+          é tema de proposta — por isso fica fora da barra de abas. */}
+      <FinancingComparison
+        financingA={data.financingA ?? null}
+        financingB={data.financingB ?? null}
+        nameA={data.candidateA.name}
+        nameB={data.candidateB.name}
+      />
 
       {/* Topic tabs — editorial with sliding indicator */}
       {themes.length > 1 && (

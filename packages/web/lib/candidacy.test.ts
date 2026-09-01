@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { candidacyStatusPresentation } from './candidacy'
+import { candidacyStatusPresentation, opensAsDownload } from './candidacy'
 
 test('presents each tracked election state without overstating official registration', () => {
   assert.equal(candidacyStatusPresentation('pre_candidato').label, 'Pré-candidatura anunciada')
@@ -14,4 +14,32 @@ test('presents each tracked election state without overstating official registra
   assert.equal(candidacyStatusPresentation('status_nao_mapeado').requiresReview, true)
   assert.equal(candidacyStatusPresentation(null).label, 'Situação não verificada')
   assert.equal(candidacyStatusPresentation('confirmado').requiresReview, true)
+})
+
+// --- opensAsDownload: o rótulo tem de dizer a verdade sobre o clique -------
+
+test('reconhece a página da candidatura como endereço que abre para leitura', () => {
+  assert.equal(
+    opensAsDownload(
+      'https://divulgacandcontas.tse.jus.br/divulga/#/candidato/BR/BR/20322002026/280002540694/2026/BR',
+    ),
+    false,
+  )
+})
+
+test('reconhece o pacote do catálogo como arquivo que cai nos downloads', () => {
+  // É o endereço que a ficha estampava como "Fonte", baixando um ZIP.
+  assert.equal(
+    opensAsDownload(
+      'https://cdn.tse.jus.br/estatistica/sead/odsele/consulta_cand_complementar/consulta_cand_complementar_2026.zip',
+    ),
+    true,
+  )
+  assert.equal(opensAsDownload('https://cdn.tse.jus.br/proposta_governo_2026_BR.zip#entry=x.pdf'), true)
+  assert.equal(opensAsDownload('https://divulgacandcontas.tse.jus.br/divulga/rest/arquivo/doc/1.pdf'), true)
+})
+
+test('não confunde ponto no caminho com extensão de arquivo', () => {
+  assert.equal(opensAsDownload('https://tse.jus.br/eleicoes/eleicoes-2026'), false)
+  assert.equal(opensAsDownload('https://tse.jus.br/zip/candidatos'), false)
 })

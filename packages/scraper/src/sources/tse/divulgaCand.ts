@@ -278,6 +278,45 @@ export function targetForCandidate(input: {
   }
 }
 
+/**
+ * Página pública da candidatura para citar na interface, ou `null` quando não
+ * dá para endereçá-la.
+ *
+ * Total de propósito. `electoralUnitFor` recusa UF inválida numa disputa
+ * estadual, e uma linha ruim do snapshot não pode derrubar a importação
+ * inteira: sem página, quem cita cai no endereço do dataset.
+ *
+ * O `idEleicao` sai de `configuredElectionId()`, **nunca** do `electionId` do
+ * registro tabular — aquele é o `CD_ELEICAO` dos dados abertos, um número
+ * diferente. Trocar um pelo outro monta uma URL que responde, mas para outra
+ * eleição.
+ */
+export function candidacyPublicUrl(
+  input: {
+    tseId: string | null
+    position: string
+    state: string | null
+    electionYear: number
+  },
+  baseUrl = DIVULGACAND_BASE_URL,
+): string | null {
+  if (!input.tseId || !/^\d+$/.test(input.tseId)) return null
+  try {
+    return divulgaCandPublicUrl(
+      targetForCandidate({
+        tseId: input.tseId,
+        position: input.position,
+        state: input.state,
+        electionYear: input.electionYear,
+        electionId: configuredElectionId(),
+      }),
+      baseUrl,
+    )
+  } catch {
+    return null
+  }
+}
+
 /** `codTipo` da proposta de governo no mapa de tipos do DivulgaCandContas. */
 const CAMPAIGN_PROGRAM_TYPE_CODE = '5'
 

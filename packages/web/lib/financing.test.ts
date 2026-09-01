@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { financingComposition, filterValidParties } from './financing'
+import { financingComposition, filterValidParties, fefcStanding } from './financing'
 
 test('orders the buckets by size and skips the empty ones', () => {
   const parts = financingComposition({
@@ -101,4 +101,54 @@ test('filterValidParties discards legacy {name, value} rows and keeps the ones w
 test('filterValidParties returns an empty list for anything that is not an array', () => {
   assert.deepEqual(filterValidParties(null), [])
   assert.deepEqual(filterValidParties(undefined), [])
+})
+
+// --- fefcStanding: os três estados do fundo eleitoral -----------------------
+
+test('sem prestação entregue não é o mesmo que não ter recebido fundão', () => {
+  // A distinção que o bloco de comparação existe para preservar: quem não
+  // entregou contas ao TSE e quem entregou declarando zero não podem render
+  // a mesma coisa na tela.
+  const naoEntregou = fefcStanding(null)
+  const naoRecebeu = fefcStanding({ totalReceived: 2750000, fefcReceived: 0 })
+
+  assert.equal(naoEntregou.kind, 'none')
+  assert.equal(naoRecebeu.kind, 'known')
+  assert.notEqual(naoEntregou.kind, naoRecebeu.kind)
+})
+
+test('composição não informada é um terceiro estado, nem ausência nem zero', () => {
+  // `fefcReceived` nulo com prestação entregue: o TSE tem as contas, mas a
+  // origem da receita não foi consultada. Exibir 0% aqui inventaria dado.
+  const standing = fefcStanding({ totalReceived: 1000000, fefcReceived: null })
+  assert.equal(standing.kind, 'unknown')
+})
+
+test('calcula a proporção do fundão sobre a arrecadação', () => {
+  const standing = fefcStanding({ totalReceived: 42300000, fefcReceived: 42000000 })
+  assert.equal(standing.kind, 'known')
+  assert.equal(standing.kind === 'known' && standing.value, 42000000)
+  assert.ok(standing.kind === 'known' && Math.abs(standing.share! - 99.29) < 0.01)
+})
+
+test('quem não recebeu fundão fica com zero por cento, não com ausência', () => {
+  const standing = fefcStanding({ totalReceived: 2750000, fefcReceived: 0 })
+  assert.equal(standing.kind === 'known' && standing.share, 0)
+})
+
+test('lê os decimais em string que a API devolve', () => {
+  const standing = fefcStanding({ totalReceived: '35300000', fefcReceived: '35000000' })
+  assert.equal(standing.kind === 'known' && standing.value, 35000000)
+  assert.ok(standing.kind === 'known' && Math.abs(standing.share! - 99.15) < 0.01)
+})
+
+test('não divide por zero quando a arrecadação declarada é zero', () => {
+  // Prestação entregue zerada: o valor é dado, a proporção não existe.
+  const standing = fefcStanding({ totalReceived: 0, fefcReceived: 0 })
+  assert.equal(standing.kind, 'known')
+  assert.equal(standing.kind === 'known' && standing.share, null)
+})
+
+test('trata valor não numérico como não informado em vez de virar NaN', () => {
+  assert.equal(fefcStanding({ totalReceived: 1000, fefcReceived: 'n/d' }).kind, 'unknown')
 })

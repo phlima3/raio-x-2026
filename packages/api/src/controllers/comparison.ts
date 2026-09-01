@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
+import type { CampaignFinancing } from '@prisma/client'
 import { z } from 'zod'
 import * as candidateService from '../services/candidateService'
 import { getProposalsByCandidate, getProposalCategories } from '../services/proposalService'
@@ -9,6 +10,37 @@ const ComparisonQuerySchema = z.object({
   candidateB: z.string().min(1),
   topic: z.string().optional(),
 })
+
+/**
+ * Prestação de contas mais recente já publicada, reduzida ao que a comparação
+ * mostra. `getCandidateBySlug` traz a relação com a política de publicação
+ * aplicada e ordenada por ano desc, então a primeira linha é a do ano corrente.
+ *
+ * `donors` e `suppliers` ficam de fora de propósito: o bloco não os exibe, e
+ * não se abre um endpoint novo para dados de doador pessoa física.
+ *
+ * Devolver `null` quando não há linha é o que permite à tela separar quem não
+ * entregou contas de quem entregou declarando zero.
+ */
+function publicFinancing(candidate: { campaignFinancings: CampaignFinancing[] }) {
+  const financing = candidate.campaignFinancings[0]
+  if (!financing) return null
+
+  return {
+    year: financing.year,
+    totalReceived: financing.totalReceived,
+    totalSpent: financing.totalSpent,
+    fefcReceived: financing.fefcReceived,
+    partyFundReceived: financing.partyFundReceived,
+    crowdfundingReceived: financing.crowdfundingReceived,
+    individualsReceived: financing.individualsReceived,
+    companiesReceived: financing.companiesReceived,
+    ownResourcesReceived: financing.ownResourcesReceived,
+    otherReceived: financing.otherReceived,
+    sourceUrl: financing.sourceUrl,
+    accountsUpdatedAt: financing.accountsUpdatedAt,
+  }
+}
 
 export async function compareHandler(
   req: Request,
@@ -29,6 +61,19 @@ export async function compareHandler(
     }
     if (!candidateB) {
       res.status(404).json({ success: false, error: `Candidato "${slugB}" não encontrado` })
+      return
+    }
+
+    // O cargo define o que cada um promete governar e de que porte é a campanha.
+    // O seletor da tela já só oferece quem disputa o mesmo cargo, mas a regra
+    // precisa valer também para URL montada à mão: sem isto, compara-se plano
+    // de presidente com o de governador — e, desde a comparação financeira,
+    // R$ 42 mi de campanha nacional com R$ 2 mi de estadual, lado a lado.
+    if (candidateA.position !== candidateB.position) {
+      res.status(400).json({
+        success: false,
+        error: 'Só é possível comparar candidatos ao mesmo cargo',
+      })
       return
     }
 
@@ -79,6 +124,8 @@ export async function compareHandler(
           slug: slugB,
         },
         comparisons,
+        financingA: publicFinancing(candidateA),
+        financingB: publicFinancing(candidateB),
       },
     })
   } catch (err) {
