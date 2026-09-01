@@ -1,0 +1,31 @@
+{
+  "slug": "pablo-henrique-costa-marcal-prtb-br-presidente-2026",
+  "bio": "Pablo Henrique Costa Marçal é empresário e influenciador digital, natural de Goiânia (GO). Em 2022, foi pré-candidato à Presidência pelo Pros, mas a candidatura não foi homologada, e depois concorreu a deputado federal por São Paulo. Em 2024, disputou a Prefeitura de São Paulo pelo PRTB. Em 2026, apresentou pedido de registro de candidatura à Presidência pelo PRTB, com Leonardo Avalanche como vice.",
+  "recentContext": "Desde 20 de agosto de 2026, uma liminar do TSE impede Pablo Marçal de usar recursos públicos de campanha e de praticar atos de propaganda eleitoral enquanto o mérito do pedido de registro não for julgado.",
+  "wikipediaUrl": "https://pt.wikipedia.org/wiki/Pablo_Mar%C3%A7al",
+  "officialSiteUrl": null,
+  "photoUrl": null,
+  "officialPhotoPageUrl": null,
+  "approvalRate": null,
+  "partyHistory": [
+    "PROS — candidatura a deputado federal em 2022",
+    "PRTB — candidaturas municipais em 2024 e presidencial em 2026"
+  ],
+  "politicalCareer": [
+    {
+      "role": "Candidato a deputado federal por São Paulo",
+      "period": "2022",
+      "highlight": "Disputou a eleição pelo Pros após a candidatura presidencial não ser homologada"
+    },
+    {
+      "role": "Candidato à Prefeitura de São Paulo",
+      "period": "2024",
+      "highlight": "Disputou a eleição municipal pelo PRTB"
+    },
+    {
+      "role": "Requerente de registro para a Presidência da República",
+      "period": "2026",
+      "highlight": "Apresentou pedido pelo PRTB, com Leonardo Avalanche como candidato a vice-presidente"
+    }
+  ]
+}
