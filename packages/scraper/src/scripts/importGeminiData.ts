@@ -21,6 +21,7 @@ import {
   type CandidateMaterialPatch,
   type CandidateMaterialSnapshot,
 } from '../domain/candidateMaterialChange'
+import { candidateSlugTargets } from '../domain/candidateSlugTargets'
 import { invalidateApiCandidateCaches } from '../utils/invalidateApiCache'
 import { revalidateCandidatePages } from '../utils/revalidateWeb'
 
@@ -109,7 +110,7 @@ async function importCandidate(output: GeminiOutput): Promise<void> {
   // Find all candidates with this slug (there may be 2 when the same person
   // runs for both presidente and governador — they share slug but different id).
   // Use raw query to avoid stale Prisma client type issues with the slug column.
-  const candidates = await prisma.$queryRaw<
+  const rows = await prisma.$queryRaw<
     Array<{
       id: string
       name: string
@@ -123,10 +124,15 @@ async function importCandidate(output: GeminiOutput): Promise<void> {
       siteUrl: string | null
       bioSourceUrl: string | null
       approvalRate: number | null
+      isPublished: boolean
     }>
   >`SELECT id, name, party, state, position, bio, "bioSummary", "photoUrl",
-           "photoSourceUrl", "siteUrl", "bioSourceUrl", "approvalRate"
+           "photoSourceUrl", "siteUrl", "bioSourceUrl", "approvalRate", "isPublished"
     FROM "Candidate" WHERE slug = ${slug}`
+
+  // Uma candidatura despublicada que divide o slug com uma viva é lápide, não
+  // concorrente; o guard abaixo segue valendo para ambiguidade real.
+  const candidates = candidateSlugTargets(rows)
 
   if (candidates.length === 0) {
     warn(`No candidate found with slug "${slug}" — skipping`)
