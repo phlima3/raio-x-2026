@@ -7,6 +7,7 @@ import {
   type TseComplementRow,
 } from './candidacyStatus'
 import type { TseCandidateRecord } from './candidateCsv'
+import { candidacyPublicUrl } from './divulgaCand'
 
 export interface ImportTseCandidatesInput {
   records: TseCandidateRecord[]
@@ -445,9 +446,14 @@ export async function importTseCandidates(
       const statusRaw = missingRequiredJudgment
         ? '#NE'
         : judgment?.rawStatus ?? combinedRawStatus(record)
-      const statusSourceUrl = input.requireComplementJudgment || judgment
+      // O dataset é um ZIP: clicar baixa um arquivo em vez de abrir uma fonte
+      // que a pessoa consiga ler. Havendo página da candidatura no
+      // DivulgaCandContas, é ela que se cita; o pacote fica de reserva para a
+      // candidatura que não dá para endereçar.
+      const statusDatasetUrl = input.requireComplementJudgment || judgment
         ? input.complementSourceUrl ?? input.sourceUrl
         : input.sourceUrl
+      const statusSourceUrl = candidacyPublicUrl(record) ?? statusDatasetUrl
       const statusNeedsReview = missingRequiredJudgment || judgment?.ambiguous === true
       const statusReviewReason = missingRequiredJudgment
         ? `Complemento TSE ausente para ${record.tseId}`
@@ -709,10 +715,19 @@ export async function importTseCandidates(
     const runningMate = runningMates.length === 1 ? runningMates[0] : null
     const runningMateName = runningMate?.name ?? null
     const runningMateParty = runningMate?.party ?? null
+    // A página citada é a do presidente, não a do vice. A composição da chapa é
+    // propriedade da candidatura majoritária, e é na página dela que o
+    // DivulgaCandContas publica a seção "Vices / Suplentes" — ou seja, é ali que
+    // se confere o vínculo afirmado, e não só a existência da pessoa.
+    //
+    // Vale também que o vice não vira `Candidate`: o `SQ_CANDIDATO` dele não
+    // fica guardado em lugar nenhum, então uma URL montada a partir do vice não
+    // teria como ser reconstruída depois, fora de uma importação completa.
     const runningMateSourceUrl = runningMate
-      ? judgments.has(runningMate.tseId)
-        ? input.complementSourceUrl ?? input.sourceUrl
-        : input.sourceUrl
+      ? candidacyPublicUrl(president) ??
+        (judgments.has(runningMate.tseId)
+          ? input.complementSourceUrl ?? input.sourceUrl
+          : input.sourceUrl)
       : null
     const candidate = await prisma.candidate.findUnique({
       where: { tseId: president.tseId },

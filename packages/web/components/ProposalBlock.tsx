@@ -1,3 +1,5 @@
+import { opensAsDownload } from '@/lib/candidacy'
+
 const STATUS_CONFIG: Record<string, { label: string; tone: 'approved' | 'rejected' | 'neutral' | 'warning' }> = {
   APPROVED: { label: 'Aprovado', tone: 'approved' },
   REJECTED: { label: 'Rejeitado', tone: 'rejected' },
@@ -34,8 +36,6 @@ interface ProposalBlockProps {
   url?: string | null
   proposedAt?: string | null
 }
-
-const FILE_URL = /\.(pdf|zip)(\?|#|$)/i
 
 export function ProposalBlock({
   title,
@@ -120,7 +120,7 @@ export function ProposalBlock({
                 catálogo, que é o caminho de quem não passou por lá, continua
                 sendo um arquivo que cai nos downloads. */}
             {source === 'tse_program'
-              ? FILE_URL.test(url)
+              ? opensAsDownload(url)
                 ? 'Baixar plano no TSE ↗'
                 : 'Ver no TSE ↗'
               : 'Ver original ↗'}

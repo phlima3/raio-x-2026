@@ -17,7 +17,7 @@ import { NewsPanel } from '@/components/NewsPanel'
 import { ApprovalMeter } from '@/components/ApprovalMeter'
 import { SectionNav } from '@/components/SectionNav'
 import { absoluteImageUrl, canonicalUrl } from '@/lib/seo'
-import { candidacyStatusPresentation } from '@/lib/candidacy'
+import { candidacyStatusPresentation, opensAsDownload } from '@/lib/candidacy'
 import { JsonLd } from '@/components/JsonLd'
 import {
   buildBreadcrumbList,
@@ -296,7 +296,13 @@ export default async function CandidatePage(props: Props): Promise<JSX.Element> 
                       rel="noopener noreferrer"
                       className="mt-2 inline-block font-mono text-[9px] uppercase tracking-[0.14em] text-ember hover:underline"
                     >
-                      Fonte · verificada em {statusVerifiedAt} ↗
+                      {/* O rótulo depende do endereço, e não da fonte: a página da
+                          candidatura abre para leitura, o pacote do catálogo cai
+                          na pasta de downloads. */}
+                      {opensAsDownload(candidate.candidacyStatusSourceUrl)
+                        ? 'Baixar fonte'
+                        : 'Ver fonte'}{' '}
+                      · verificada em {statusVerifiedAt} ↗
                     </a>
                   ) : (
                     <p className="mt-2 font-mono text-[9px] uppercase tracking-[0.14em] text-ember">
@@ -327,7 +333,10 @@ export default async function CandidatePage(props: Props): Promise<JSX.Element> 
                       rel="noopener noreferrer"
                       className="mt-1 inline-block font-mono text-[9px] uppercase tracking-[0.14em] text-ember hover:underline"
                     >
-                      Fonte da composição da chapa ↗
+                      {opensAsDownload(candidate.runningMateSourceUrl)
+                        ? 'Baixar fonte da composição da chapa'
+                        : 'Ver fonte da composição da chapa'}{' '}
+                      ↗
                     </a>
                   )}
                 </div>

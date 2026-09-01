@@ -99,3 +99,14 @@ export function candidacyStatusPresentation(
   if (!status) return REVIEW_REQUIRED
   return STATUS_PRESENTATIONS[status] ?? REVIEW_REQUIRED
 }
+
+/**
+ * O TSE publica tanto páginas de candidatura quanto pacotes do catálogo, e o
+ * rótulo do link tem de dizer a verdade sobre o clique: uma abre para leitura,
+ * o outro cai na pasta de downloads.
+ */
+const FILE_URL = /\.(pdf|zip)(\?|#|$)/i
+
+export function opensAsDownload(url: string): boolean {
+  return FILE_URL.test(url)
+}
