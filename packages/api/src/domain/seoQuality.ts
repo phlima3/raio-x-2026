@@ -153,8 +153,26 @@ const RUNNING_MATE_REQUIRED_STATUSES = new Set([
   'indeferido',
 ])
 
+/**
+ * Frases que não aparecem em texto publicável onde quer que estejam: quem
+ * escreve "em breve" ou "a definir" no meio de uma proposta está entregando
+ * rascunho.
+ */
 const PLACEHOLDER_PATTERN =
-  /\b(?:proposta\s*\d+|em\s+breve|lorem\s+ipsum|conte[uú]do\s+em\s+atualiza[cç][aã]o|perfil\s+em\s+atualiza[cç][aã]o|a\s+definir|placeholder|teste)\b/i
+  /\b(?:proposta\s*\d+|em\s+breve|lorem\s+ipsum|conte[uú]do\s+em\s+atualiza[cç][aã]o|perfil\s+em\s+atualiza[cç][aã]o|a\s+definir|placeholder)\b/i
+
+/**
+ * "teste" é rascunho quando é o campo inteiro, e conteúdo quando está numa
+ * frase: plano de governo fala em "ambientes de teste", "teste piloto",
+ * "banco de testes". Como token solto na lista acima ele reprovava proposta
+ * legítima — o plano do Haddad em SP caiu por "regras estáveis, ambientes de
+ * teste e talento formado em escala".
+ */
+const PLACEHOLDER_ONLY_PATTERN = /^[\s\p{P}]*teste\s*\d*[\s\p{P}]*$/iu
+
+function isPlaceholderText(value: string): boolean {
+  return PLACEHOLDER_PATTERN.test(value) || PLACEHOLDER_ONLY_PATTERN.test(value)
+}
 
 function hasText(value: string | null | undefined, minimumLength = 1): boolean {
   return Boolean(value && value.trim().length >= minimumLength)
@@ -196,7 +214,7 @@ function containsPlaceholder(candidate: CandidateQualityInput): boolean {
     proposal.summary,
   ])
   return [candidate.bioSummary, candidate.bio, ...proposalCopy].some(
-    (value) => value != null && PLACEHOLDER_PATTERN.test(value),
+    (value) => value != null && isPlaceholderText(value),
   )
 }
 
@@ -213,7 +231,7 @@ function substantiveModules(candidate: CandidateQualityInput): SubstantiveModule
       hasText(proposal.title, 12) &&
       hasText(body, 40) &&
       isHttpsUrl(proposal.url) &&
-      !PLACEHOLDER_PATTERN.test(`${proposal.title} ${body}`)
+      !isPlaceholderText(`${proposal.title} ${body}`)
     )
   })
   if (sourcedProposals.length >= 2) modules.push('propostas')
@@ -298,7 +316,7 @@ export function evaluateCandidateIndexability(
 
   if (
     !hasText(candidate.bioSummary, 100) ||
-    (candidate.bioSummary != null && PLACEHOLDER_PATTERN.test(candidate.bioSummary))
+    (candidate.bioSummary != null && isPlaceholderText(candidate.bioSummary))
   ) {
     blockers.push('introducao_insuficiente')
   }

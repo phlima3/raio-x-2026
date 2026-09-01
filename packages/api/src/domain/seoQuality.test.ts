@@ -167,3 +167,40 @@ test('detects a visible placeholder even when that proposal has no valid source 
   assert.equal(result.indexable, false)
   assert.ok(result.blockers.includes('placeholder_detectado'))
 })
+
+test('"teste" dentro de uma frase é conteúdo, não placeholder', () => {
+  // O caso real: o plano de governo do Haddad em SP fala em ambientes de teste
+  // regulatório, e o token solto na lista de placeholders reprovava a ficha.
+  const result = evaluateCandidateIndexability({
+    ...completeCandidate,
+    proposals: [
+      ...completeCandidate.proposals,
+      {
+        title: 'Oferecer regras estáveis e ambientes de teste para atrair investimento',
+        description:
+          'Oferecer regras estáveis, ambientes de teste e talento formado em escala ' +
+          'para disputar investimentos da era da inteligência artificial.',
+        summary: null,
+        url: 'https://divulgacandcontas.tse.jus.br/divulga/#/candidato/SP/SP/1/2/2026/SP',
+      },
+    ],
+  })
+
+  assert.ok(!result.blockers.includes('placeholder_detectado'))
+})
+
+test('"teste" sozinho no campo continua sendo placeholder', () => {
+  for (const title of ['teste', '  Teste  ', 'teste 2', 'TESTE.']) {
+    const result = evaluateCandidateIndexability({
+      ...completeCandidate,
+      proposals: [
+        ...completeCandidate.proposals,
+        { title, description: 'Descrição qualquer com tamanho suficiente.', summary: null, url: null },
+      ],
+    })
+    assert.ok(
+      result.blockers.includes('placeholder_detectado'),
+      `esperava placeholder para ${JSON.stringify(title)}`,
+    )
+  }
+})

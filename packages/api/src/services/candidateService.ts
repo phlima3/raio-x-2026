@@ -118,6 +118,7 @@ type CandidateListRow = Pick<
 > & {
   slug: string
   firstProposalTitle: string | null
+  bioSummary: string | null
 }
 
 interface CandidateListResult {
@@ -255,6 +256,7 @@ export async function listCandidates(filters: CandidateFilters): Promise<Candida
           c."officialStatus", c."dataSource", c."lastSyncedAt",
           c."personKey", c."tseId", c."effectiveSlug" AS slug,
           c."candidacyStatus", c."materialUpdatedAt", c."updatedAt",
+          c."bioSummary",
           proposal.title AS "firstProposalTitle"
         FROM canonical c
         JOIN slug_counts sc ON sc."effectiveSlug" = c."effectiveSlug"
