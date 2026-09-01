@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import { ViewTransitionLink } from './ViewTransitionLink'
-import { absoluteImageUrl } from '@/lib/seo'
+import { renderableImageUrl } from '@/lib/seo'
 
 const POSITION_LABELS: Record<string, string> = {
   PRESIDENTE: 'Presidente',
@@ -25,6 +25,7 @@ interface CandidateCardProps {
   isIncumbent?: boolean
   approvalRate?: number | null
   firstProposalTitle?: string | null
+  bioSummary?: string | null
   slug: string
   index?: number
 }
@@ -55,11 +56,12 @@ export function CandidateCard({
   isIncumbent,
   approvalRate,
   firstProposalTitle,
+  bioSummary,
   slug,
   index,
 }: CandidateCardProps) {
   const initials = initialsFor(name)
-  const safePhotoUrl = absoluteImageUrl(photoUrl)
+  const safePhotoUrl = renderableImageUrl(photoUrl)
 
   return (
     <ViewTransitionLink
@@ -113,13 +115,20 @@ export function CandidateCard({
           </div>
         </div>
 
-        {firstProposalTitle && (
+        {/* A citação é a proposta do candidato; sem proposta publicada o card
+            ficava com um vazio que se lia como ficha incompleta. A ficha do
+            registro entra no lugar — sem aspas, porque não é fala de ninguém. */}
+        {firstProposalTitle ? (
           <p className="mt-2.5 font-serif italic text-[13px] text-ink-muted line-clamp-2 leading-snug pl-[60px] sm:pl-[68px]">
             <span className="text-ember not-italic mr-0.5">&ldquo;</span>
             {firstProposalTitle}
             <span className="text-ember not-italic ml-0.5">&rdquo;</span>
           </p>
-        )}
+        ) : bioSummary ? (
+          <p className="mt-2.5 text-[13px] text-ink-muted line-clamp-2 leading-snug pl-[60px] sm:pl-[68px]">
+            {bioSummary}
+          </p>
+        ) : null}
 
         <div className="flex flex-wrap items-center gap-2 mt-auto pt-3 pl-[60px] sm:pl-[68px]">
           <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-soft border border-ink/15 px-2 py-0.5">

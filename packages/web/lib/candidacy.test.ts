@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { candidacyStatusPresentation, opensAsDownload } from './candidacy'
+import { bioProvenance, candidacyStatusPresentation, opensAsDownload } from './candidacy'
 
 test('presents each tracked election state without overstating official registration', () => {
   assert.equal(candidacyStatusPresentation('pre_candidato').label, 'Pré-candidatura anunciada')
@@ -42,4 +42,17 @@ test('reconhece o pacote do catálogo como arquivo que cai nos downloads', () =>
 test('não confunde ponto no caminho com extensão de arquivo', () => {
   assert.equal(opensAsDownload('https://tse.jus.br/eleicoes/eleicoes-2026'), false)
   assert.equal(opensAsDownload('https://tse.jus.br/zip/candidatos'), false)
+})
+
+test('a procedência da introdução sai da fonte citada', () => {
+  const tse = 'https://divulgacandcontas.tse.jus.br/divulga/#/candidato/SP/SP/1/2/2026/SP'
+  assert.equal(bioProvenance(tse), 'registro_oficial')
+  assert.equal(bioProvenance('https://www.tre-sp.jus.br/candidato/1'), 'registro_oficial')
+  // Texto redigido continua anunciado como síntese.
+  assert.equal(bioProvenance('https://pt.wikipedia.org/wiki/Fernando_Haddad'), 'sintese_editorial')
+  assert.equal(bioProvenance(null), 'sintese_editorial')
+  // Nada de http nem host forjado passa por oficial.
+  assert.equal(bioProvenance('http://divulgacandcontas.tse.jus.br/x'), 'sintese_editorial')
+  assert.equal(bioProvenance('https://tse.jus.br.evil.example/x'), 'sintese_editorial')
+  assert.equal(bioProvenance('nao-e-url'), 'sintese_editorial')
 })

@@ -8,7 +8,7 @@ import type {
   ComparisonFinancing,
   ComparisonResult,
 } from '@/lib/types'
-import { absoluteImageUrl } from '@/lib/seo'
+import { renderableImageUrl } from '@/lib/seo'
 import { ProposalBlock } from './ProposalBlock'
 import { FinancingComparison } from './FinancingComparison'
 
@@ -213,7 +213,7 @@ export function Comparator({ candidateSlugA, candidateSlugB, topic }: Comparator
       {/* Candidate headers — dual column, stack on mobile */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8 mb-8">
         {[data.candidateA, data.candidateB].map((c) => {
-          const photoUrl = absoluteImageUrl(c.photoUrl)
+          const photoUrl = renderableImageUrl(c.photoUrl)
 
           return (
           <div key={c.slug} className="border-b-2 border-ink pb-4" data-cmp-header>

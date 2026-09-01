@@ -9,7 +9,7 @@ import type {
   ConsistencyScore,
   CandidateSeoReportItem,
 } from './types'
-import { absoluteImageUrl } from './seo'
+import { renderableImageUrl } from './seo'
 
 // Server-side: use internal URL if available (faster, no DNS/TLS overhead in K8s)
 // Client-side: always use the public URL
@@ -72,7 +72,7 @@ export async function fetchCandidates(params?: Record<string, string>) {
     ...result,
     data: result.data.map((candidate) => ({
       ...candidate,
-      photoUrl: absoluteImageUrl(candidate.photoUrl) ?? null,
+      photoUrl: renderableImageUrl(candidate.photoUrl) ?? null,
     })),
   }
 }
@@ -83,7 +83,7 @@ export async function fetchCandidate(slug: string) {
     ...result,
     data: {
       ...result.data,
-      photoUrl: absoluteImageUrl(result.data.photoUrl) ?? null,
+      photoUrl: renderableImageUrl(result.data.photoUrl) ?? null,
     },
   }
 }

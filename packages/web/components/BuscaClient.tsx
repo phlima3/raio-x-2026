@@ -27,6 +27,7 @@ interface Candidate {
   isIncumbent?: boolean
   approvalRate?: number | null
   firstProposalTitle?: string | null
+  bioSummary?: string | null
   slug: string
 }
 

@@ -16,8 +16,8 @@ import { ConsistencyPanel } from '@/components/ConsistencyPanel'
 import { NewsPanel } from '@/components/NewsPanel'
 import { ApprovalMeter } from '@/components/ApprovalMeter'
 import { SectionNav } from '@/components/SectionNav'
-import { absoluteImageUrl, canonicalUrl } from '@/lib/seo'
-import { candidacyStatusPresentation, opensAsDownload } from '@/lib/candidacy'
+import { absoluteImageUrl, canonicalUrl, renderableImageUrl } from '@/lib/seo'
+import { bioProvenance, candidacyStatusPresentation, opensAsDownload } from '@/lib/candidacy'
 import { JsonLd } from '@/components/JsonLd'
 import {
   buildBreadcrumbList,
@@ -157,7 +157,10 @@ export default async function CandidatePage(props: Props): Promise<JSX.Element> 
   const roman = (id: string) => sections.find((s) => s.id === id)?.roman ?? ''
 
   const initials = initialsFor(candidate.name)
-  const photoUrl = absoluteImageUrl(candidate.photoUrl)
+  // O JSON-LD precisa da URL absoluta; a tag <img> tem de apontar para a
+  // origem que serve o arquivo, senão a foto do `public/` só carrega em prod.
+  const photoUrl = renderableImageUrl(candidate.photoUrl)
+  const photoSchemaUrl = absoluteImageUrl(candidate.photoUrl)
   const officeLabel =
     POSITION_LABELS[candidate.position] ?? candidate.position
   const status = candidacyStatusPresentation(candidate.candidacyStatus)
@@ -179,7 +182,7 @@ export default async function CandidatePage(props: Props): Promise<JSX.Element> 
           name: candidate.name,
           slug: candidate.slug,
           description,
-          image: photoUrl,
+          image: photoSchemaUrl,
           dateModified: candidate.materialUpdatedAt,
         })}
       />
@@ -368,7 +371,29 @@ export default async function CandidatePage(props: Props): Promise<JSX.Element> 
                 </blockquote>
                 {candidate.bioSummary && (
                   <p className="mt-3 font-mono text-[9px] uppercase tracking-[0.18em] text-ink-soft">
-                    Síntese assistida por IA · {reviewedAt ? `revisada em ${reviewedAt}` : 'revisão humana pendente'} ·{' '}
+                    {bioProvenance(candidate.bioSourceUrl) === 'registro_oficial' ? (
+                      <>
+                        Ficha do registro no TSE ·{' '}
+                        {candidate.bioSourceUrl ? (
+                          <a
+                            href={candidate.bioSourceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-ember hover:underline"
+                          >
+                            conferir na fonte
+                          </a>
+                        ) : (
+                          'fonte oficial'
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        Síntese assistida por IA ·{' '}
+                        {reviewedAt ? `revisada em ${reviewedAt}` : 'revisão humana pendente'}
+                      </>
+                    )}{' '}
+                    ·{' '}
                     <Link href="/politica-editorial" className="text-ember hover:underline">
                       política editorial
                     </Link>

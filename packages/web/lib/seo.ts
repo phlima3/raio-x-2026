@@ -46,6 +46,27 @@ export function absoluteImageUrl(value: string | null | undefined): string | und
   return url.toString()
 }
 
+/**
+ * A mesma validação, mas para o `src` de uma imagem que a página vai exibir.
+ *
+ * `absoluteImageUrl` existe para metadado — OG e JSON-LD precisam de URL
+ * absoluta e ela resolve o caminho relativo contra o domínio de produção. Usar
+ * esse resultado no `<Image>` faz a foto que o próprio app serve em
+ * `public/images/` ser buscada em `https://raio-x-2026.com.br`: em produção
+ * funciona por coincidência de origem, e em qualquer outro ambiente — dev
+ * local, preview — a imagem quebra, porque o arquivo só existe no bundle que
+ * ainda não foi publicado.
+ *
+ * Aqui o caminho da própria origem volta relativo, e só o que é de terceiro
+ * (Senado, Câmara, CDN do TSE) sai absoluto.
+ */
+export function renderableImageUrl(value: string | null | undefined): string | undefined {
+  const absolute = absoluteImageUrl(value)
+  if (!absolute) return undefined
+  const url = new URL(absolute)
+  return url.origin === SITE_ORIGIN ? `${url.pathname}${url.search}` : absolute
+}
+
 export interface SitemapCandidate {
   slug: string
   indexable: boolean

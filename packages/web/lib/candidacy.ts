@@ -110,3 +110,32 @@ const FILE_URL = /\.(pdf|zip)(\?|#|$)/i
 export function opensAsDownload(url: string): boolean {
   return FILE_URL.test(url)
 }
+
+/**
+ * De onde veio o texto de introdução do perfil.
+ *
+ * O rótulo sob a introdução afirmava "Síntese assistida por IA" para qualquer
+ * `bioSummary`. A ficha de registro é montada de campo declarado ao TSE, sem
+ * modelo nenhum no caminho — anunciá-la como saída de IA é afirmação falsa
+ * sobre a procedência, exatamente o que a página existe para não fazer.
+ *
+ * A distinção sai da fonte citada: página da Justiça Eleitoral é registro
+ * oficial; qualquer outra é o texto redigido do catálogo editorial.
+ */
+export type BioProvenance = 'registro_oficial' | 'sintese_editorial'
+
+export function bioProvenance(bioSourceUrl: string | null | undefined): BioProvenance {
+  if (!bioSourceUrl) return 'sintese_editorial'
+  let hostname: string
+  try {
+    const url = new URL(bioSourceUrl)
+    if (url.protocol !== 'https:') return 'sintese_editorial'
+    hostname = url.hostname.toLowerCase()
+  } catch {
+    return 'sintese_editorial'
+  }
+  const daJusticaEleitoral = hostname === 'tse.jus.br' ||
+    hostname.endsWith('.tse.jus.br') ||
+    /(^|\.)tre-[a-z]{2}\.jus\.br$/.test(hostname)
+  return daJusticaEleitoral ? 'registro_oficial' : 'sintese_editorial'
+}
