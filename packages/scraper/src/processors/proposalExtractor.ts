@@ -128,11 +128,25 @@ function flattenByTheme(
   return results
 }
 
+/**
+ * Corta no espaço anterior, não no caractere 140.
+ *
+ * O corte cru parte a última palavra ("...transformações trazidas pela int") e
+ * o título vira uma frase truncada no meio do site. Sem espaço antes do limite
+ * — palavra única gigante — resta o corte cru mesmo.
+ */
+function excerpt(text: string, limit: number): string {
+  if (text.length <= limit) return text
+  const hard = text.slice(0, limit)
+  const lastSpace = hard.lastIndexOf(' ')
+  return (lastSpace > 0 ? hard.slice(0, lastSpace) : hard).replace(/[\s,;:—-]+$/, '') + '…'
+}
+
 export function proposalTitleFromDescription(category: string, description: string): string {
   const compact = description.replace(/\s+/g, ' ').trim()
   const firstSentence = compact.split(/(?<=[.!?])\s+/)[0].replace(/[.!?]+$/, '').trim()
-  const excerpt = firstSentence.slice(0, 140).trim()
-  return excerpt.length >= 12 ? excerpt : `${category}: ${compact.slice(0, 120).trim()}`
+  const title = excerpt(firstSentence, 140).trim()
+  return title.length >= 12 ? title : `${category}: ${excerpt(compact, 120).trim()}`
 }
 
 interface ExistingProposalSnapshot {

@@ -37,6 +37,60 @@ export interface RunProgramProposalExtractionOptions {
   limit?: number
   slug?: string
   positions?: Position[]
+  /** Sigla da UF; recorta a rodada a um estado sem mexer no cargo. */
+  state?: string
+}
+
+/**
+ * O recorte de candidaturas de uma rodada, compartilhado com o
+ * `publish:programs` para os dois lados do fluxo aceitarem os mesmos flags.
+ *
+ * `--slug` é exclusivo: pedir uma ficha específica e ainda filtrar por cargo ou
+ * UF só serviria para a ficha pedida sumir calada. Cargo e estado combinam
+ * (`--position=GOVERNADOR --state=SP`), e sem nenhum dos dois o escopo é vazio,
+ * isto é, todas as candidaturas.
+ */
+export function candidateScope(scope: {
+  slug?: string
+  positions?: Position[]
+  state?: string
+}): { slug?: string; position?: { in: Position[] }; state?: string } {
+  if (scope.slug) return { slug: scope.slug }
+  return {
+    ...(scope.positions ? { position: { in: scope.positions } } : {}),
+    ...(scope.state ? { state: scope.state } : {}),
+  }
+}
+
+const UFS = new Set([
+  'AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MG', 'MS', 'MT',
+  'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO',
+])
+
+/** `--position=GOVERNADOR,SENADOR`; ausente é "todos os cargos". */
+export function parsePositionsArg(argv: string[] = process.argv): Position[] | undefined {
+  const flag = argv.find((argument) => argument.startsWith('--position='))
+  if (!flag) return undefined
+  return flag.split('=')[1].split(',').map((value) => {
+    const position = Position[value.trim().toUpperCase() as keyof typeof Position]
+    if (!position) throw new Error(`Cargo desconhecido: ${value}`)
+    return position
+  })
+}
+
+/**
+ * `--state=SP`; ausente é "todos os estados".
+ *
+ * UF inválida aborta em vez de filtrar por um valor que não casa com nada: o
+ * modo de falha do filtro silencioso é uma rodada que termina com zero linhas
+ * e parece dizer que não havia dado, quando o que houve foi um erro de digitação.
+ */
+export function parseStateArg(argv: string[] = process.argv): string | undefined {
+  const flag = argv.find((argument) => argument.startsWith('--state='))
+  if (!flag) return undefined
+  const state = flag.split('=')[1].trim().toUpperCase()
+  if (!UFS.has(state)) throw new Error(`UF desconhecida: ${flag.split('=')[1]}`)
+  return state
 }
 
 interface ExtractedProposal {
@@ -81,16 +135,29 @@ export function flattenProgramProposals(
 /**
  * A que endereço a proposta manda o leitor.
  *
- * Citar o PDF faz o clique virar um arquivo na pasta de downloads, e não uma
- * fonte que a pessoa consiga ler e conferir. O sync do DivulgaCandContas
- * guarda a página pública da candidatura em `metadata.candidatePage`: havendo
- * página, é ela que se cita. O caminho do catálogo não tem equivalente — ali o
- * recurso é o pacote inteiro — e nesse caso resta o `sourceUrl`.
+ * Citar o arquivo faz o clique virar um download, e não uma fonte que a pessoa
+ * consiga ler e conferir. Ordem de preferência:
+ *
+ *   1. a página da **própria candidatura** no DivulgaCandContas;
+ *   2. `metadata.candidatePage`, gravada pelo sync por candidato;
+ *   3. o `sourceUrl` — o pacote da UF ou o PDF avulso, conforme a origem.
+ *
+ * A página da candidatura vem antes da do documento porque um mesmo PDF pode
+ * pertencer a duas candidaturas: o PCO registrou o mesmo programa para a
+ * disputa presidencial e para a de governo de SP, o dedupe por SHA-256
+ * reconheceu um único documento e o relinkou para uma das duas. Citar o
+ * `candidatePage` dali mandava quem lia as propostas da Izadora (governo/SP)
+ * para a ficha do Rui Costa Pimenta (presidência/BR) — fonte de outra pessoa,
+ * pior que o pacote que se queria evitar.
  */
 export function programCitationUrl(document: {
   sourceUrl: string | null
   metadata?: unknown
+  candidate?: { candidacyStatusSourceUrl?: string | null } | null
 }): string | null {
+  const own = document.candidate?.candidacyStatusSourceUrl
+  if (typeof own === 'string' && /^https:\/\//i.test(own)) return own
+
   const metadata =
     typeof document.metadata === 'object' &&
     document.metadata !== null &&
@@ -99,6 +166,7 @@ export function programCitationUrl(document: {
       : null
   const page = metadata?.candidatePage
   if (typeof page === 'string' && /^https?:\/\//i.test(page)) return page
+
   return document.sourceUrl
 }
 
@@ -119,11 +187,7 @@ export async function runProgramProposalExtraction(
           type: SourceDocumentType.CAMPAIGN_PROGRAM,
           extractionStatus: DocumentExtractionStatus.EXTRACTED,
           candidateId: { not: null },
-          ...(options.slug
-            ? { candidate: { slug: options.slug } }
-            : options.positions
-              ? { candidate: { position: { in: options.positions } } }
-              : {}),
+          candidate: candidateScope(options),
         },
         select: {
           id: true,
@@ -131,7 +195,7 @@ export async function runProgramProposalExtraction(
           sourceUrl: true,
           metadata: true,
           candidateId: true,
-          candidate: { select: { name: true, slug: true } },
+          candidate: { select: { name: true, slug: true, candidacyStatusSourceUrl: true } },
         },
         orderBy: { fetchedAt: 'desc' },
         ...(options.limit ? { take: options.limit } : {}),
@@ -232,14 +296,6 @@ async function main(): Promise<void> {
   const dryRun = process.argv.includes('--dry-run')
   const limitArg = process.argv.find((argument) => /^--limit=\d+$/.test(argument))
   const slugArg = process.argv.find((argument) => argument.startsWith('--slug='))
-  const positionArg = process.argv.find((argument) => argument.startsWith('--position='))
-  const positions = positionArg
-    ? positionArg.split('=')[1].split(',').map((value) => {
-      const position = Position[value.trim().toUpperCase() as keyof typeof Position]
-      if (!position) throw new Error(`Cargo desconhecido: ${value}`)
-      return position
-    })
-    : undefined
   const prisma = createScraperPrismaClient()
   try {
     logger.info('[program-proposals] Extraindo propostas dos programas de governo')
@@ -248,7 +304,8 @@ async function main(): Promise<void> {
       dryRun,
       limit: limitArg ? Number(limitArg.split('=')[1]) : undefined,
       slug: slugArg ? slugArg.split('=')[1] : undefined,
-      positions,
+      positions: parsePositionsArg(),
+      state: parseStateArg(),
     })
     logger.info('[program-proposals] Concluído', result)
   } finally {

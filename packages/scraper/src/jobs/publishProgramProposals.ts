@@ -2,6 +2,7 @@ import { createScraperPrismaClient } from '../utils/prisma'
 import 'dotenv/config'
 import { Position, ProposalOrigin, ProposalStatus, type PrismaClient } from '@prisma/client'
 
+import { candidateScope, parsePositionsArg, parseStateArg } from './extractProgramProposals'
 import { invalidateApiCandidateCaches } from '../utils/invalidateApiCache'
 import { logger } from '../utils/logger'
 import { revalidateCandidatePages } from '../utils/revalidateWeb'
@@ -13,6 +14,8 @@ export interface PublishProgramProposalsOptions {
   prisma: PrismaClient
   positions?: Position[]
   slug?: string
+  /** Sigla da UF; recorta a publicação a um estado sem mexer no cargo. */
+  state?: string
   dryRun?: boolean
 }
 
@@ -36,7 +39,11 @@ export interface PublishProgramProposalsResult {
 export async function publishProgramProposals(
   options: PublishProgramProposalsOptions,
 ): Promise<PublishProgramProposalsResult> {
-  const positions = options.positions ?? [Position.PRESIDENTE]
+  // Sem cargo, sem slug e sem UF o padrão continua sendo a disputa presidencial:
+  // publicar a extração inteira do país por omissão de flag não é um default.
+  const scope = options.slug || options.positions || options.state
+    ? options
+    : { positions: [Position.PRESIDENTE] }
 
   const targets = await options.prisma.proposal.findMany({
     where: {
@@ -46,7 +53,7 @@ export async function publishProgramProposals(
       status: ProposalStatus.DRAFT,
       candidate: {
         isPublished: true,
-        ...(options.slug ? { slug: options.slug } : { position: { in: positions } }),
+        ...candidateScope(scope),
       },
     },
     select: { id: true, candidate: { select: { slug: true, name: true } } },
@@ -70,20 +77,13 @@ export async function publishProgramProposals(
 async function main(): Promise<void> {
   const dryRun = process.argv.includes('--dry-run')
   const slugArg = process.argv.find((argument) => argument.startsWith('--slug='))
-  const positionArg = process.argv.find((argument) => argument.startsWith('--position='))
-  const positions = positionArg
-    ? positionArg.split('=')[1].split(',').map((value) => {
-      const position = Position[value.trim().toUpperCase() as keyof typeof Position]
-      if (!position) throw new Error(`Cargo desconhecido: ${value}`)
-      return position
-    })
-    : undefined
 
   const prisma = createScraperPrismaClient()
   try {
     const result = await publishProgramProposals({
       prisma,
-      positions,
+      positions: parsePositionsArg(),
+      state: parseStateArg(),
       slug: slugArg ? slugArg.split('=')[1] : undefined,
       dryRun,
     })

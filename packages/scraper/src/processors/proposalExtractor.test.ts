@@ -66,6 +66,21 @@ test('derives a substantive title instead of generating a numbered placeholder',
   )
 })
 
+test('trunca no espaço anterior, sem partir a última palavra', () => {
+  const longa =
+    'Apoiar os setores que pagam bons salários e preparar os trabalhadores para as ' +
+    'transformações trazidas pela inteligência artificial e pela transição energética'
+  const title = proposalTitleFromDescription('Economia', longa)
+
+  assert.ok(title.length <= 141, `título com ${title.length} caracteres`)
+  assert.ok(title.endsWith('…'), title)
+  // A palavra que sobra é inteira: o texto sem a reticência é prefixo da frase
+  // e termina exatamente onde havia um espaço.
+  const semReticencia = title.slice(0, -1)
+  assert.ok(longa.startsWith(semReticencia), title)
+  assert.equal(longa[semReticencia.length], ' ')
+})
+
 test('depublishes only proposals removed from the same successful source snapshot', () => {
   const snapshot = {
     candidateId: proposal.candidateId,
