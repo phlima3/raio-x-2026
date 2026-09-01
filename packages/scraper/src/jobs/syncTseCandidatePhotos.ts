@@ -6,6 +6,7 @@ import { unzipSync } from 'fflate'
 import { createScraperPrismaClient } from '../utils/prisma'
 import { createTseCkanClient, TseResourceKind } from '../sources/tse/ckanClient'
 import { invalidateApiCandidateCaches } from '../utils/invalidateApiCache'
+import { parsePositionsArg } from './extractProgramProposals'
 import { logger } from '../utils/logger'
 
 /**
@@ -35,10 +36,31 @@ function parseUnits(): string[] {
 export async function syncTseCandidatePhotos(): Promise<void> {
   const units = new Set(parseUnits())
   const dryRun = process.argv.includes('--dry-run')
+  const positions = parsePositionsArg()
   const prisma = createScraperPrismaClient()
   const client = createTseCkanClient()
 
   try {
+    // O pacote de uma UF traz a eleição inteira — em SP são ~2.500 fotos, quase
+    // todas de deputado. Uma consulta por entrada é o que fazia a rodada passar
+    // de dez minutos contra o túnel; o mapa é a mesma prefetch que o sync de
+    // documentos já usa. `--position` corta o que vai para o disco: sem ele, o
+    // `public/` do site ganha milhares de imagens de candidatura que nenhuma
+    // página renderiza.
+    const byTseId = new Map(
+      (await prisma.candidate.findMany({
+        where: {
+          tseId: { not: null },
+          ...(positions ? { position: { in: positions } } : {}),
+        },
+        select: { id: true, tseId: true, photoUrl: true },
+      })).flatMap((c) => c.tseId ? [[c.tseId, c] as const] : []),
+    )
+    logger.info('[tse:photos] candidaturas elegíveis', {
+      total: byTseId.size,
+      cargos: positions ?? 'todos',
+    })
+
     const resources = (await client.discover(2026)).filter(
       (resource) => resource.kind === TseResourceKind.PHOTOS &&
         units.has(resource.name.slice(0, 2).toUpperCase()),
@@ -62,10 +84,7 @@ export async function syncTseCandidatePhotos(): Promise<void> {
         if (!match) continue
         const tseId = match[2]
 
-        const candidate = await prisma.candidate.findUnique({
-          where: { tseId },
-          select: { id: true, photoUrl: true },
-        })
+        const candidate = byTseId.get(tseId)
         if (!candidate) continue
 
         // Só a foto de urna vive em `images/candidates/tse`; qualquer outro
