@@ -49,18 +49,50 @@ export function findEditorialComparison(slug: string) {
   return EDITORIAL_COMPARISONS.find((comparison) => comparison.slug === slug)
 }
 
+/** Cargos disputados dentro de uma UF; o mesmo recorte que a busca usa. */
+const STATE_SCOPED = new Set(['GOVERNADOR', 'VICE_GOVERNADOR', 'SENADOR'])
+
+export interface ComparableRace {
+  position: string
+  state: string
+}
+
+/** A disputa de uma candidatura: cargo, mais a UF quando o cargo é estadual. */
+export function raceOf(candidate: ComparableRace): { position: string; state: string | null } {
+  return {
+    position: candidate.position,
+    state: STATE_SCOPED.has(candidate.position) ? candidate.state : null,
+  }
+}
+
+export function sameRace(a: ComparableRace, b: ComparableRace): boolean {
+  const left = raceOf(a)
+  const right = raceOf(b)
+  return left.position === right.position && left.state === right.state
+}
+
 /**
  * Quem pode ser o segundo candidato de uma comparação.
  *
  * Comparar plano de governo de presidente com o de governador compara disputas
- * diferentes: o cargo define o que cada um promete governar. Antes da primeira
- * escolha não há o que restringir.
+ * diferentes: o cargo define o que cada um promete governar. E cargo sozinho
+ * não basta — governador de SP e governador do RJ não disputam a mesma coisa,
+ * então a UF entra para os cargos estaduais.
+ *
+ * Sem conseguir resolver o primeiro escolhido a lista sai **vazia**, e não
+ * inteira. Devolver tudo transformava "não achei quem você escolheu" em
+ * "qualquer um serve": a página busca uma fatia dos 194 governadores, e quem
+ * chegava pelo botão da ficha de um candidato fora da fatia via a disputa
+ * presidencial oferecida como adversária.
  */
-export function eligibleOpponents<T extends { slug: string; position: string }>(
+export function eligibleOpponents<T extends ComparableRace & { slug: string }>(
   candidates: T[],
-  selectedSlug: string | undefined,
+  selected: string | ComparableRace | undefined,
 ): T[] {
-  const first = candidates.find((candidate) => candidate.slug === selectedSlug)
-  if (!first) return candidates
-  return candidates.filter((candidate) => candidate.position === first.position)
+  if (selected == null) return candidates
+  const first = typeof selected === 'string'
+    ? candidates.find((candidate) => candidate.slug === selected)
+    : selected
+  if (!first) return []
+  return candidates.filter((candidate) => sameRace(candidate, first))
 }

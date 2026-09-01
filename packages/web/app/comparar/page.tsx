@@ -2,9 +2,9 @@ import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Suspense } from 'react'
-import { fetchCandidates } from '@/lib/api'
+import { fetchCandidate, fetchCandidates, isApiNotFound } from '@/lib/api'
 import { Comparator } from '@/components/Comparator'
-import { eligibleOpponents } from '@/lib/comparisons'
+import { eligibleOpponents, raceOf } from '@/lib/comparisons'
 import type { CandidateSummary } from '@/lib/types'
 
 interface Props {
@@ -31,20 +31,64 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   }
 }
 
+/**
+ * A disputa do primeiro escolhido, pelo slug da URL.
+ *
+ * Resolver pela ficha, e não procurando na listagem, é o que garante que o
+ * candidato sempre seja encontrado: a listagem é paginada e o botão "comparar
+ * lado a lado" da ficha manda qualquer slug para cá.
+ */
+async function fetchRaceOf(slug: string): Promise<{ position: string; state: string | null } | null> {
+  try {
+    const { data } = await fetchCandidate(slug)
+    return raceOf(data)
+  } catch (error) {
+    if (isApiNotFound(error, `/api/candidates/${slug}`)) return null
+    throw error
+  }
+}
+
+/** O `limit` da API é limitado a 100, e são 194 governadores e 351 senadores. */
+const PAGE_SIZE = 100
+
+/**
+ * Percorre as páginas de um cargo. Pedir uma fatia só deixava o catálogo
+ * cortado em ES: quem quisesse comparar dois candidatos de SP não achava
+ * nenhum dos dois na lista.
+ */
+async function fetchAllCandidates(params: Record<string, string>): Promise<CandidateSummary[]> {
+  const todos: CandidateSummary[] = []
+  for (let page = 1; ; page++) {
+    const { data, meta } = await fetchCandidates({
+      ...params,
+      page: String(page),
+      limit: String(PAGE_SIZE),
+    })
+    todos.push(...data)
+    if (data.length === 0 || todos.length >= (meta?.total ?? todos.length)) break
+  }
+  return todos
+}
+
 export default async function CompararPage(props: Props) {
   const searchParams = await props.searchParams;
   const { a, b, topic } = searchParams
 
-  const [presidentsRes, governorsRes, senatorsRes] = await Promise.allSettled([
-    fetchCandidates({ position: 'PRESIDENTE', limit: '20' }),
-    fetchCandidates({ position: 'GOVERNADOR', limit: '50' }),
-    fetchCandidates({ position: 'SENADOR', limit: '100' }),
-  ])
+  // Escolhido o primeiro, o segundo sai da disputa dele — e não de uma fatia
+  // do catálogo. São 194 governadores e 351 senadores; as fatias de 50 e 100
+  // paravam em ES, então quem chegasse pelo botão da ficha de um candidato de
+  // SP não encontrava nenhum adversário legítimo na lista.
+  const selectedRace = a ? await fetchRaceOf(a) : null
 
-  const presidents = presidentsRes.status === 'fulfilled' ? presidentsRes.value.data : []
-  const governors = governorsRes.status === 'fulfilled' ? governorsRes.value.data : []
-  const senators = senatorsRes.status === 'fulfilled' ? senatorsRes.value.data : []
-  const allCandidates = [...presidents, ...governors, ...senators]
+  const pools = selectedRace
+    ? [{
+      position: selectedRace.position,
+      ...(selectedRace.state ? { state: selectedRace.state } : {}),
+    }]
+    : [{ position: 'PRESIDENTE' }, { position: 'GOVERNADOR' }, { position: 'SENADOR' }]
+
+  const resultados = await Promise.allSettled(pools.map((p) => fetchAllCandidates(p)))
+  const allCandidates = resultados.flatMap((r) => (r.status === 'fulfilled' ? r.value : []))
 
   const bothSelected = Boolean(a && b)
 
@@ -226,7 +270,9 @@ function CandidatePicker({ candidates, selectedA, selectedB }: CandidatePickerPr
 
       {step === 1 && first && (
         <p className="mb-5 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-soft">
-          Mostrando apenas quem disputa o mesmo cargo · {POSITION_LABELS[first.position] ?? first.position}
+          Mostrando apenas quem disputa a mesma eleição ·{' '}
+          {POSITION_LABELS[first.position] ?? first.position}
+          {raceOf(first).state ? ` · ${raceOf(first).state}` : ''}
         </p>
       )}
 
