@@ -3,8 +3,18 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { useRouter } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { CandidateCard } from './CandidateCard'
 import { EditorialSelect, type SelectOption } from './EditorialSelect'
+
+// Só carrega a malha do IBGE (~20 kB gz) quando o cargo é estadual.
+const BrazilStateMap = dynamic(
+  () => import('./BrazilStateMap').then((m) => m.BrazilStateMap),
+  { loading: () => <div className="h-64" /> }
+)
+
+// Cargos disputados por estado — aí o mapa substitui o select.
+const STATE_SCOPED = new Set(['GOVERNADOR', 'SENADOR'])
 
 interface Candidate {
   id: string
@@ -131,6 +141,7 @@ export function BuscaClient({
     })
   }, [generation])
 
+  const showMap = STATE_SCOPED.has(position)
   const hasFilters = Boolean(q || position || state)
 
   const handleClear = () => {
@@ -173,16 +184,20 @@ export function BuscaClient({
             />
           </div>
 
-          <div className="sm:w-32">
-            <EditorialSelect
-              name="state"
-              label="Estado"
-              defaultValue={state}
-              options={stateOptions}
-              onChange={setState}
-            />
-          </div>
+          {!showMap && (
+            <div className="sm:w-32">
+              <EditorialSelect
+                name="state"
+                label="Estado"
+                defaultValue={state}
+                options={stateOptions}
+                onChange={setState}
+              />
+            </div>
+          )}
         </div>
+
+        {showMap && <BrazilStateMap value={state} onChange={setState} />}
 
         {hasFilters && (
           <div className="mt-4 flex items-center flex-wrap gap-2 border-t border-ink/10 pt-3">

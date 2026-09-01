@@ -38,6 +38,11 @@ export function EditorialSelect({ name, label, options, defaultValue = '', onCha
     setFocusIdx(-1)
   }, [])
 
+  // Mantém o rótulo em sincronia quando o filtro muda por fora (limpar, mapa).
+  useEffect(() => {
+    setSelected(options.find((o) => o.value === defaultValue) ?? options[0])
+  }, [defaultValue, options])
+
   useEffect(() => {
     if (!open) return
     const handler = (e: MouseEvent) => {

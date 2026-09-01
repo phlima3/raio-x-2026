@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "gen:map": "tsx scripts/gen-brazil-map.ts",
     "seo:audit": "tsx scripts/seo-audit.ts",
     "seo:smoke": "tsx scripts/runtime-smoke.ts",
     "seo:quality-report": "tsx scripts/seo-quality-report.ts",
