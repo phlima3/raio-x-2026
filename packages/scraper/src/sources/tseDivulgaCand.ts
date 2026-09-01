@@ -46,6 +46,8 @@ export interface RunDivulgaCandSyncOptions {
   electionId?: string
   /** Cargos varridos quando nenhuma URL explícita é passada. */
   positions?: Position[]
+  /** Sigla da UF; recorta a varredura a um estado sem mexer no cargo. */
+  state?: string
   /** URLs públicas do DivulgaCandContas; sobrepõem a varredura por cargo. */
   urls?: string[]
   tseIds?: string[]
@@ -161,6 +163,7 @@ export async function resolveTargets(
       isPublished: true,
       tseId: options.tseIds?.length ? { in: options.tseIds } : { not: null },
       ...(options.positions?.length ? { position: { in: options.positions } } : {}),
+      ...(options.state ? { state: options.state } : {}),
     },
     select,
     orderBy: { name: 'asc' },

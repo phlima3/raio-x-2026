@@ -232,10 +232,20 @@ export function divulgaCandFileUrl(fileId: string, baseUrl = DIVULGACAND_BASE_UR
  * **turno** — o turno 2 devolve uma casca vazia enquanto não houver segundo
  * turno — e não o `tpPrestador`, que vem "CA" no corpo.
  *
- * Na eleição majoritária o número do candidato é o do partido, e é por isso que
- * o mesmo valor serve aos dois segmentos. Estender para deputado exige guardar
- * o número do partido à parte.
+ * O quinto segmento é o **número do partido** e o sexto o do candidato. Em
+ * presidente e governador os dois coincidem — a urna usa as duas casas da
+ * legenda — e por isso repetir o mesmo valor funcionou enquanto a varredura era
+ * presidencial. No Senado o número tem três casas (Marina 180, Derrite 111): as
+ * duas primeiras são a legenda e a terceira distingue os dois candidatos da
+ * mesma. Repetir o número ali devolve corpo vazio, que chega como
+ * "Unexpected end of JSON input" — medido em 2026-09-01 contra as 14
+ * candidaturas ao Senado por SP; `18/180` responde, `180/180` não.
  */
+export function divulgaCandPartyNumber(ballotNumber: number): number {
+  const digits = String(Math.trunc(Math.abs(ballotNumber)))
+  return digits.length <= 2 ? Number(digits) : Number(digits.slice(0, 2))
+}
+
 export function divulgaCandAccountsUrl(
   target: DivulgaCandTarget,
   ballotNumber: number,
@@ -244,7 +254,7 @@ export function divulgaCandAccountsUrl(
 ): string {
   return `${trimBaseUrl(baseUrl)}/divulga/rest/v1/prestador/consulta` +
     `/${target.electionId}/${target.year}/${target.electoralUnit}/${round}` +
-    `/${ballotNumber}/${ballotNumber}/${target.candidateId}`
+    `/${divulgaCandPartyNumber(ballotNumber)}/${ballotNumber}/${target.candidateId}`
 }
 
 /**

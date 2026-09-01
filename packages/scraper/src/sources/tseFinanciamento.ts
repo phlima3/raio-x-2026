@@ -8,6 +8,7 @@ import {
   type CompletedSyncRun,
 } from '../sync/runDataSourceSync'
 import { invalidateApiCandidateCaches } from '../utils/invalidateApiCache'
+import { parsePositionsArg, parseStateArg } from '../jobs/extractProgramProposals'
 import { logger } from '../utils/logger'
 import { revalidateCandidatePages } from '../utils/revalidateWeb'
 import { tseBrowserEnabled } from './tse/browserTransport'
@@ -25,6 +26,14 @@ import {
 import type { DivulgaCandAccounts } from './tse/divulgaCandAccounts'
 import { resolveTargets } from './tseDivulgaCand'
 
+/** A conta de campanha é da chapa e responde vazia na candidatura de vice. */
+const VICE_POSITIONS = new Set<Position>([
+  Position.VICE_PRESIDENTE,
+  Position.VICE_GOVERNADOR,
+  Position.PRIMEIRO_SUPLENTE,
+  Position.SEGUNDO_SUPLENTE,
+])
+
 export interface RunFinanciamentoSyncOptions {
   prisma: PrismaClient
   client?: DivulgaCandClient
@@ -32,6 +41,10 @@ export interface RunFinanciamentoSyncOptions {
   electionId?: string
   tseIds?: string[]
   limit?: number
+  /** Cargos varridos; ausente é todos. */
+  positions?: Position[]
+  /** Sigla da UF; recorta a rodada a um estado sem mexer no cargo. */
+  state?: string
   dryRun?: boolean
 }
 
@@ -83,12 +96,19 @@ export async function runFinanciamentoSync(
     store: createPrismaSyncRunStore(options.prisma),
     execute: async () => {
       // Só o titular: a consulta do vice responde 200 com `totalRecebido` nulo,
-      // e gravar zero ali faria a ficha dizer que a chapa não arrecadou.
-      const targets = await resolveTargets(
-        { ...options, positions: [Position.PRESIDENTE] },
-        year,
-        electionId,
-      )
+      // e gravar zero ali faria a ficha dizer que a chapa não arrecadou. A
+      // conta é da chapa e fica na candidatura de cabeça — o que exclui vice,
+      // não os demais cargos. Sem `--position`, a rodada segue presidencial.
+      const positions = options.positions ?? [Position.PRESIDENTE]
+      const vices = positions.filter((position) => VICE_POSITIONS.has(position))
+      if (vices.length > 0) {
+        throw new Error(
+          `[financiamento] ${vices.join(', ')}: a prestação de contas é da chapa e ` +
+            'responde vazia para o vice — consulte o titular',
+        )
+      }
+
+      const targets = await resolveTargets({ ...options, positions }, year, electionId)
       if (targets.length === 0) return { noop: true, metrics: { candidates: 0 } }
 
       let consulted = 0
@@ -188,6 +208,8 @@ if (require.main === module) {
   syncFinanciamento({
     dryRun: process.argv.includes('--dry-run'),
     limit: limitArgument ? Number(limitArgument.split('=')[1]) : undefined,
+    positions: parsePositionsArg(),
+    state: parseStateArg(),
   }).catch((error) => {
     logger.error('[financiamento] Erro fatal', error)
     process.exit(1)
