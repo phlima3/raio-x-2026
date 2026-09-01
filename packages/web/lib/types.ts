@@ -137,6 +137,27 @@ export interface CandidateDetail extends CandidateSummary {
   photoLicense?: string | null
 }
 
+/**
+ * Recorte de `CampaignFinancing` que `/api/comparison` devolve — sem `donors`
+ * nem `suppliers`, que a comparação não exibe. `null` no lugar do objeto
+ * inteiro significa prestação não entregue, que não é o mesmo que zero.
+ */
+export type ComparisonFinancing = Pick<
+  CampaignFinancing,
+  | 'year'
+  | 'totalReceived'
+  | 'totalSpent'
+  | 'fefcReceived'
+  | 'partyFundReceived'
+  | 'crowdfundingReceived'
+  | 'individualsReceived'
+  | 'companiesReceived'
+  | 'ownResourcesReceived'
+  | 'otherReceived'
+  | 'sourceUrl'
+  | 'accountsUpdatedAt'
+>
+
 export interface ComparisonResult {
   theme: string
   proposalsA: Proposal[]

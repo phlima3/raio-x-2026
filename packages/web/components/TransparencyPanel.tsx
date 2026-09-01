@@ -6,7 +6,7 @@ import type {
   AssetDeclaration,
   CampaignFinancing,
 } from '@/lib/types'
-import { financingComposition, filterValidParties } from '@/lib/financing'
+import { financingComposition, filterValidParties, fmtBRL } from '@/lib/financing'
 import { formatAccountsDate } from '@/lib/dates'
 
 type ActiveTab = 'voting' | 'assets' | 'financing'
@@ -25,14 +25,6 @@ const VOTE_LABEL: Record<string, string> = {
   ABSTENTION: 'Abstenção',
   ABSENT: 'Ausente',
   OBSTRUCTION: 'Obstrução',
-}
-
-function fmtBRL(value: string | number): string {
-  return Number(value).toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    maximumFractionDigits: 0,
-  })
 }
 
 export interface TransparencyData {

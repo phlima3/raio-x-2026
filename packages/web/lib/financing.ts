@@ -32,9 +32,19 @@ export interface FinancingSlice {
   share: number
 }
 
+/**
+ * Devolve `null` para ausência e para lixo não numérico, preservando a
+ * diferença entre "não informado" e "zero" que o banco guarda em colunas
+ * anuláveis. Quem só precisa somar usa `amount`, que colapsa os dois em 0.
+ */
+function parseMoney(value: Money): number | null {
+  if (value === null || value === undefined || value === '') return null
+  const parsed = typeof value === 'string' ? Number(value) : value
+  return Number.isFinite(parsed) ? parsed : null
+}
+
 function amount(value: Money): number {
-  const parsed = typeof value === 'string' ? Number(value) : value ?? 0
-  return typeof parsed === 'number' && Number.isFinite(parsed) ? parsed : 0
+  return parseMoney(value) ?? 0
 }
 
 export function financingComposition(financing: FinancingComposable): FinancingSlice[] {
@@ -69,4 +79,44 @@ export function filterValidParties(people: unknown): PartyEntry[] {
       party !== null &&
       Number.isFinite((party as { amount?: unknown }).amount),
   )
+}
+
+/**
+ * Situação do candidato quanto ao fundo eleitoral (FEFC) — dinheiro público.
+ *
+ * São três estados, e nenhum pode ser renderizado como outro:
+ *
+ * - `none`    sem prestação de contas entregue ao TSE. Não há número nenhum.
+ * - `unknown` prestação entregue, mas a origem da receita não foi consultada
+ *             (`fefcReceived` nulo). Exibir 0% aqui inventaria dado.
+ * - `known`   valor declarado, inclusive quando é zero — que é informação, e
+ *             não ausência dela.
+ *
+ * `share` é nulo quando a arrecadação declarada é zero: o valor existe, a
+ * proporção não, e "NaN%" não é resposta.
+ */
+export type FefcStanding =
+  | { kind: 'none' }
+  | { kind: 'unknown' }
+  | { kind: 'known'; value: number; share: number | null; total: number }
+
+export function fefcStanding(
+  financing: FinancingComposable | null | undefined,
+): FefcStanding {
+  if (!financing) return { kind: 'none' }
+
+  const value = parseMoney(financing.fefcReceived)
+  if (value === null) return { kind: 'unknown' }
+
+  const total = amount(financing.totalReceived)
+  return { kind: 'known', value, total, share: total > 0 ? (value / total) * 100 : null }
+}
+
+/** Formatação monetária única do site — o painel da ficha usa a mesma. */
+export function fmtBRL(value: string | number): string {
+  return Number(value).toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    maximumFractionDigits: 0,
+  })
 }
