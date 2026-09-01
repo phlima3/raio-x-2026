@@ -58,8 +58,10 @@ export function Comparator({ candidateSlugA, candidateSlugB, topic }: Comparator
     setLoading(true)
     setError(null)
     const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
+    // Sem `topic`: a API filtrada devolve UMA comparação só, e a barra de abas
+    // (que exige themes.length > 1) sumia sem volta. Busca todos os temas uma
+    // vez e filtra no cliente — que é o que activeComparison já fazia.
     const params = new URLSearchParams({ candidateA: candidateSlugA, candidateB: candidateSlugB })
-    if (activeTopic) params.set('topic', activeTopic)
 
     try {
       const res = await fetch(`${API_BASE}/api/comparison?${params}`)
@@ -71,7 +73,7 @@ export function Comparator({ candidateSlugA, candidateSlugB, topic }: Comparator
     } finally {
       setLoading(false)
     }
-  }, [candidateSlugA, candidateSlugB, activeTopic])
+  }, [candidateSlugA, candidateSlugB])
 
   useEffect(() => { fetchData() }, [fetchData])
 
