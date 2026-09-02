@@ -39,6 +39,8 @@ export interface RunProgramProposalExtractionOptions {
   positions?: Position[]
   /** Siglas de UF; recorta a rodada a esses estados sem mexer no cargo. */
   state?: string[]
+  /** Reprocessa documento que ja rendeu proposta; o padrao e pular. */
+  force?: boolean
 }
 
 /**
@@ -196,6 +198,18 @@ export async function runProgramProposalExtraction(
           extractionStatus: DocumentExtractionStatus.EXTRACTED,
           candidateId: { not: null },
           candidate: candidateScope(options),
+          // Documento que ja rendeu proposta nao volta para a fila.
+          //
+          // Sem isto, cada execucao recomeca pelo mesmo documento e refaz o
+          // mesmo prefixo: a rodada dos 165 planos estaduais caia com o tunel
+          // aos ~55 e as duas seguintes reprocessaram os mesmos 55, sem nunca
+          // alcancar o resto. Reextrair tambem nao acrescenta nada -- o upsert
+          // por `externalId` so reescreve o que ja existe, e item ja revisado e
+          // preservado de qualquer forma.
+          //
+          // `--force` reprocessa mesmo assim, para quando o prompt ou o modelo
+          // muda e o texto anterior precisa ser refeito.
+          ...(options.force ? {} : { proposals: { none: {} } }),
         },
         select: {
           id: true,
@@ -314,6 +328,7 @@ async function main(): Promise<void> {
       slug: slugArg ? slugArg.split('=')[1] : undefined,
       positions: parsePositionsArg(),
       state: parseStateArg(),
+      force: process.argv.includes('--force'),
     })
     logger.info('[program-proposals] Concluído', result)
   } finally {
