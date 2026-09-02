@@ -194,6 +194,31 @@ export async function comPrazo<T>(tarefa: Promise<T>, ms: number, oQue: string):
   }
 }
 
+/**
+ * O transporte tem uma aba só e um `downloadWaiter` só (singletons de módulo).
+ * Duas consultas concorrentes navegam na mesma `page`: a segunda cancela a
+ * navegação da primeira e sobrescreve o waiter dela, que então não resolve
+ * nunca e só termina estourando o prazo.
+ *
+ * `Promise.all([download(a), download(b)])` é o jeito natural de escrever o
+ * job — e é o que `sync:tse` e `sync:tse:priority` faziam. Falhava calado três
+ * minutos depois, dizendo que o TSE não respondeu quando o que houve foi o
+ * segundo download atropelar o primeiro.
+ *
+ * A fila serializa aqui, onde toda consulta passa, em vez de deixar a regra
+ * "não paralelize" para cada job lembrar. O prazo de cada consulta continua
+ * contando a partir do trabalho dela, não da espera na fila.
+ */
+let fila: Promise<unknown> = Promise.resolve()
+
+export function enfileirar<T>(tarefa: () => Promise<T>): Promise<T> {
+  const resultado = fila.then(tarefa)
+  // A fila nunca carrega rejeição adiante: uma consulta que falha não pode
+  // derrubar a próxima da fila junto.
+  fila = resultado.then(() => undefined, () => undefined)
+  return resultado
+}
+
 export function createTseBrowserTransport(timeoutMs = 180_000): TseBrowserTransport {
   async function requisitar(url: string, target: Page): Promise<Buffer> {
     try {
@@ -229,7 +254,7 @@ export function createTseBrowserTransport(timeoutMs = 180_000): TseBrowserTransp
     }
   }
 
-  async function request(url: string): Promise<Buffer> {
+  async function consultar(url: string): Promise<Buffer> {
     const target = await activePage()
     try {
       return await comPrazo(requisitar(url, target), timeoutMs, `a consulta a ${url}`)
@@ -242,6 +267,10 @@ export function createTseBrowserTransport(timeoutMs = 180_000): TseBrowserTransp
       }
       throw error
     }
+  }
+
+  function request(url: string): Promise<Buffer> {
+    return enfileirar(() => consultar(url))
   }
 
   return {

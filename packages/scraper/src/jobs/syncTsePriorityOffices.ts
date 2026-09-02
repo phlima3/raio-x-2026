@@ -8,10 +8,10 @@ import { revalidateCandidatePages } from '../utils/revalidateWeb'
 import { Position } from '@prisma/client'
 
 /**
- * Importação dirigida à disputa presidencial. O snapshot completo leva mais do
- * que a vida do túnel; recortar para PRESIDENTE e VICE_PRESIDENTE mantém a
- * mesma lógica de reconciliação e faz a varredura de pré-candidaturas atuar
- * apenas sobre esses cargos, que é exatamente o recorte pretendido.
+ * Importação dirigida aos cargos que o site publica. O snapshot completo leva
+ * mais do que a vida do túnel; recortar mantém a mesma lógica de reconciliação
+ * e faz a varredura de pré-candidaturas atuar apenas sobre esses cargos, que é
+ * exatamente o recorte pretendido.
  */
 async function main(): Promise<void> {
   const dryRun = process.argv.includes('--dry-run')
@@ -41,13 +41,24 @@ async function main(): Promise<void> {
     // dois cargos, e `makeSlug(nome, partido, UF)` ignora o cargo: as duas
     // fichas colidem no mesmo slug e a candidatura presidencial fica
     // inalcançável enquanto a ficha estadual seguir publicada.
-    const WANTED = new Set(['PRESIDENTE', 'VICE_PRESIDENTE', 'GOVERNADOR', 'VICE_GOVERNADOR'])
+    //
+    // Senador entra porque a varredura de `nao_registrado` só atua sobre os
+    // cargos presentes no recorte — a garantia de que um recorte parcial não
+    // despublica cargo que não cobriu. Enquanto SENADOR ficou de fora, as
+    // pré-candidaturas editoriais ao Senado nunca foram varridas: 39 seguiam
+    // publicadas sem registro no TSE, cinco delas ao lado da ficha oficial da
+    // mesma pessoa. Suplente continua fora: não há ficha editorial de suplente
+    // para reconciliar, e o cargo acrescentaria ~600 candidaturas que nenhuma
+    // página do site renderiza.
+    const WANTED = new Set([
+      'PRESIDENTE', 'VICE_PRESIDENTE', 'GOVERNADOR', 'VICE_GOVERNADOR', 'SENADOR',
+    ])
     const records = parsed.records.filter((r) => WANTED.has(r.position))
     const byPosition = [...WANTED].map(
       (p) => `${p}=${records.filter((r) => r.position === p).length}`,
     ).join(' ')
     console.info(`[tse:priority] snapshot=${parsed.records.length} recorte=${records.length} ${byPosition}`)
-    if (records.length === 0) throw new Error('recorte presidencial vazio — abortando')
+    if (records.length === 0) throw new Error('recorte vazio — abortando')
 
     const metrics = await importTseCandidates(prisma, {
       records,

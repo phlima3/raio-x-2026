@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import {
   assertNavigationStatus,
   comPrazo,
+  enfileirar,
   TseBrowserError,
   tseBrowserEnabled,
 } from '../src/sources/tse/browserTransport'
@@ -106,5 +107,37 @@ describe('comPrazo', () => {
     await comPrazo(Promise.resolve(1), 30_000, 'tarefa rápida')
     const depois = process.getActiveResourcesInfo?.().filter((r) => r === 'Timeout').length ?? 0
     expect(depois).toBeLessThanOrEqual(antes)
+  })
+})
+
+
+describe('enfileirar', () => {
+  // O transporte tem uma aba e um downloadWaiter só: duas consultas ao mesmo
+  // tempo atropelam uma à outra e a primeira só termina no prazo de 180s.
+  it('serializes overlapping requests instead of letting them share the one tab', async () => {
+    const eventos: string[] = []
+    const tarefa = (nome: string, ms: number) => () =>
+      new Promise<string>((resolve) => {
+        eventos.push(`entrou:${nome}`)
+        setTimeout(() => {
+          eventos.push(`saiu:${nome}`)
+          resolve(nome)
+        }, ms)
+      })
+
+    // `a` é mais lenta de propósito: sem fila, `b` entraria antes de `a` sair.
+    const resultados = await Promise.all([
+      enfileirar(tarefa('a', 30)),
+      enfileirar(tarefa('b', 1)),
+    ])
+
+    expect(resultados).toEqual(['a', 'b'])
+    expect(eventos).toEqual(['entrou:a', 'saiu:a', 'entrou:b', 'saiu:b'])
+  })
+
+  it('lets the next request through after one fails, instead of poisoning the queue', async () => {
+    const falha = enfileirar(() => Promise.reject(new Error('caiu')))
+    await expect(falha).rejects.toThrow('caiu')
+    await expect(enfileirar(() => Promise.resolve('segue'))).resolves.toBe('segue')
   })
 })
