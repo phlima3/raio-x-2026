@@ -39,10 +39,22 @@ const POSITION_LABELS: Record<string, string> = {
 
 export const revalidate = 3600
 
+/**
+ * So a disputa presidencial e pre-renderizada no build.
+ *
+ * `dynamicParams` continua ligado: as demais fichas sao geradas na primeira
+ * visita e ficam em cache pelo mesmo `revalidate`. Nada sai do indice por isso
+ * -- o sitemap e montado do relatorio de qualidade, nao desta lista.
+ *
+ * Pre-renderizar todas custava uma requisicao a API por ficha, em rajada. Com
+ * a trilha de fonte oficial isso passou de poucas dezenas para 510, estourou o
+ * limite de requisicoes da API e derrubou o build inteiro no 429. O build nao
+ * deve depender da vazao da API para terminar.
+ */
 export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
   const report = await fetchCandidateSeoReport()
   return report.data
-    .filter((candidate) => candidate.indexable)
+    .filter((candidate) => candidate.indexable && candidate.position === 'PRESIDENTE')
     .map((candidate) => ({ slug: candidate.slug }))
 }
 
