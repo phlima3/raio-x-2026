@@ -73,6 +73,7 @@ export function baldeDaReceita(fonte: string | null, origem: string | null): Bal
 }
 
 export interface ReceitaRow {
+  SG_UF?: string
   SQ_CANDIDATO?: string
   SQ_PRESTADOR_CONTAS?: string
   DS_FONTE_RECEITA?: string
@@ -85,6 +86,7 @@ export interface ReceitaRow {
 }
 
 export interface DespesaRow {
+  SG_UF?: string
   SQ_PRESTADOR_CONTAS?: string
   VR_PAGTO_DESPESA?: string
 }
@@ -173,6 +175,31 @@ function lerCsv<T>(bytes: Uint8Array | undefined): T[] {
   }) as T[]
 }
 
+/**
+ * O TSE **não publica arquivo próprio do Distrito Federal**: `_DF.csv` não
+ * existe em nenhuma das séries, e as candidaturas de lá aparecem só no
+ * consolidado `_BRASIL`, misturadas às das outras UFs (1.208 linhas de receita
+ * e 519 de despesa em 2026).
+ *
+ * Sem este alternativo, as 24 candidaturas do DF eram contadas como "não
+ * prestou contas": o dado existe e estava sendo procurado no arquivo errado —
+ * a mesma armadilha do DivulgaCandContas devolvendo vazio para cargo estadual.
+ *
+ * Para as 26 UFs com arquivo próprio nada muda; o consolidado só é lido quando
+ * o arquivo da UF falta.
+ */
+export function lerDaUf<T extends { SG_UF?: string }>(
+  arquivos: Record<string, Uint8Array>,
+  serie: string,
+  year: number,
+  uf: string,
+): T[] {
+  const proprio = arquivos[`${serie}_${year}_${uf}.csv`]
+  if (proprio) return lerCsv<T>(proprio)
+  return lerCsv<T>(arquivos[`${serie}_${year}_BRASIL.csv`])
+    .filter((row) => row.SG_UF?.trim().toUpperCase() === uf)
+}
+
 export interface ImportTseAccountingOptions {
   prisma: PrismaClient
   client?: TseCkanClient
@@ -217,14 +244,17 @@ export async function importTseAccounting(options: ImportTseAccountingOptions): 
   const receitasPorCandidato = new Map<string, ReceitaRow[]>()
   const despesasPorUf = new Map<string, DespesaRow[]>()
   for (const uf of ufs) {
-    for (const row of lerCsv<ReceitaRow>(arquivos[`receitas_candidatos_${year}_${uf}.csv`])) {
+    for (const row of lerDaUf<ReceitaRow>(arquivos, 'receitas_candidatos', year, uf)) {
       const id = row.SQ_CANDIDATO?.trim()
       if (!id) continue
       const lista = receitasPorCandidato.get(id) ?? []
       lista.push(row)
       receitasPorCandidato.set(id, lista)
     }
-    despesasPorUf.set(uf, lerCsv<DespesaRow>(arquivos[`despesas_pagas_candidatos_${year}_${uf}.csv`]))
+    despesasPorUf.set(
+      uf,
+      lerDaUf<DespesaRow>(arquivos, 'despesas_pagas_candidatos', year, uf),
+    )
   }
 
   let gravadas = 0

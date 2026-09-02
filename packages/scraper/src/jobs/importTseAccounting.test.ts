@@ -1,7 +1,14 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { agregarContas, baldeDaReceita, dataBr, valorBr } from './importTseAccounting'
+import {
+  agregarContas,
+  baldeDaReceita,
+  dataBr,
+  lerDaUf,
+  valorBr,
+  type ReceitaRow,
+} from './importTseAccounting'
 
 test('valor no formato brasileiro, e vazio não vira NaN', () => {
   assert.equal(valorBr('8.093.962,77'), 8093962.77)
@@ -73,4 +80,39 @@ test('doador sem identificação real não vira linha na ficha', () => {
   })
   // O total continua contando o que veio sem doador identificado.
   assert.equal(contas.totalReceived, 1000)
+})
+
+
+test('sem arquivo da UF, o consolidado _BRASIL entra recortado por SG_UF', () => {
+  // O TSE não publica `_DF.csv` em nenhuma das séries: as candidaturas do
+  // Distrito Federal só existem no consolidado. Sem isto, as 24 do DF eram
+  // contadas como "não prestou contas".
+  const csv = (texto: string) => Buffer.from(texto, 'latin1')
+  const arquivos: Record<string, Uint8Array> = {
+    'receitas_candidatos_2026_SP.csv': csv(`SG_UF;SQ_CANDIDATO;VR_RECEITA
+SP;111;1.000,00
+`),
+    'receitas_candidatos_2026_BRASIL.csv': csv(`SG_UF;SQ_CANDIDATO;VR_RECEITA
+DF;222;2.000,00
+SP;999;9.999,00
+df;333;3,00
+`),
+  }
+
+  // UF com arquivo próprio não passa nem perto do consolidado: o 999 de SP que
+  // só existe lá não pode vazar para a rodada.
+  assert.deepEqual(
+    lerDaUf<ReceitaRow>(arquivos, 'receitas_candidatos', 2026, 'SP').map((r) => r.SQ_CANDIDATO),
+    ['111'],
+  )
+
+  // DF vem do consolidado, e só as linhas do DF — inclusive a com sigla em
+  // caixa baixa, que é dado do TSE e não erro de quem lê.
+  assert.deepEqual(
+    lerDaUf<ReceitaRow>(arquivos, 'receitas_candidatos', 2026, 'DF').map((r) => r.SQ_CANDIDATO),
+    ['222', '333'],
+  )
+
+  // Série inexistente devolve vazio em vez de estourar.
+  assert.deepEqual(lerDaUf<ReceitaRow>(arquivos, 'despesas_pagas_candidatos', 2026, 'DF'), [])
 })
