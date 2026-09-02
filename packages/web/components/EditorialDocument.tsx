@@ -58,7 +58,7 @@ export function EditorialDocument({ page }: { page: EditorialPageDefinition }) {
         </p>
       </header>
 
-      <div className="container mx-auto px-4 md:px-6 py-14 md:py-20 grid grid-cols-12 gap-x-10 gap-y-12">
+      <div className="container mx-auto px-4 md:px-6 py-14 md:py-20 grid grid-cols-12 gap-x-0 md:gap-x-10 gap-y-12">
         <aside className="col-span-12 md:col-span-3">
           <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ember mb-4">Nesta página</p>
           <ol className="space-y-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-muted">

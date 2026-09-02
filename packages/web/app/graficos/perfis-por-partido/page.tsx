@@ -138,7 +138,7 @@ export default async function PartyProfilesGraphPage(): Promise<JSX.Element> {
         </p>
       </header>
 
-      <div className="container mx-auto px-4 md:px-6 py-14 md:py-20 grid grid-cols-12 gap-x-10 gap-y-12">
+      <div className="container mx-auto px-4 md:px-6 py-14 md:py-20 grid grid-cols-12 gap-x-0 md:gap-x-10 gap-y-12">
         <section className="col-span-12 lg:col-span-8" aria-labelledby="grafico-titulo">
           <div className="flex flex-wrap items-end justify-between gap-4 border-b-2 border-ink pb-4">
             <div>

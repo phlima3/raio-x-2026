@@ -80,16 +80,15 @@ export function Navbar() {
 
 function MobileTrigger() {
   return (
-    <details className="md:hidden ml-auto group relative">
+    <details className="md:hidden ml-auto group">
       <summary
-        aria-label="Abrir menu"
         className="focus-editorial list-none cursor-pointer h-full flex items-center px-4 border-l border-ink/20 font-mono text-[11px] uppercase tracking-[0.22em] text-ink-muted hover:text-ember hover:bg-paper-light transition-colors select-none"
       >
         <span className="group-open:hidden">§ Menu</span>
         <span className="hidden group-open:inline">× Fechar</span>
       </summary>
 
-      <div className="absolute top-full right-0 left-auto w-screen max-w-full bg-paper border-y-2 border-ink shadow-[0_8px_0_rgba(26,22,20,0.25)]">
+      <div className="absolute top-full left-0 right-0 max-h-[80dvh] overflow-y-auto overscroll-contain bg-paper border-y-2 border-ink shadow-[0_8px_0_rgba(26,22,20,0.25)]">
         <nav aria-label="Menu mobile" className="container mx-auto px-4">
           <ul className="divide-y divide-ink/15">
             {NAV_ITEMS.map(({ href, label, external }) => (
