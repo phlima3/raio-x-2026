@@ -23,17 +23,10 @@ interface CandidateCardProps {
   photoUrl?: string | null
   ballotNumber?: number | null
   isIncumbent?: boolean
-  approvalRate?: number | null
   firstProposalTitle?: string | null
   bioSummary?: string | null
   slug: string
   index?: number
-}
-
-function approvalTone(rate: number): string {
-  if (rate >= 50) return 'text-civic-green'
-  if (rate >= 35) return 'text-ink-muted'
-  return 'text-ember'
 }
 
 function initialsFor(name: string): string {
@@ -54,7 +47,6 @@ export function CandidateCard({
   photoUrl,
   ballotNumber,
   isIncumbent,
-  approvalRate,
   firstProposalTitle,
   bioSummary,
   slug,
@@ -137,11 +129,6 @@ export function CandidateCard({
           {isIncumbent && (
             <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-ember border border-ember/30 px-2 py-0.5">
               Incumbente
-            </span>
-          )}
-          {approvalRate != null && (
-            <span className={`font-mono text-[10px] uppercase tracking-[0.14em] tabular-nums ml-auto ${approvalTone(approvalRate)}`}>
-              {approvalRate}% aprov.
             </span>
           )}
         </div>

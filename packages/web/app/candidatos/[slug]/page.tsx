@@ -14,7 +14,6 @@ import { ProposalsSection } from '@/components/ProposalsSection'
 import { TransparencyPanel } from '@/components/TransparencyPanel'
 import { ConsistencyPanel } from '@/components/ConsistencyPanel'
 import { NewsPanel } from '@/components/NewsPanel'
-import { ApprovalMeter } from '@/components/ApprovalMeter'
 import { SectionNav } from '@/components/SectionNav'
 import { absoluteImageUrl, canonicalUrl, renderableImageUrl } from '@/lib/seo'
 import { bioProvenance, candidacyStatusPresentation, opensAsDownload } from '@/lib/candidacy'
@@ -439,11 +438,6 @@ export default async function CandidatePage(props: Props): Promise<JSX.Element> 
                   {candidate.partyHistory.join(' → ')}
                 </p>
               </details>
-            )}
-
-            {/* Approval measure strip — animated */}
-            {candidate.approvalRate != null && (
-              <ApprovalMeter value={candidate.approvalRate} />
             )}
 
             {/* CTAs */}

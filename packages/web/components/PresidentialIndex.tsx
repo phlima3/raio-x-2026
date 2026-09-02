@@ -14,11 +14,10 @@ export type PresidentialCandidate = {
   photoUrl?: string | null
   ballotNumber?: number | null
   isIncumbent?: boolean
-  approvalRate?: number | null
   firstProposalTitle?: string | null
 }
 
-type SortKey = 'default' | 'name' | 'state' | 'approval'
+type SortKey = 'default' | 'name' | 'state'
 
 type Props = {
   candidates: PresidentialCandidate[]
@@ -28,7 +27,6 @@ const SORT_LABELS: Record<SortKey, string> = {
   default: 'Editorial',
   name: 'A–Z',
   state: 'UF',
-  approval: 'Aprovação',
 }
 
 function prefersReducedMotion(): boolean {
@@ -59,12 +57,6 @@ function sortCandidates(
       return copy.sort((a, b) => {
         const s = (a.state ?? '').localeCompare(b.state ?? '', 'pt-BR')
         return s !== 0 ? s : a.name.localeCompare(b.name, 'pt-BR')
-      })
-    case 'approval':
-      return copy.sort((a, b) => {
-        const aRate = a.approvalRate ?? -1
-        const bRate = b.approvalRate ?? -1
-        return bRate - aRate
       })
   }
 }
@@ -198,7 +190,6 @@ function Entry({
     photoUrl,
     ballotNumber,
     isIncumbent,
-    approvalRate,
     firstProposalTitle,
   } = candidate
   const initials = initialsFor(name)
@@ -260,27 +251,6 @@ function Entry({
             {firstProposalTitle}
             <span className="text-ember not-italic ml-0.5">”</span>
           </p>
-        )}
-      </div>
-
-      <div className="pt-2 shrink-0 text-right min-w-[64px]">
-        {approvalRate != null ? (
-          <>
-            <p className="font-serif text-3xl tabular-nums leading-none tracking-[-0.02em]">
-              {approvalRate}
-              <span className="text-sm text-ink-soft align-top ml-0.5">%</span>
-            </p>
-            <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-ink-soft mt-1.5">
-              aprovação
-            </p>
-          </>
-        ) : (
-          <span
-            aria-label="sem dado"
-            className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft"
-          >
-            ——
-          </span>
         )}
       </div>
 
