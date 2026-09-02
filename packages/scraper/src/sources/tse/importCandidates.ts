@@ -144,6 +144,26 @@ function identityTokens(...values: Array<string | null>): Set<string> {
  * contra "FLÁVIO NANTES BOLSONARO"). Comparar os dois lados por nome civil e
  * nome de urna evita duplicar a candidatura.
  */
+/**
+ * Quais revisões abertas escondem a candidatura.
+ *
+ * Reconciliar identidade e existir como candidatura são perguntas diferentes —
+ * é a mesma decisão que o ramo de criação já aplica em `blocksPublication`. Um
+ * `CANDIDACY_CONFLICT` aberto (homônimo editorial único, o caso de quem trocou
+ * de partido entre o seed e o registro) registra em aberto **qual ficha é a
+ * mesma pessoa**, não se a candidatura existe: ela veio do TSE.
+ *
+ * Sem este recorte os dois ramos discordavam. A criação publicava, e a
+ * atualização da passada seguinte via a revisão aberta e despublicava — foi
+ * assim que Carlos Viana (MG) e Eliziane Gama (MA) sumiram do site tendo
+ * registro deferido no TSE.
+ */
+const REVISOES_QUE_BLOQUEIAM = [
+  ReviewItemKind.IDENTITY_AMBIGUITY,
+  ReviewItemKind.DUPLICATE_PERSON,
+  ReviewItemKind.SOURCE_DATA_ERROR,
+] as const
+
 function sharesIdentity(
   candidate: { name: string; socialName: string | null },
   record: TseCandidateRecord,
@@ -463,7 +483,11 @@ export async function importTseCandidates(
 
       if (existingOfficial) {
         const openReview = await prisma.reviewItem.findFirst({
-          where: { candidateId: existingOfficial.id, status: ReviewItemStatus.OPEN },
+          where: {
+            candidateId: existingOfficial.id,
+            status: ReviewItemStatus.OPEN,
+            kind: { in: [...REVISOES_QUE_BLOQUEIAM] },
+          },
           select: { id: true },
         })
         const personResolution = await ensureCandidatePerson(

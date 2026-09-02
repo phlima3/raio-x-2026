@@ -21,6 +21,13 @@ import { logger } from '../utils/logger'
  * que os 161x225 da foto de urna.
  */
 const PHOTO_ENTRY = /^F([A-Z]{2})(\d+)_div\.jpe?g$/i
+/**
+ * Credito da foto de urna. O TSE publica estas imagens no portal de dados
+ * abertos, e e ele que as divulga; o credito nomeia a fonte, sem afirmar
+ * licenca que o portal nao declara.
+ */
+const PHOTO_CREDIT = 'Foto de urna - Tribunal Superior Eleitoral, dados abertos'
+
 const PUBLIC_DIR = join(
   process.cwd(),
   process.cwd().endsWith('scraper') ? '../..' : '.',
@@ -53,7 +60,10 @@ export async function syncTseCandidatePhotos(): Promise<void> {
           tseId: { not: null },
           ...(positions ? { position: { in: positions } } : {}),
         },
-        select: { id: true, tseId: true, photoUrl: true },
+        select: {
+          id: true, tseId: true, photoUrl: true,
+          photoSourceUrl: true, photoLicense: true,
+        },
       })).flatMap((c) => c.tseId ? [[c.tseId, c] as const] : []),
     )
     logger.info('[tse:photos] candidaturas elegíveis', {
@@ -97,10 +107,24 @@ export async function syncTseCandidatePhotos(): Promise<void> {
         if (!dryRun) {
           writeFileSync(join(PUBLIC_DIR, `${tseId}.jpg`), Buffer.from(bytes))
           written++
-          if (candidate.photoUrl !== photoUrl) {
+          // A procedencia e gravada junto com o arquivo: o pacote de onde a
+          // foto saiu e o credito de quem a publicou. Sem isso a ficha exibe
+          // uma foto sem dizer de onde veio, e o gate -- com razao -- segura a
+          // pagina. E dado que o job ja tem em maos; deixa-lo de fora e que
+          // era a omissao.
+          if (
+            candidate.photoUrl !== photoUrl ||
+            candidate.photoSourceUrl !== resource.url ||
+            candidate.photoLicense !== PHOTO_CREDIT
+          ) {
             await prisma.candidate.update({
               where: { id: candidate.id },
-              data: { photoUrl, materialUpdatedAt: new Date() },
+              data: {
+                photoUrl,
+                photoSourceUrl: resource.url,
+                photoLicense: PHOTO_CREDIT,
+                materialUpdatedAt: new Date(),
+              },
             })
             linked++
           }

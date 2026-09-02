@@ -60,7 +60,7 @@ export default async function GovernorPage(props: Props): Promise<JSX.Element> {
   const title = `Candidatos a governador de ${data.stateName} em 2026`
   const description = `Perfis qualificados da disputa pelo governo de ${data.stateName}, com propostas e fontes.`
   return (
-    <LandingPageFrame path={path} eyebrow={`Governo estadual · ${data.code}`} title={title} description={description} intro={`Acompanhe os nomes da disputa em ${data.stateName}. Só entram nesta lista perfis com status documentado, revisão editorial e conteúdo substantivo apoiado por fontes.`} dateModified={latestMaterialUpdate(data.candidates)}>
+    <LandingPageFrame path={path} eyebrow={`Governo estadual · ${data.code}`} title={title} description={description} intro={`Acompanhe os nomes da disputa em ${data.stateName}. Só entram nesta lista perfis com situação eleitoral documentada e conteúdo apoiado por fontes citadas.`} dateModified={latestMaterialUpdate(data.candidates)}>
       <section className="container mx-auto px-4 md:px-6 py-14 md:py-20">
         <CandidateLandingList candidates={data.candidates} />
       </section>

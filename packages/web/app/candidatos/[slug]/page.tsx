@@ -159,6 +159,9 @@ export default async function CandidatePage(props: Props): Promise<JSX.Element> 
   const initials = initialsFor(candidate.name)
   // O JSON-LD precisa da URL absoluta; a tag <img> tem de apontar para a
   // origem que serve o arquivo, senão a foto do `public/` só carrega em prod.
+  // O expediente não pode anunciar revisão que não houve: a ficha de fonte
+  // oficial é derivada do registro no TSE, campo a campo, sem redação humana.
+  const revisadoPorPessoa = Boolean(candidate.editorialReviewer?.trim())
   const photoUrl = renderableImageUrl(candidate.photoUrl)
   const photoSchemaUrl = absoluteImageUrl(candidate.photoUrl)
   const officeLabel =
@@ -595,17 +598,23 @@ export default async function CandidatePage(props: Props): Promise<JSX.Element> 
                 Expediente do perfil
               </p>
               <p className="mt-3 font-serif text-xl">
-                {qualification?.indexable ? 'Revisão concluída' : 'Em revisão editorial'}
+                {revisadoPorPessoa
+                  ? 'Revisão editorial concluída'
+                  : qualification?.indexable
+                    ? 'Ficha de fonte oficial'
+                    : 'Fora do índice'}
               </p>
             </div>
             <dl className="space-y-3 text-sm text-ink-muted">
               <div>
                 <dt className="font-mono text-[9px] uppercase tracking-[0.18em]">Autoria</dt>
-                <dd className="mt-1">{candidate.editorialAuthor ?? 'Não informada'}</dd>
+                <dd className="mt-1">
+                  {candidate.editorialAuthor ?? 'Ficha derivada do registro no TSE'}
+                </dd>
               </div>
               <div>
                 <dt className="font-mono text-[9px] uppercase tracking-[0.18em]">Revisão</dt>
-                <dd className="mt-1">{candidate.editorialReviewer ?? 'Pendente'}</dd>
+                <dd className="mt-1">{candidate.editorialReviewer ?? 'Sem revisão humana'}</dd>
               </div>
               <div>
                 <dt className="font-mono text-[9px] uppercase tracking-[0.18em]">Atualização material</dt>

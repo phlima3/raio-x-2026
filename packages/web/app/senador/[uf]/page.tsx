@@ -58,7 +58,7 @@ export default async function SenatorPage(props: Props): Promise<JSX.Element> {
   if (!data) notFound()
   const title = `Candidatos ao Senado por ${data.stateName} em 2026`
   return (
-    <LandingPageFrame path={`/senador/${data.code.toLowerCase()}`} eyebrow={`Senado Federal · ${data.code}`} title={title} description={`Perfis qualificados da disputa ao Senado por ${data.stateName}.`} intro={`Consulte os nomes acompanhados para o Senado em ${data.stateName}. Páginas incompletas ou ainda sem revisão não entram nesta seleção.`} dateModified={latestMaterialUpdate(data.candidates)}>
+    <LandingPageFrame path={`/senador/${data.code.toLowerCase()}`} eyebrow={`Senado Federal · ${data.code}`} title={title} description={`Perfis qualificados da disputa ao Senado por ${data.stateName}.`} intro={`Consulte os nomes acompanhados para o Senado em ${data.stateName}. Páginas incompletas ou sem fonte citada não entram nesta seleção.`} dateModified={latestMaterialUpdate(data.candidates)}>
       <section className="container mx-auto px-4 md:px-6 py-14 md:py-20">
         <CandidateLandingList candidates={data.candidates} />
       </section>

@@ -10,6 +10,7 @@ export type SeoBlockerCode =
   | 'introducao_insuficiente'
   | 'trajetoria_sem_fonte'
   | 'menos_de_tres_modulos'
+  | 'sem_modulo_substantivo'
   | 'atualizacao_material_ausente'
   | 'revisao_editorial_ausente'
   | 'aprovacao_editorial_ausente'
@@ -99,6 +100,7 @@ export const SEO_BLOCKER_MESSAGES: Record<SeoBlockerCode, string> = {
   introducao_insuficiente: 'A introdução exclusiva está ausente, curta ou contém placeholder.',
   trajetoria_sem_fonte: 'A trajetória/biografia não possui uma fonte HTTPS registrada.',
   menos_de_tres_modulos: 'Há menos de três módulos substantivos apoiados por fontes.',
+  sem_modulo_substantivo: 'Não há nenhum módulo substantivo apoiado por fonte.',
   atualizacao_material_ausente: 'A última atualização material não foi registrada.',
   revisao_editorial_ausente: 'A revisão editorial não foi registrada.',
   aprovacao_editorial_ausente: 'A aprovação editorial não foi registrada.',
@@ -259,6 +261,29 @@ function substantiveModules(candidate: CandidateQualityInput): SubstantiveModule
   return modules
 }
 
+/**
+ * Perfil montado **inteiramente a partir de fonte oficial**: identidade
+ * confirmada pelo TSE, situação eleitoral citada na Justiça Eleitoral, ficha do
+ * registro com a sua fonte, e foto — quando existe — com procedência gravada.
+ *
+ * Não há aqui texto escrito por pessoa: cada frase é derivada de campo do
+ * registro, e o rodapé de cada bloco diz de onde veio. É por isso que a
+ * assinatura editorial não se aplica — ela atesta redação e revisão humanas, e
+ * exigi-la de um perfil que ninguém redigiu só produzia 519 páginas fora do
+ * índice com o dado pronto no banco.
+ *
+ * O que continua valendo é a garantia que importa: **nada entra sem fonte**.
+ * Perfil com texto curado segue pela trilha editorial, com autoria e revisor.
+ */
+function isOfficialSourceProfile(candidate: CandidateQualityInput): boolean {
+  return (
+    hasText(candidate.tseId, 3) &&
+    isHttpsUrl(candidate.candidacyStatusSourceUrl) &&
+    isHttpsUrl(candidate.bioSourceUrl) &&
+    (candidate.photoUrl == null || isHttpsUrl(candidate.photoSourceUrl))
+  )
+}
+
 export function evaluateCandidateIndexability(
   candidate: CandidateQualityInput,
   options: { now?: Date; staleStatusAfterHours?: number } = {},
@@ -266,6 +291,7 @@ export function evaluateCandidateIndexability(
   const blockers: SeoBlockerCode[] = []
   const warnings: SeoWarningCode[] = []
   const modules = substantiveModules(candidate)
+  const fonteOficial = isOfficialSourceProfile(candidate)
 
   if (
     !hasText(candidate.slug, 3) ||
@@ -321,16 +347,28 @@ export function evaluateCandidateIndexability(
     blockers.push('introducao_insuficiente')
   }
   if (!isHttpsUrl(candidate.bioSourceUrl)) blockers.push('trajetoria_sem_fonte')
-  if (modules.length < 3) blockers.push('menos_de_tres_modulos')
+  // A trilha editorial pede três módulos porque promete um perfil trabalhado.
+  // A oficial pede um: a ficha do registro com a fonte do TSE já é registro
+  // público útil, e exigir três excluiria toda candidatura sem mandato
+  // anterior — que é a maioria — por não ter votação nem projeto de lei.
+  if (fonteOficial) {
+    if (modules.length < 1) blockers.push('sem_modulo_substantivo')
+  } else if (modules.length < 3) {
+    blockers.push('menos_de_tres_modulos')
+  }
 
   const materialUpdatedAt = dateValue(candidate.materialUpdatedAt)
   const reviewedAt = dateValue(candidate.reviewedAt)
   const approvedAt = dateValue(candidate.editorialApprovedAt)
   if (materialUpdatedAt == null) blockers.push('atualizacao_material_ausente')
-  if (reviewedAt == null) blockers.push('revisao_editorial_ausente')
-  if (approvedAt == null) blockers.push('aprovacao_editorial_ausente')
-  if (!hasText(candidate.editorialAuthor, 3)) blockers.push('autoria_ausente')
-  if (!hasText(candidate.editorialReviewer, 3)) blockers.push('revisor_ausente')
+  // Assinatura humana só se cobra de quem produziu texto humano. Ver
+  // `isOfficialSourceProfile`.
+  if (!fonteOficial) {
+    if (reviewedAt == null) blockers.push('revisao_editorial_ausente')
+    if (approvedAt == null) blockers.push('aprovacao_editorial_ausente')
+    if (!hasText(candidate.editorialAuthor, 3)) blockers.push('autoria_ausente')
+    if (!hasText(candidate.editorialReviewer, 3)) blockers.push('revisor_ausente')
+  }
   if (
     materialUpdatedAt != null &&
     ((reviewedAt != null && reviewedAt < materialUpdatedAt) ||

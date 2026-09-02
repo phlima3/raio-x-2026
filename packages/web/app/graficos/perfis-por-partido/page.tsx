@@ -198,7 +198,7 @@ export default async function PartyProfilesGraphPage(): Promise<JSX.Element> {
             </p>
             {!ready && (
               <p className="mt-3 font-medium text-ember">
-                Publicação em revisão: nenhum perfil passou integralmente pelo gate editorial.
+                Publicação em preparo: nenhum perfil reúne ainda as fontes exigidas pelo gate.
               </p>
             )}
           </div>

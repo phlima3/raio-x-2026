@@ -204,3 +204,81 @@ test('"teste" sozinho no campo continua sendo placeholder', () => {
     )
   }
 })
+
+
+/**
+ * Trilha "fonte oficial": ficha montada so de dado do TSE, sem texto escrito
+ * por pessoa. Ver `isOfficialSourceProfile`.
+ */
+const fichaOficial: CandidateQualityInput = {
+  ...completeCandidate,
+  tseId: '250002553928',
+  position: 'GOVERNADOR',
+  runningMateName: null,
+  runningMateParty: null,
+  runningMateSourceUrl: null,
+  // Ninguem redigiu nem revisou: e o que a trilha oficial assume.
+  reviewedAt: null,
+  editorialApprovedAt: null,
+  editorialAuthor: null,
+  editorialReviewer: null,
+  photoUrl: '/images/candidates/tse/250002553928.jpg',
+  photoSourceUrl: 'https://cdn.tse.jus.br/estatistica/sead/eleicoes/foto_cand2026_SP_div.zip',
+  photoLicense: 'Foto de urna - Tribunal Superior Eleitoral, dados abertos',
+  // So `trajetoria`: sem proposta, sem votacao, sem bens, sem noticia.
+  proposals: [],
+  votingRecords: [],
+  assetDeclarations: [],
+  campaignFinancings: [],
+  newsItems: [],
+}
+
+test('ficha so de fonte oficial indexa sem assinatura humana', () => {
+  const result = evaluateCandidateIndexability(fichaOficial, {
+    now: new Date('2026-08-07T18:00:00.000Z'),
+  })
+  assert.deepEqual(result.blockers, [])
+  assert.equal(result.indexable, true)
+  // Um modulo basta na trilha oficial; exigir tres excluiria toda candidatura
+  // sem mandato anterior, que e a maioria.
+  assert.deepEqual(result.substantiveModules, ['trajetoria'])
+})
+
+test('sem procedencia da foto a ficha volta a trilha editorial e e cobrada de assinatura', () => {
+  const result = evaluateCandidateIndexability(
+    { ...fichaOficial, photoSourceUrl: null, photoLicense: null },
+    { now: new Date('2026-08-07T18:00:00.000Z') },
+  )
+  assert.equal(result.indexable, false)
+  assert.ok(result.blockers.includes('credito_de_imagem_ausente'))
+  assert.ok(result.blockers.includes('autoria_ausente'))
+  assert.ok(result.blockers.includes('revisor_ausente'))
+})
+
+test('ficha oficial sem nenhum modulo com fonte nao indexa', () => {
+  // Fonte continua registrada (segue na trilha oficial), mas a ficha ficou
+  // curta demais para valer como trajetoria: sem nenhum modulo, nao ha pagina.
+  const result = evaluateCandidateIndexability(
+    { ...fichaOficial, bio: 'Disputa o governo.' },
+    { now: new Date('2026-08-07T18:00:00.000Z') },
+  )
+  assert.equal(result.indexable, false)
+  assert.deepEqual(result.substantiveModules, [])
+  assert.ok(result.blockers.includes('sem_modulo_substantivo'))
+  // A trilha oficial dispensa assinatura, nao a checagem de conteudo.
+  assert.ok(!result.blockers.includes('revisor_ausente'))
+})
+
+test('perfil editorial continua exigindo autoria e revisor', () => {
+  const result = evaluateCandidateIndexability(
+    {
+      ...completeCandidate,
+      editorialAuthor: null,
+      editorialReviewer: null,
+    },
+    { now: new Date('2026-08-07T18:00:00.000Z') },
+  )
+  assert.equal(result.indexable, false)
+  assert.ok(result.blockers.includes('autoria_ausente'))
+  assert.ok(result.blockers.includes('revisor_ausente'))
+})

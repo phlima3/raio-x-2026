@@ -75,7 +75,7 @@ export function LandingPageFrame({
 
 export function CandidateLandingList({
   candidates,
-  emptyMessage = 'Nenhum perfil passou pelo gate editorial para esta página.',
+  emptyMessage = 'Nenhum perfil reúne fontes suficientes para esta página.',
 }: {
   candidates: CandidateSeoReportItem[]
   emptyMessage?: string

@@ -18,7 +18,7 @@ export default function ComparisonsIndexPage() {
       eyebrow="Comparações seletivas"
       title="Comparações editoriais de candidatos"
       description={metadata.description as string}
-      intro="O comparador continua aberto como ferramenta. Uma comparação só recebe URL indexável quando há demanda, dados completos, síntese própria, fontes por tema e revisão humana."
+      intro="O comparador continua aberto como ferramenta. Uma comparação só recebe URL indexável quando há demanda, dados completos, síntese própria e fontes por tema."
       dateModified="2026-08-07T15:00:00-03:00"
     >
       <section className="container mx-auto px-4 md:px-6 py-14 md:py-20">

@@ -37,7 +37,7 @@ export default async function PresidentialCandidatesPage(): Promise<JSX.Element>
       eyebrow="Presidência da República"
       title="Candidatos à Presidência em 2026"
       description={description}
-      intro="A lista reúne apenas perfis que passaram pelo gate de fontes e revisão. A situação exibida diferencia pré-candidatura, escolha em convenção, pedido de registro e decisão da Justiça Eleitoral."
+      intro="A lista reúne perfis montados a partir de dados oficiais do TSE, com a fonte citada em cada campo. Revisão humana só quando há texto editorial. A situação exibida diferencia pré-candidatura, escolha em convenção, pedido de registro e decisão da Justiça Eleitoral."
       dateModified={latestMaterialUpdate(items)}
     >
       <section className="container mx-auto px-4 md:px-6 py-14 md:py-20">
