@@ -2,7 +2,7 @@ import { createScraperPrismaClient } from '../utils/prisma'
 import 'dotenv/config'
 import { Position } from '@prisma/client'
 import { withPage } from '../utils/playwright'
-import { navigateForContent } from '../utils/siteNavigation'
+import { navigateForContent, sameSiteHttpUrl } from '../utils/siteNavigation'
 import { processProposalsFromSite } from '../processors/proposalExtractor'
 import { logger } from '../utils/logger'
 
@@ -68,9 +68,17 @@ export async function scrapeCandidateSite(
       // If no explicit proposalsPath, try to find the proposals sub-page
     if (!config.proposalsPath) {
       const detected = await detectProposalsLink(page)
-      if (detected && detected !== targetUrl) {
-        logger.info(`[sites] Detected proposals page at ${detected}`)
-        await navigateForContent(page, detected)
+      // O href vem do DOM do site do candidato, que nao e confiavel: so segue
+      // se apontar para o proprio site. Ver sameSiteHttpUrl.
+      const safeDetected = detected ? sameSiteHttpUrl(detected, config.siteUrl) : null
+      if (detected && !safeDetected) {
+        logger.warn(
+          `[sites] Ignoring off-site proposals link ${detected} for ${config.candidateName}`,
+        )
+      }
+      if (safeDetected && safeDetected !== targetUrl) {
+        logger.info(`[sites] Detected proposals page at ${safeDetected}`)
+        await navigateForContent(page, safeDetected)
       }
     }
 
