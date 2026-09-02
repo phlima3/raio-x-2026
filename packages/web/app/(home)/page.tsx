@@ -112,7 +112,7 @@ export default async function HomePage() {
 
       {/* ——— Hero ——— */}
       <section className="container mx-auto px-6 pt-16 md:pt-24 pb-14 relative">
-        <div className="grid grid-cols-12 gap-x-8 gap-y-10">
+        <div className="grid grid-cols-12 gap-x-0 md:gap-x-8 gap-y-10">
           <header className="col-span-12 md:col-span-8 rise-in">
             <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-ember mb-7">
               <span className="inline-block w-8 h-px bg-ember align-middle mr-3" />
@@ -354,7 +354,7 @@ export default async function HomePage() {
       {/* ——— Colofão — Fontes ——— */}
       <section className="border-t-2 border-ink bg-paper-dark/40 cv-auto">
         <div className="container mx-auto px-6 py-16">
-          <div className="grid grid-cols-12 gap-8 mb-10">
+          <div className="grid grid-cols-12 gap-y-8 md:gap-x-8 mb-10">
             <div className="col-span-12 md:col-span-4">
               <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-ember mb-4">
                 Colofão

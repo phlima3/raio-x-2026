@@ -12,7 +12,7 @@ export default function HomeLoading() {
 
       {/* Hero skeleton */}
       <section className="container mx-auto px-6 pt-16 md:pt-24 pb-14">
-        <div className="grid grid-cols-12 gap-x-8 gap-y-10">
+        <div className="grid grid-cols-12 gap-x-0 md:gap-x-8 gap-y-10">
           <div className="col-span-12 md:col-span-8 space-y-6">
             <div className="h-3 w-56 bg-ember/40 rounded-sm animate-pulse" />
             <div className="space-y-3">
