@@ -43,6 +43,25 @@ test('senador nasce fora do estado que disputa', () => {
   assert.match(ficha ?? '', /Disputa uma vaga ao Senado por São Paulo pelo REDE, com o número 180\./)
 })
 
+test('"por" contrai com o artigo do estado que o senador disputa', () => {
+  // SP é "de São Paulo" e saía certo por acidente; as UFs com artigo davam
+  // "Senado por Rio de Janeiro" e "Senado por Bahia".
+  const senadorEm = (state: string) =>
+    fichaDeRegistro({
+      position: Position.SENADOR,
+      state,
+      party: 'PT',
+      ballotNumber: 133,
+      birthDate: '08/02/1958',
+      birthState: state,
+    }) ?? ''
+
+  assert.match(senadorEm('RJ'), /Senado pelo Rio de Janeiro pelo PT/)
+  assert.match(senadorEm('BA'), /Senado pela Bahia pelo PT/)
+  assert.match(senadorEm('DF'), /Senado pelo Distrito Federal pelo PT/)
+  assert.match(senadorEm('MG'), /Senado por Minas Gerais pelo PT/)
+})
+
 test('campo ausente some da frase em vez de virar "não informado"', () => {
   const ficha = fichaDeRegistro({
     position: Position.GOVERNADOR,

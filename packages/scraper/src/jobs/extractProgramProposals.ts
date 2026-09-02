@@ -37,8 +37,8 @@ export interface RunProgramProposalExtractionOptions {
   limit?: number
   slug?: string
   positions?: Position[]
-  /** Sigla da UF; recorta a rodada a um estado sem mexer no cargo. */
-  state?: string
+  /** Siglas de UF; recorta a rodada a esses estados sem mexer no cargo. */
+  state?: string[]
 }
 
 /**
@@ -47,18 +47,18 @@ export interface RunProgramProposalExtractionOptions {
  *
  * `--slug` é exclusivo: pedir uma ficha específica e ainda filtrar por cargo ou
  * UF só serviria para a ficha pedida sumir calada. Cargo e estado combinam
- * (`--position=GOVERNADOR --state=SP`), e sem nenhum dos dois o escopo é vazio,
- * isto é, todas as candidaturas.
+ * (`--position=GOVERNADOR --state=MG,RJ`), e sem nenhum dos dois o escopo é
+ * vazio, isto é, todas as candidaturas.
  */
 export function candidateScope(scope: {
   slug?: string
   positions?: Position[]
-  state?: string
-}): { slug?: string; position?: { in: Position[] }; state?: string } {
+  state?: string[]
+}): { slug?: string; position?: { in: Position[] }; state?: { in: string[] } } {
   if (scope.slug) return { slug: scope.slug }
   return {
     ...(scope.positions ? { position: { in: scope.positions } } : {}),
-    ...(scope.state ? { state: scope.state } : {}),
+    ...(scope.state?.length ? { state: { in: scope.state } } : {}),
   }
 }
 
@@ -79,18 +79,26 @@ export function parsePositionsArg(argv: string[] = process.argv): Position[] | u
 }
 
 /**
- * `--state=SP`; ausente é "todos os estados".
+ * `--state=MG,RJ,BA`; ausente é "todos os estados".
+ *
+ * Aceita lista porque os jobs que leem pacote nacional do TSE (`bios:tse`,
+ * `import:contas`) baixam o mesmo arquivo a cada execução: seis UFs numa
+ * chamada é um download, seis chamadas são seis.
  *
  * UF inválida aborta em vez de filtrar por um valor que não casa com nada: o
  * modo de falha do filtro silencioso é uma rodada que termina com zero linhas
  * e parece dizer que não havia dado, quando o que houve foi um erro de digitação.
+ * Uma UF inválida no meio da lista aborta a lista inteira, pelo mesmo motivo.
  */
-export function parseStateArg(argv: string[] = process.argv): string | undefined {
+export function parseStateArg(argv: string[] = process.argv): string[] | undefined {
   const flag = argv.find((argument) => argument.startsWith('--state='))
   if (!flag) return undefined
-  const state = flag.split('=')[1].trim().toUpperCase()
-  if (!UFS.has(state)) throw new Error(`UF desconhecida: ${flag.split('=')[1]}`)
-  return state
+  const states = flag.split('=')[1].split(',').map((value) => {
+    const state = value.trim().toUpperCase()
+    if (!UFS.has(state)) throw new Error(`UF desconhecida: ${value}`)
+    return state
+  })
+  return [...new Set(states)]
 }
 
 interface ExtractedProposal {

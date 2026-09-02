@@ -62,10 +62,24 @@ export function rotuloEmMinuscula(value: string): string {
   return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase('pt-BR')
 }
 
+const POR_CONTRAIDO: Record<string, string> = { de: 'por', do: 'pelo', da: 'pela' }
+
+/**
+ * "de São Paulo" → "por São Paulo", "do Rio de Janeiro" → "pelo Rio de Janeiro".
+ *
+ * `por` contrai com o artigo do nome do estado. Trocar as três formas por
+ * `por ` escrevia "uma vaga ao Senado por Bahia": entre as UFs, só as sem
+ * artigo ("de São Paulo", "de Minas Gerais") saíam certas, e SP é justamente a
+ * UF em que a frase foi conferida primeiro.
+ */
+export function senadoPor(estado: string): string {
+  return estado.replace(/^(de|do|da) /, (_, artigo: string) => `${POR_CONTRAIDO[artigo]} `)
+}
+
 const CARGO_FRASE: Partial<Record<Position, (estado: string) => string>> = {
   [Position.GOVERNADOR]: (estado) => `o governo ${estado}`,
   [Position.VICE_GOVERNADOR]: (estado) => `a vice-governança ${estado}`,
-  [Position.SENADOR]: (estado) => `uma vaga ao Senado ${estado.replace(/^d[eoa] /, 'por ')}`,
+  [Position.SENADOR]: (estado) => `uma vaga ao Senado ${senadoPor(estado)}`,
   [Position.PRESIDENTE]: () => 'a Presidência da República',
 }
 
@@ -126,7 +140,7 @@ export function podeSobrescrever(
 export interface ImportTseRegistryBiosOptions {
   prisma: PrismaClient
   positions?: Position[]
-  state?: string
+  state?: string[]
   slug?: string
   dryRun?: boolean
 }

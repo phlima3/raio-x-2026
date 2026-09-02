@@ -44,7 +44,7 @@ export interface RunFinanciamentoSyncOptions {
   /** Cargos varridos; ausente é todos. */
   positions?: Position[]
   /** Sigla da UF; recorta a rodada a um estado sem mexer no cargo. */
-  state?: string
+  state?: string[]
   dryRun?: boolean
 }
 

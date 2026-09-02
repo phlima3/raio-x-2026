@@ -177,7 +177,7 @@ export interface ImportTseAccountingOptions {
   prisma: PrismaClient
   client?: TseCkanClient
   positions?: Position[]
-  state?: string
+  state?: string[]
   slug?: string
   year?: number
   dryRun?: boolean

@@ -11,24 +11,39 @@ import {
 
 test('combina cargo e UF para recortar uma disputa estadual', () => {
   assert.deepEqual(
-    candidateScope({ positions: [Position.GOVERNADOR], state: 'SP' }),
-    { position: { in: [Position.GOVERNADOR] }, state: 'SP' },
+    candidateScope({ positions: [Position.GOVERNADOR], state: ['SP'] }),
+    { position: { in: [Position.GOVERNADOR] }, state: { in: ['SP'] } },
   )
-  assert.deepEqual(candidateScope({ state: 'SP' }), { state: 'SP' })
+  assert.deepEqual(candidateScope({ state: ['MG', 'RJ'] }), { state: { in: ['MG', 'RJ'] } })
   assert.deepEqual(candidateScope({}), {})
+  // Lista vazia não é "todas as UFs" por acidente nem `state: { in: [] }`, que
+  // no Prisma não casa com candidatura nenhuma.
+  assert.deepEqual(candidateScope({ state: [] }), {})
 })
 
 test('--slug ignora cargo e UF em vez de somar filtros que escondem a ficha pedida', () => {
   assert.deepEqual(
-    candidateScope({ slug: 'x-pt-sp-governador-2026', positions: [Position.PRESIDENTE], state: 'RJ' }),
+    candidateScope({ slug: 'x-pt-sp-governador-2026', positions: [Position.PRESIDENTE], state: ['RJ'] }),
     { slug: 'x-pt-sp-governador-2026' },
   )
 })
 
 test('UF é normalizada para maiúscula e a desconhecida aborta em vez de filtrar por nada', () => {
-  assert.equal(parseStateArg(['--state=sp']), 'SP')
+  assert.deepEqual(parseStateArg(['--state=sp']), ['SP'])
   assert.equal(parseStateArg([]), undefined)
   assert.throws(() => parseStateArg(['--state=XX']), /UF desconhecida/)
+})
+
+test('--state aceita lista, para o pacote nacional do TSE ser baixado uma vez só', () => {
+  assert.deepEqual(
+    parseStateArg(['--state=MG,rj , BA']),
+    ['MG', 'RJ', 'BA'],
+  )
+  assert.deepEqual(parseStateArg(['--state=SP,SP']), ['SP'])
+  // Uma UF errada no meio derruba a lista inteira: a rodada parcial silenciosa
+  // é o modo de falha que o aborto existe para evitar.
+  assert.throws(() => parseStateArg(['--state=MG,XX,BA']), /UF desconhecida: XX/)
+  assert.throws(() => parseStateArg(['--state=MG,']), /UF desconhecida/)
 })
 
 test('cargo desconhecido aborta; a lista aceita mais de um', () => {

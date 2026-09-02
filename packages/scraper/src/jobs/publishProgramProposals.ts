@@ -15,7 +15,7 @@ export interface PublishProgramProposalsOptions {
   positions?: Position[]
   slug?: string
   /** Sigla da UF; recorta a publicação a um estado sem mexer no cargo. */
-  state?: string
+  state?: string[]
   dryRun?: boolean
 }
 
