@@ -62,6 +62,22 @@ test('"por" contrai com o artigo do estado que o senador disputa', () => {
   assert.match(senadorEm('MG'), /Senado por Minas Gerais pelo PT/)
 })
 
+test('OUTROS é lacuna da tabela do TSE, não ocupação declarada', () => {
+  const ficha = fichaDeRegistro({
+    position: Position.GOVERNADOR,
+    state: 'MG',
+    party: 'PDT',
+    ballotNumber: 12,
+    birthDate: '25/03/1959',
+    birthState: 'MG',
+    occupation: 'OUTROS',
+    education: 'ENSINO MÉDIO COMPLETO',
+  })
+  assert.doesNotMatch(ficha ?? '', /ocupação/)
+  // O resto da declaração continua: só a ocupação vazia é que sai.
+  assert.match(ficha ?? '', /declarou à Justiça Eleitoral grau de instrução ensino médio completo\./)
+})
+
 test('campo ausente some da frase em vez de virar "não informado"', () => {
   const ficha = fichaDeRegistro({
     position: Position.GOVERNADOR,

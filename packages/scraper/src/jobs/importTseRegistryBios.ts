@@ -95,6 +95,19 @@ export interface FichaInput {
 }
 
 /**
+ * `OUTROS` é o código de escape da tabela de ocupações do TSE: o que ele
+ * informa é que nenhuma das ocupações listadas serve, não uma ocupação da
+ * pessoa. "Declarou à Justiça Eleitoral a ocupação de outros" publica como
+ * declaração de alguém o que é lacuna da tabela — some da frase, como qualquer
+ * campo ausente.
+ */
+function ocupacaoDeclarada(value: string | null | undefined): string | null {
+  const occupation = value?.trim()
+  if (!occupation || occupation.toLocaleUpperCase('pt-BR') === 'OUTROS') return null
+  return occupation
+}
+
+/**
  * A frase só afirma o que o registro traz. Campo ausente some da frase em vez
  * de virar "não informado": a ficha é uma citação do registro, e preencher
  * lacuna com texto nosso apaga a diferença entre o que foi declarado e o que
@@ -116,7 +129,8 @@ export function fichaDeRegistro(input: FichaInput): string | null {
   }
 
   const declarado: string[] = []
-  if (input.occupation) declarado.push(`a ocupação de ${rotuloEmMinuscula(input.occupation)}`)
+  const occupation = ocupacaoDeclarada(input.occupation)
+  if (occupation) declarado.push(`a ocupação de ${rotuloEmMinuscula(occupation)}`)
   if (input.education) declarado.push(`grau de instrução ${rotuloEmMinuscula(input.education)}`)
   if (declarado.length > 0) {
     frases.push(

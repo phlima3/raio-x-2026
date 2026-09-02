@@ -13,9 +13,13 @@ node_modules
 **/*.tsbuildinfo
 
 # Env
-.env
-.env.local
-.env.*.local
+# Recursivo: `veloz deploy` sobe o diretorio local, e os padroes sem `**/`
+# so casavam na raiz. `packages/web/.env.local` subia junto e sobrescrevia o
+# API_URL_INTERNAL de producao pela URL publica -- todo fetch server-side
+# passava a sair pela internet.
+**/.env
+**/.env.local
+**/.env.*.local
 
 # Logs & editor
 **/*.log
