@@ -2,6 +2,7 @@ import { notFound, permanentRedirect } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import type { CandidateDetail } from '@/lib/types'
 import {
   fetchCandidate,
   fetchCandidateConsistency,
@@ -78,6 +79,36 @@ function formatDate(value: string | null | undefined): string | null {
   }).format(date)
 }
 
+/**
+ * Frase do card de compartilhamento, montada do que a ficha realmente tem.
+ *
+ * Só entra número que existe: prometer "0 propostas" é pior que não citar
+ * proposta nenhuma.
+ */
+function resumoSocial(c: CandidateDetail): string {
+  const fatos: string[] = []
+  const propostas = c.proposals?.length ?? 0
+  if (propostas > 0) {
+    fatos.push(`${propostas} ${propostas === 1 ? 'proposta extraída' : 'propostas extraídas'} do plano de governo`)
+  }
+  const recebido = Number(c.campaignFinancings?.[0]?.totalReceived)
+  if (Number.isFinite(recebido) && recebido > 0) {
+    fatos.push(
+      `${recebido.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        maximumFractionDigits: 0,
+      })} declarados em campanha`,
+    )
+  }
+  const votacoes = c.votingRecords?.length ?? 0
+  if (votacoes > 0) fatos.push(`${votacoes} votações registradas`)
+
+  const cabeca = `${c.name} (${c.party}-${c.state}) nas Eleições 2026.`
+  if (fatos.length === 0) return `${cabeca} Situação da candidatura e fontes oficiais.`
+  return `${cabeca} ${fatos.join(', ')}. Cada dado com a fonte no TSE.`
+}
+
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const params = await props.params;
   try {
@@ -97,7 +128,11 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
         : { index: false, follow: true },
       openGraph: {
         title: `${c.name} — Raio-X 2026`,
-        description: `Propostas, votações e dados de transparência de ${c.name}.`,
+        // Texto que o leitor ve no card compartilhado. Cita o que esta ficha
+        // tem de concreto, em vez da mesma frase para as 519 candidaturas:
+        // "Propostas, votacoes e dados de transparencia de X" nao diferencia
+        // nada e nao da motivo para abrir.
+        description: resumoSocial(c),
         url: canonicalPath,
         images: [{ url: socialImage, alt: `Raio-X eleitoral de ${c.name}` }],
       },
