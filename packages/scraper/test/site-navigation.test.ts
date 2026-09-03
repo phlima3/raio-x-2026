@@ -1,7 +1,7 @@
 import type { Page, Response } from 'playwright'
 import { describe, expect, it, vi } from 'vitest'
 
-import { navigateForContent } from '../src/utils/siteNavigation'
+import { navigateForContent, sameSiteHttpUrl } from '../src/utils/siteNavigation'
 
 function response(status: number): Response {
   return { status: () => status } as unknown as Response
@@ -63,5 +63,42 @@ describe('navigateForContent', () => {
       state: 'attached',
       timeout: 15_000,
     })
+  })
+})
+
+describe('navegacao a partir de conteudo nao confiavel', () => {
+  function spyPage() {
+    return {
+      goto: vi.fn().mockResolvedValue(response(200)),
+      waitForLoadState: vi.fn().mockResolvedValue(undefined),
+      waitForSelector: vi.fn().mockResolvedValue({}),
+    } as unknown as Pick<Page, 'goto' | 'waitForLoadState' | 'waitForSelector'>
+  }
+
+  it.each([
+    'file:///proc/self/environ',
+    'file:///C:/Users/dev/.env',
+    'chrome://version',
+    'data:text/html,<h1>x</h1>',
+  ])('nao navega para %s', async (url) => {
+    const page = spyPage()
+    await expect(navigateForContent(page, url)).rejects.toThrow(/Esquema bloqueado/)
+    expect(page.goto).not.toHaveBeenCalled()
+  })
+
+  it('segue link de propostas no proprio site, inclusive http -> https e www', () => {
+    expect(sameSiteHttpUrl('https://zema.com.br/propostas', 'http://zema.com.br'))
+      .toBe('https://zema.com.br/propostas')
+    expect(sameSiteHttpUrl('https://www.zema.com.br/programa', 'https://zema.com.br'))
+      .toBe('https://www.zema.com.br/programa')
+  })
+
+  it.each([
+    ['file:///proc/self/environ#/propostas', 'leitura de arquivo local'],
+    ['http://127.0.0.1:15432/#/propostas', 'loopback do runner'],
+    ['http://169.254.169.254/latest/meta-data/#/programa', 'metadata link-local'],
+    ['https://evil.example/propostas', 'host de terceiro'],
+  ])('recusa %s (%s)', (href) => {
+    expect(sameSiteHttpUrl(href, 'https://zema.com.br')).toBeNull()
   })
 })
