@@ -1,9 +1,14 @@
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
+
 import { ImageResponse } from 'next/og'
 import { fetchCandidate } from '@/lib/api'
 import { candidacyStatusPresentation } from '@/lib/candidacy'
-import { canonicalUrl } from '@/lib/seo'
 
-export const runtime = 'edge'
+// Node, nao edge: o retrato e lido do `public/` em disco. No edge o unico
+// caminho era buscar a propria origem por HTTP, e essa requisicao nao voltava
+// -- o card saia com a moldura vazia e depois sem foto nenhuma, sem erro.
+export const runtime = 'nodejs'
 export const alt = 'Raio-X eleitoral do candidato'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
@@ -31,23 +36,21 @@ function dinheiroCurto(value: string | null | undefined): string | null {
 }
 
 /**
- * Retrato como data URI, em vez de deixar o Satori buscar pela URL.
+ * Retrato como data URI, lido do `public/` do proprio deploy.
  *
- * Passando a URL, o card saiu com a moldura vazia: o renderizador nao esperou
- * pela imagem e desenhou sem ela, sem erro nenhum. Buscar aqui torna a falha
- * visivel — e um card sem foto continua valido, so nao e o desejado.
+ * Passar a URL para o Satori deixava a moldura vazia: ele desenhava sem
+ * esperar pela imagem, sem erro. E buscar por HTTP no runtime edge nao
+ * resolvia, porque era a aplicacao chamando a si mesma. Ler do disco nao tem
+ * nem espera de rede nem esse laco.
  */
-async function retratoEmbutido(url: string | null): Promise<string | null> {
-  if (!url) return null
+async function retratoEmbutido(photoUrl: string | null | undefined): Promise<string | null> {
+  if (!photoUrl?.startsWith('/')) return null
   try {
-    const response = await fetch(url)
-    if (!response.ok) return null
-    const bytes = new Uint8Array(await response.arrayBuffer())
-    let binario = ''
-    for (const byte of bytes) binario += String.fromCharCode(byte)
-    const tipo = response.headers.get('content-type') ?? 'image/jpeg'
-    return `data:${tipo};base64,${btoa(binario)}`
+    const bytes = await readFile(join(process.cwd(), 'public', photoUrl))
+    const tipo = photoUrl.endsWith('.png') ? 'image/png' : 'image/jpeg'
+    return `data:${tipo};base64,${bytes.toString('base64')}`
   } catch {
+    // Foto ausente no disco nao invalida o card; ele so sai sem retrato.
     return null
   }
 }
@@ -64,9 +67,7 @@ export default async function CandidateOpenGraphImage({
 
   const name = candidate?.name ?? 'Perfil eleitoral'
   const status = candidacyStatusPresentation(candidate?.candidacyStatus).label
-  const foto = await retratoEmbutido(
-    candidate?.photoUrl ? canonicalUrl(candidate.photoUrl) : null,
-  )
+  const foto = await retratoEmbutido(candidate?.photoUrl)
 
   const identidade = [
     candidate?.party,
