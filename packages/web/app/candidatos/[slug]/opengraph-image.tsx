@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { ImageResponse } from 'next/og'
 import { fetchCandidate } from '@/lib/api'
 import { candidacyStatusPresentation } from '@/lib/candidacy'
+import { canonicalUrl } from '@/lib/seo'
 
 // Node, nao edge: o retrato e lido do `public/` em disco. No edge o unico
 // caminho era buscar a propria origem por HTTP, e essa requisicao nao voltava
@@ -35,22 +36,44 @@ function dinheiroCurto(value: string | null | undefined): string | null {
   return `R$ ${Math.round(total)}`
 }
 
+function comoDataUri(bytes: Buffer | Uint8Array, photoUrl: string): string {
+  const tipo = photoUrl.endsWith('.png') ? 'image/png' : 'image/jpeg'
+  return `data:${tipo};base64,${Buffer.from(bytes).toString('base64')}`
+}
+
 /**
- * Retrato como data URI, lido do `public/` do proprio deploy.
+ * Retrato como data URI.
  *
- * Passar a URL para o Satori deixava a moldura vazia: ele desenhava sem
- * esperar pela imagem, sem erro. E buscar por HTTP no runtime edge nao
- * resolvia, porque era a aplicacao chamando a si mesma. Ler do disco nao tem
- * nem espera de rede nem esse laco.
+ * Passar a URL direto para o Satori nao funciona: ele desenha sem esperar pela
+ * imagem e o card sai com a moldura vazia, sem erro nenhum.
+ *
+ * Duas fontes porque nenhuma sozinha se mostrou confiavel: o caminho no disco
+ * depende de onde o processo foi iniciado (`next start` roda de
+ * `packages/web`, mas a imagem publicada nao apareceu por `public/`), e a
+ * busca por HTTP e a aplicacao chamando a si mesma -- no runtime edge isso nao
+ * voltava. Tenta o disco, cai para o HTTP, e se as duas falharem o card sai
+ * sem retrato em vez de quebrar.
  */
 async function retratoEmbutido(photoUrl: string | null | undefined): Promise<string | null> {
   if (!photoUrl?.startsWith('/')) return null
+
+  const bases = [
+    join(process.cwd(), 'public'),
+    join(process.cwd(), 'packages', 'web', 'public'),
+  ]
+  for (const base of bases) {
+    try {
+      return comoDataUri(await readFile(join(base, photoUrl)), photoUrl)
+    } catch {
+      // proxima base
+    }
+  }
+
   try {
-    const bytes = await readFile(join(process.cwd(), 'public', photoUrl))
-    const tipo = photoUrl.endsWith('.png') ? 'image/png' : 'image/jpeg'
-    return `data:${tipo};base64,${bytes.toString('base64')}`
+    const response = await fetch(canonicalUrl(photoUrl))
+    if (!response.ok) return null
+    return comoDataUri(new Uint8Array(await response.arrayBuffer()), photoUrl)
   } catch {
-    // Foto ausente no disco nao invalida o card; ele so sai sem retrato.
     return null
   }
 }
