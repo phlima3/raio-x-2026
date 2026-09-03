@@ -10,9 +10,15 @@ const DEFAULT_TIMEOUT_MS = 300_000
 /**
  * Janela do Codex medida em caracteres, com folga para o prompt e a resposta.
  *
- * O maior plano de governo do TSE tem ~320 mil caracteres; 200 mil cobre a
- * quase totalidade sem truncar, e o que passar disso o `baseProvider` corta —
- * declarar mais do que cabe é truncar sem saber onde.
+ * **Documento acima do orçamento é pulado inteiro**, não truncado: o
+ * `extract:programs` o conta em `oversized` e segue adiante. Com os 200 mil
+ * daqui, 23 dos 165 planos estaduais ficaram de fora sem render nada; a rodada
+ * com `CODEX_INPUT_BUDGET=600000` trouxe todos os 23 e mais 2.850 propostas.
+ *
+ * O maior plano medido tem 523 mil caracteres. O default fica em 200 mil por
+ * ser o que roda rápido no caso comum; quando as métricas mostrarem
+ * `oversized > 0`, é sinal de rodar de novo com o orçamento maior — e não de
+ * que aqueles documentos não tinham proposta.
  */
 const DEFAULT_INPUT_BUDGET = 200_000
 
