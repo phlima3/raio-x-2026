@@ -30,6 +30,28 @@ function dinheiroCurto(value: string | null | undefined): string | null {
   return `R$ ${Math.round(total)}`
 }
 
+/**
+ * Retrato como data URI, em vez de deixar o Satori buscar pela URL.
+ *
+ * Passando a URL, o card saiu com a moldura vazia: o renderizador nao esperou
+ * pela imagem e desenhou sem ela, sem erro nenhum. Buscar aqui torna a falha
+ * visivel — e um card sem foto continua valido, so nao e o desejado.
+ */
+async function retratoEmbutido(url: string | null): Promise<string | null> {
+  if (!url) return null
+  try {
+    const response = await fetch(url)
+    if (!response.ok) return null
+    const bytes = new Uint8Array(await response.arrayBuffer())
+    let binario = ''
+    for (const byte of bytes) binario += String.fromCharCode(byte)
+    const tipo = response.headers.get('content-type') ?? 'image/jpeg'
+    return `data:${tipo};base64,${btoa(binario)}`
+  } catch {
+    return null
+  }
+}
+
 export default async function CandidateOpenGraphImage({
   params,
 }: {
@@ -42,7 +64,9 @@ export default async function CandidateOpenGraphImage({
 
   const name = candidate?.name ?? 'Perfil eleitoral'
   const status = candidacyStatusPresentation(candidate?.candidacyStatus).label
-  const foto = candidate?.photoUrl ? canonicalUrl(candidate.photoUrl) : null
+  const foto = await retratoEmbutido(
+    candidate?.photoUrl ? canonicalUrl(candidate.photoUrl) : null,
+  )
 
   const identidade = [
     candidate?.party,
