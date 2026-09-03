@@ -41,7 +41,7 @@ function initialsFor(name: string): string {
 function ColumnHeader({ letter, candidate }: { letter: 'A' | 'B'; candidate: CandidateSummary }) {
   const photoUrl = renderableImageUrl(candidate.photoUrl)
   return (
-    <h3 className="sticky top-[56px] z-20 sm:static flex items-center gap-2.5 bg-paper py-2 mb-4 border-b border-ink/10 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-soft">
+    <h3 className="sticky top-[56px] z-20 sm:static flex items-center gap-2.5 bg-paper-light py-2 mb-4 border-b border-ink/10 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-soft">
       <span className="text-ember">{letter}</span>
       <span className="relative w-6 h-6 rounded-full overflow-hidden border border-ink/20 bg-ember/10 shrink-0">
         {photoUrl ? (
