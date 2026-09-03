@@ -3,10 +3,13 @@ import 'dotenv/config'
 import { Prisma } from '@prisma/client'
 
 import { createApp } from './app'
+import { startMetricsServer } from './observability/metrics'
 import { ensureRedisReady, invalidate } from './services/cacheService'
 
 const PORT = process.env.PORT ?? process.env.API_PORT ?? 3001
 const app = createApp()
+
+startMetricsServer()
 
 app.listen(PORT, () => {
   console.info(`[api] Running on http://localhost:${PORT}`)

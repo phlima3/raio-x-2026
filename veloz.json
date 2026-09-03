@@ -52,6 +52,15 @@
           "engine": "redis",
           "version": "7"
         }
+      },
+      "observability": {
+        "metrics": {
+          "path": "/metrics",
+          "port": 9090
+        },
+        "traces": {
+          "sampleRate": 1
+        }
       }
     },
     "packages/web": {

@@ -36,6 +36,27 @@ function initialsFor(name: string): string {
     .toUpperCase()
 }
 
+// Sticky no mobile: as colunas empilham e, rolando, não dava para saber de
+// quem era a proposta. 56px = altura do Navbar sticky.
+function ColumnHeader({ letter, candidate }: { letter: 'A' | 'B'; candidate: CandidateSummary }) {
+  const photoUrl = renderableImageUrl(candidate.photoUrl)
+  return (
+    <h3 className="sticky top-[56px] z-20 sm:static flex items-center gap-2.5 bg-paper py-2 mb-4 border-b border-ink/10 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-soft">
+      <span className="text-ember">{letter}</span>
+      <span className="relative w-6 h-6 rounded-full overflow-hidden border border-ink/20 bg-ember/10 shrink-0">
+        {photoUrl ? (
+          <Image src={photoUrl} alt="" fill sizes="24px" className="object-cover" unoptimized />
+        ) : (
+          <span className="flex items-center justify-center w-full h-full font-serif text-[10px] text-ember">
+            {initialsFor(candidate.name)}
+          </span>
+        )}
+      </span>
+      <span className="truncate text-ink">{candidate.name}</span>
+    </h3>
+  )
+}
+
 function prefersReducedMotion(): boolean {
   if (typeof window === 'undefined') return false
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -95,9 +116,11 @@ export function Comparator({ candidateSlugA, candidateSlugB, topic }: Comparator
     const btnRect = activeBtn.getBoundingClientRect()
     const left = btnRect.left - barRect.left
     const width = btnRect.width
+    // Abas quebram linha no mobile: ancora no fundo do botão ativo, não da barra
+    const top = btnRect.bottom - barRect.top - 2
 
     indicatorRef.current.animate(
-      [{ left: `${left}px`, width: `${width}px` }],
+      [{ left: `${left}px`, width: `${width}px`, top: `${top}px` }],
       {
         duration: prefersReducedMotion() ? 0 : 360,
         easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
@@ -289,8 +312,8 @@ export function Comparator({ candidateSlugA, candidateSlugB, topic }: Comparator
           <div
             ref={indicatorRef}
             aria-hidden
-            className="absolute bottom-0 h-[2px] bg-ember"
-            style={{ left: 0, width: 0 }}
+            className="absolute h-[2px] bg-ember"
+            style={{ left: 0, width: 0, top: 0 }}
           />
         </div>
       )}
@@ -307,10 +330,7 @@ export function Comparator({ candidateSlugA, candidateSlugB, topic }: Comparator
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 sm:divide-x sm:divide-ink/10">
             <div>
-              <h3 className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-soft mb-4 pb-2 border-b border-ink/10">
-                <span className="text-ember mr-2">A</span>
-                {data.candidateA.name.split(' ')[0]}
-              </h3>
+<ColumnHeader letter="A" candidate={data.candidateA} />
               {activeComparison.proposalsA.length === 0 ? (
                 <p className="font-serif italic text-[15px] text-ink-soft py-8">
                   Sem propostas para este tema.
@@ -320,10 +340,7 @@ export function Comparator({ candidateSlugA, candidateSlugB, topic }: Comparator
               )}
             </div>
             <div className="sm:pl-8 border-t border-ink/10 pt-6 sm:border-t-0 sm:pt-0">
-              <h3 className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-soft mb-4 pb-2 border-b border-ink/10">
-                <span className="text-ember mr-2">B</span>
-                {data.candidateB.name.split(' ')[0]}
-              </h3>
+<ColumnHeader letter="B" candidate={data.candidateB} />
               {activeComparison.proposalsB.length === 0 ? (
                 <p className="font-serif italic text-[15px] text-ink-soft py-8">
                   Sem propostas para este tema.

@@ -1,4 +1,5 @@
 import Redis from 'ioredis'
+import { recordCacheEvent } from '../observability/metrics'
 
 // ── Client singleton ──────────────────────────────────────────────────────────
 
@@ -78,15 +79,22 @@ export async function withCache<T>(
   ttlSeconds: number,
   fn: () => Promise<T>,
 ): Promise<T> {
-  if (process.env.CACHE_DISABLED === 'true') return fn()
+  if (process.env.CACHE_DISABLED === 'true') {
+    recordCacheEvent('bypass')
+    return fn()
+  }
   const client = getRedis()
 
   try {
     const cached = await client.get(namespaced(key))
-    if (cached) return JSON.parse(cached) as T
+    if (cached) {
+      recordCacheEvent('hit')
+      return JSON.parse(cached) as T
+    }
   } catch {
     // Redis down or parse error — fall through to fn()
   }
+  recordCacheEvent('miss')
 
   const result = await fn()
 

@@ -3,6 +3,7 @@ import express, { type Express } from 'express'
 import helmet from 'helmet'
 
 import { errorHandler } from './middleware/errorHandler'
+import { metricsMiddleware } from './observability/metrics'
 import { rateLimiter } from './middleware/rateLimiter'
 import candidatesRouter from './routes/candidates'
 import comparisonRouter from './routes/comparison'
@@ -24,6 +25,9 @@ export function createApp(): Express {
   app.use(cors({ origin: corsOrigins }))
   app.use(express.json())
   app.use(rateLimiter)
+  // Depois do rate limiter, para que a requisicao recusada com 429 tambem
+  // apareca na metrica -- e justamente o caso que se quer enxergar.
+  app.use(metricsMiddleware)
 
   app.use('/health', healthRouter)
   app.use('/api/candidates', candidatesRouter)
