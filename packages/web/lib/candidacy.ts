@@ -101,6 +101,20 @@ export function candidacyStatusPresentation(
 }
 
 /**
+ * Partido e UF como a imprensa escreve: "Caiado (PSD-GO)". Presidenciável
+ * disputa o país inteiro e fica só com o partido, esteja gravado com `BR` ou
+ * com a UF de domicílio do seed editorial.
+ */
+export function partyLabel(candidate: {
+  party: string
+  state: string | null
+  position?: string
+}): string {
+  const nationwide = candidate.position === 'PRESIDENTE' || !candidate.state || candidate.state === 'BR'
+  return nationwide ? candidate.party : `${candidate.party}-${candidate.state}`
+}
+
+/**
  * O TSE publica tanto páginas de candidatura quanto pacotes do catálogo, e o
  * rótulo do link tem de dizer a verdade sobre o clique: uma abre para leitura,
  * o outro cai na pasta de downloads.

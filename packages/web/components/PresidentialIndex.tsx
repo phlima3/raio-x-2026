@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { ViewTransitionLink } from './ViewTransitionLink'
+import { fundoEleitoralLine } from '@/lib/financing'
 
 export type PresidentialCandidate = {
   id: string
@@ -12,12 +13,13 @@ export type PresidentialCandidate = {
   state: string
   position: string
   photoUrl?: string | null
-  ballotNumber?: number | null
   isIncumbent?: boolean
   firstProposalTitle?: string | null
+  fefcReceived?: string | null
+  totalReceived?: string | null
 }
 
-type SortKey = 'default' | 'name' | 'state'
+type SortKey = 'default' | 'name' | 'fefc'
 
 type Props = {
   candidates: PresidentialCandidate[]
@@ -25,8 +27,13 @@ type Props = {
 
 const SORT_LABELS: Record<SortKey, string> = {
   default: 'Editorial',
-  name: 'A–Z',
-  state: 'UF',
+  name: 'Nome',
+  fefc: 'Fundo eleitoral',
+}
+
+function money(value: string | null | undefined): number {
+  const n = Number(value)
+  return Number.isFinite(n) ? n : -1
 }
 
 function prefersReducedMotion(): boolean {
@@ -53,11 +60,13 @@ function sortCandidates(
   switch (key) {
     case 'name':
       return copy.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
-    case 'state':
-      return copy.sort((a, b) => {
-        const s = (a.state ?? '').localeCompare(b.state ?? '', 'pt-BR')
-        return s !== 0 ? s : a.name.localeCompare(b.name, 'pt-BR')
-      })
+    case 'fefc':
+      // Maior fundão primeiro; quem não tem contas (-1) vai para o fim.
+      return copy.sort(
+        (a, b) =>
+          money(b.fefcReceived) - money(a.fefcReceived) ||
+          a.name.localeCompare(b.name, 'pt-BR'),
+      )
   }
 }
 
@@ -122,9 +131,9 @@ export function PresidentialIndex({ candidates }: Props) {
       <div
         role="toolbar"
         aria-label="Ordenação da lista"
-        className="mb-8 flex items-center flex-wrap gap-x-5 gap-y-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-muted border-y border-ink/20 py-2"
+        className="mb-6 flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-ink-muted border-y border-ink/20 py-2"
       >
-        <span className="text-ink-muted">Ordenar por</span>
+        <span>Ordenar por</span>
         {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => {
           const active = sortKey === key
           return (
@@ -134,18 +143,18 @@ export function PresidentialIndex({ candidates }: Props) {
               onClick={() => handleSort(key)}
               aria-pressed={active}
               className={
-                'focus-editorial transition-colors border-b py-1.5 ' +
+                'focus-editorial transition-colors border-b py-1 ' +
                 (active
                   ? 'text-ember border-ember'
-                  : 'border-transparent hover:text-ember hover:border-ember')
+                  : 'border-transparent text-ink hover:text-ember hover:border-ember')
               }
             >
               {SORT_LABELS[key]}
             </button>
           )
         })}
-        <span className="ml-auto text-ink-muted hidden md:inline">
-          <kbd className="font-mono">⌘K</kbd> para busca rápida
+        <span className="ml-auto hidden md:inline">
+          <kbd className="font-mono">⌘K</kbd> abre a busca rápida
         </span>
       </div>
 
@@ -153,21 +162,15 @@ export function PresidentialIndex({ candidates }: Props) {
         ref={listRef}
         className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 border-t border-ink/25"
       >
-        {sorted.map((c, i) => (
+        {sorted.map((c) => (
           <li
             key={c.id}
             ref={(node) => {
               if (node) itemRefs.current.set(c.id, node)
               else itemRefs.current.delete(c.id)
             }}
-            className={sortKey === 'default' ? 'rise-in' : ''}
-            style={
-              sortKey === 'default'
-                ? { animationDelay: `${i * 60}ms` }
-                : undefined
-            }
           >
-            <Entry candidate={c} index={i + 1} />
+            <Entry candidate={c} />
           </li>
         ))}
       </ol>
@@ -175,91 +178,61 @@ export function PresidentialIndex({ candidates }: Props) {
   )
 }
 
-function Entry({
-  candidate,
-  index,
-}: {
-  candidate: PresidentialCandidate
-  index: number
-}) {
-  const {
-    slug,
-    name,
-    party,
-    state,
-    photoUrl,
-    ballotNumber,
-    isIncumbent,
-    firstProposalTitle,
-  } = candidate
-  const initials = initialsFor(name)
+function Entry({ candidate }: { candidate: PresidentialCandidate }) {
+  const { slug, name, party, photoUrl, isIncumbent, firstProposalTitle } = candidate
 
   return (
     <ViewTransitionLink
       href={`/candidatos/${slug}`}
-      className="focus-editorial group relative flex items-start gap-5 py-7 border-b border-ink/20 hover:bg-paper-light/70 transition-colors pr-4"
+      className="focus-editorial group flex items-start gap-5 py-6 border-b border-ink/20 hover:bg-paper-light/70 transition-colors"
     >
-      <span className="font-mono text-[11px] tracking-[0.1em] text-ink-soft tabular-nums pt-1.5 w-8 shrink-0">
-        {String(index).padStart(2, '0')}
-      </span>
-
       <div
-        className="relative w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden bg-ember/10 border border-ink/20 shrink-0"
+        className="relative w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden bg-paper-dark border border-ink/20 shrink-0"
         style={{ viewTransitionName: `photo-${slug}` }}
       >
         {photoUrl ? (
           <Image
             src={photoUrl}
-            alt={name}
+            alt=""
             fill
             sizes="80px"
-            className="object-cover grayscale contrast-110 group-hover:grayscale-0 transition-all duration-700"
+            className="object-cover"
             unoptimized
           />
         ) : (
-          <span className="flex items-center justify-center w-full h-full font-serif text-xl text-ember">
-            {initials}
+          <span className="flex items-center justify-center w-full h-full font-serif text-xl text-ink-muted">
+            {initialsFor(name)}
           </span>
         )}
       </div>
 
       <div className="flex-1 min-w-0">
         <h3
-          className="font-serif text-2xl md:text-[1.7rem] leading-tight tracking-[-0.01em] group-hover:text-ember transition-colors"
+          className="font-serif text-2xl md:text-[1.6rem] leading-tight tracking-[-0.01em] group-hover:text-ember transition-colors"
           style={{ viewTransitionName: `name-${slug}` }}
         >
           {name}
         </h3>
-        <p className="mt-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-muted">
-          {party} · {state}
-          {ballotNumber ? (
-            <>
-              <span className="mx-2 text-ink-soft">·</span>Nº{' '}
-              <span className="tabular-nums">{ballotNumber}</span>
-            </>
-          ) : null}
-          {isIncumbent ? (
-            <>
-              <span className="mx-2 text-ink-soft">·</span>
-              <span className="text-ember">incumbente</span>
-            </>
-          ) : null}
+        <p className="mt-1 text-sm text-ink-muted">
+          {party}
+          {isIncumbent ? ', no cargo' : ''}
         </p>
         {firstProposalTitle && (
           <p className="mt-3 font-serif italic text-[15px] text-ink-muted line-clamp-2 leading-snug">
-            <span className="text-ember not-italic mr-1">“</span>
-            {firstProposalTitle}
-            <span className="text-ember not-italic ml-0.5">”</span>
+            “{firstProposalTitle}”
+          </p>
+        )}
+        {/* `undefined` é API antiga, sem o campo; `null` é candidato sem contas. */}
+        {candidate.totalReceived !== undefined && (
+          <p className="mt-3 text-[15px] text-ink">
+            {fundoEleitoralLine(
+              candidate.totalReceived === null
+                ? null
+                : { totalReceived: candidate.totalReceived, fefcReceived: candidate.fefcReceived },
+            )}
           </p>
         )}
       </div>
-
-      <span
-        aria-hidden
-        className="absolute right-1 top-1/2 -translate-y-1/2 translate-x-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 font-serif text-ember text-2xl"
-      >
-        →
-      </span>
     </ViewTransitionLink>
   )
 }

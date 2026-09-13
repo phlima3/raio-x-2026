@@ -392,6 +392,26 @@ desenvolvimento.
 
 Migration `20260326030000_add_unaccent` habilitada em produção. Função `immutable_unaccent(text)` em plpgsql com `LANGUAGE plpgsql IMMUTABLE STRICT SET search_path = public` e `RETURN public.unaccent($1)` — necessário para índice funcional. Sem o `SET search_path = public`, PostgreSQL rejeita a função em índice expressão.
 
+### Home sem "cara de IA" (2026-09-13)
+
+Revisão da home, do menu, do rodapé e do comparador a partir de duas análises
+(Claude e GPT): saíram os rótulos em mono caixa alta com tracinho vermelho,
+pontos-médios, travessões espaçados, "→" em links, numeração 01–04 sem
+sequência, palavra em itálico vermelho no título, animações de entrada e o
+chrome de jornal inventado ("Edição Nº 01", "Colofão", "§"). Regras que ficam:
+
+- Partido e UF seguem a imprensa: `partyLabel()` em `lib/candidacy.ts` dá
+  `PSD-GO`; presidenciável fica só com o partido.
+- A hero é a tira das 13 fotos oficiais do TSE (`PresidentialStrip`). A lista
+  da Presidência mostra o fundo eleitoral em uma frase (`fundoEleitoralLine`
+  em `lib/financing.ts`), a partir de `fefcReceived`/`totalReceived` que
+  `GET /api/candidates` passou a expor. Campo `undefined` = API antiga, a
+  linha não renderiza; `null` = candidato sem prestação de contas.
+- "Sobre os dados" substitui "Três passos" e "Colofão". As estatísticas viraram
+  prosa; `BR` (presidenciáveis) não conta como UF.
+- O comparador filtra por nome, cargo e UF no cliente (`ComparePicker`,
+  `filterPickerCandidates`); o resultado mostra nomes, nunca slugs.
+
 ### Componentes frontend da Fase 6 (UX)
 
 - `NewsPanel.tsx` — client component, busca `GET /api/candidates/:slug/news`, exibe badge "Contradição detectada" (vermelho) para `hasContradiction: true`, inclui `contradictionNote`, link para `sourceUrl`, skeleton loading e empty state.

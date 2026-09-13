@@ -1,6 +1,30 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { buildComparisonSlug, eligibleOpponents, raceOf, sameRace } from './comparisons'
+import {
+  buildComparisonSlug,
+  eligibleOpponents,
+  filterPickerCandidates,
+  raceOf,
+  sameRace,
+} from './comparisons'
+
+test('filtro do comparador: nome sem acento, cargo e UF', () => {
+  const candidatos = [
+    { slug: 'lula-pt-br', name: 'Luiz Inácio Lula da Silva', party: 'PT', position: 'PRESIDENTE', state: 'BR' },
+    { slug: 'flavio-pl-rj', name: 'Flávio Bolsonaro', party: 'PL', position: 'PRESIDENTE', state: 'BR' },
+    { slug: 'haddad-sp', name: 'Fernando Haddad', party: 'PT', position: 'GOVERNADOR', state: 'SP' },
+    { slug: 'castro-rj', name: 'Cláudio Castro', party: 'PL', position: 'GOVERNADOR', state: 'RJ' },
+  ]
+  const slugs = (r: Array<{ slug: string }>) => r.map((c) => c.slug)
+
+  assert.deepEqual(slugs(filterPickerCandidates(candidatos, {})), slugs(candidatos))
+  assert.deepEqual(slugs(filterPickerCandidates(candidatos, { query: 'flavio' })), ['flavio-pl-rj'])
+  assert.deepEqual(slugs(filterPickerCandidates(candidatos, { query: 'CLÁUDIO' })), ['castro-rj'])
+  assert.deepEqual(slugs(filterPickerCandidates(candidatos, { query: 'pt' })), ['lula-pt-br', 'haddad-sp'])
+  assert.deepEqual(slugs(filterPickerCandidates(candidatos, { position: 'GOVERNADOR' })), ['haddad-sp', 'castro-rj'])
+  assert.deepEqual(slugs(filterPickerCandidates(candidatos, { position: 'GOVERNADOR', state: 'RJ' })), ['castro-rj'])
+  assert.deepEqual(slugs(filterPickerCandidates(candidatos, { query: 'zzz' })), [])
+})
 
 test('builds one deterministic URL for a candidate pair regardless of selection order', () => {
   assert.equal(buildComparisonSlug('zema-novo-mg', 'lula-pt-sp'), 'lula-pt-sp-x-zema-novo-mg')

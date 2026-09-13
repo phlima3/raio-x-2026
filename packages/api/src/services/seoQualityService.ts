@@ -13,6 +13,7 @@ import {
   type SubstantiveModule,
 } from '../domain/seoQuality'
 import { TTL, withCache } from './cacheService'
+import { toDisplayName } from '../domain/displayName'
 import { publicCandidateWhere } from './candidateService'
 import { buildCandidateSearchIntent } from '../domain/searchIntent'
 import type { CandidateSearchIntent } from '../domain/searchIntent'
@@ -156,7 +157,7 @@ export async function getCandidateSeoReport(): Promise<CandidateSeoReportItem[]>
           .filter((record) => record.id !== candidate.id)
           .map((record) => record.id)
           .sort(),
-        name: candidate.name,
+        name: toDisplayName(candidate.name),
         party: candidate.party,
         state: candidate.state,
         position: candidate.position,

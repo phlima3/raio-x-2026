@@ -45,6 +45,10 @@ export interface CandidateSummary {
   officialStatus?: 'ELIGIBLE' | 'INELIGIBLE' | 'PENDING' | 'CANCELLED' | 'UNKNOWN' | null
   dataSource?: string
   lastSyncedAt?: string | null
+  /** Prestação de contas pública mais recente; ver `fefcStanding`. */
+  fefcReceived?: string | null
+  totalReceived?: string | null
+  accountsUpdatedAt?: string | null
 }
 
 export type ProposalOrigin = 'EDITORIAL' | 'OFFICIAL_DOCUMENT' | 'AI_EXTRACTION' | 'LEGACY'

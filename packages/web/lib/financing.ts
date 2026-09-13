@@ -120,3 +120,36 @@ export function fmtBRL(value: string | number): string {
     maximumFractionDigits: 0,
   })
 }
+
+/** "R$ 42 milhões", "R$ 2,8 milhões", "R$ 608 mil": o valor como em manchete. */
+export function fmtBRLShort(value: number): string {
+  const short = (n: number) =>
+    n.toLocaleString('pt-BR', { maximumFractionDigits: n < 100 ? 1 : 0 })
+  if (value >= 1e6) {
+    const n = value / 1e6
+    return `R$ ${short(n)} ${short(n) === '1' ? 'milhão' : 'milhões'}`
+  }
+  if (value >= 1e3) return `R$ ${short(value / 1e3)} mil`
+  return fmtBRL(value)
+}
+
+/**
+ * Uma frase sobre o fundo eleitoral, para a lista da home. Cada um dos estados
+ * de `fefcStanding` vira uma frase diferente: "sem contas" não é "zero", e
+ * "origem não consultada" não é nenhum dos dois.
+ */
+export function fundoEleitoralLine(
+  financing: FinancingComposable | null | undefined,
+): string {
+  const standing = fefcStanding(financing)
+  if (standing.kind === 'none') return 'Sem prestação de contas no TSE.'
+  if (standing.kind === 'unknown') {
+    return `${fmtBRLShort(amount(financing!.totalReceived))} arrecadados. Origem do dinheiro não consultada.`
+  }
+  if (standing.total <= 0) return 'Sem receita declarada.'
+  if (standing.value <= 0) {
+    return `Sem fundo eleitoral. ${fmtBRLShort(standing.total)} arrecadados de outras fontes.`
+  }
+  // Arredondar para baixo: 99,5% virando "100%" diria que não houve outra fonte.
+  return `${fmtBRLShort(standing.value)} do fundo eleitoral, ${Math.floor(standing.share ?? 0)}% do que arrecadou.`
+}

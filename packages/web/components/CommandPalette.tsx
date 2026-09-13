@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { partyLabel } from '@/lib/candidacy'
 
 type PaletteItem = {
   id: string
@@ -9,6 +10,7 @@ type PaletteItem = {
   name: string
   party: string
   state: string
+  position: string
 }
 
 type Props = {
@@ -154,14 +156,11 @@ export function CommandPalette({ items }: Props) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="focus-editorial group hidden md:flex fixed bottom-6 right-6 z-40 items-center gap-3 bg-ink text-paper px-4 py-2.5 font-mono text-[11px] uppercase tracking-[0.2em] border border-ink hover:bg-ember hover:border-ember transition-colors shadow-[4px_4px_0_rgba(26,22,20,0.25)] hover:shadow-[6px_6px_0_rgba(26,22,20,0.3)]"
+        className="focus-editorial group hidden md:flex fixed bottom-6 right-6 z-40 items-center gap-3 bg-ink text-paper px-4 py-2.5 text-sm border border-ink hover:bg-ember hover:border-ember transition-colors"
         aria-label="Abrir busca rápida (Cmd+K)"
       >
-        <span aria-hidden className="opacity-70">
-          §
-        </span>
         <span>Busca rápida</span>
-        <kbd className="ml-2 px-1.5 py-0.5 bg-paper text-ink font-mono text-[10px] border border-paper group-hover:bg-paper-light">
+        <kbd className="px-1.5 py-0.5 bg-paper text-ink font-mono text-xs border border-paper">
           ⌘K
         </kbd>
       </button>
@@ -193,12 +192,6 @@ export function CommandPalette({ items }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center border-b-2 border-ink">
-          <span
-            aria-hidden
-            className="px-4 py-4 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-muted border-r border-ink/20 whitespace-nowrap"
-          >
-            §
-          </span>
           <input
             ref={inputRef}
             type="text"
@@ -209,22 +202,18 @@ export function CommandPalette({ items }: Props) {
             aria-autocomplete="list"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="nome, partido ou estado"
-            className="flex-1 min-w-0 bg-transparent py-4 px-4 font-serif text-lg placeholder:italic placeholder:text-ink-soft focus:outline-none"
+            placeholder="Nome, partido ou estado"
+            className="flex-1 min-w-0 bg-transparent py-4 px-5 font-serif text-lg placeholder:text-ink-soft focus:outline-none"
           />
-          <kbd className="mr-4 px-2 py-1 bg-paper-dark/60 text-ink-muted font-mono text-[10px] uppercase tracking-wider">
+          <kbd className="mr-4 px-2 py-1 bg-paper-dark/60 text-ink-muted font-mono text-xs">
             esc
           </kbd>
         </div>
 
         {results.length === 0 ? (
           <div className="py-10 px-5 text-center">
-            <p className="font-serif italic text-ink-muted">
-              Nenhum registro.
-            </p>
-            <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-muted">
-              Enter para busca ampla
-            </p>
+            <p className="text-ink-muted">Nenhum candidato com esse nome.</p>
+            <p className="mt-2 text-sm text-ink-muted">Enter abre a busca completa.</p>
           </div>
         ) : (
           <ul
@@ -253,9 +242,6 @@ export function CommandPalette({ items }: Props) {
                       (active ? 'bg-ember/10' : 'hover:bg-paper-light/70')
                     }
                   >
-                    <span className="font-mono text-[10px] tabular-nums text-ink-soft uppercase tracking-[0.12em] w-6">
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
                     <span
                       className={
                         'font-serif text-lg leading-tight flex-1 ' +
@@ -264,9 +250,7 @@ export function CommandPalette({ items }: Props) {
                     >
                       {item.name}
                     </span>
-                    <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-ink-muted">
-                      {item.party} · {item.state}
-                    </span>
+                    <span className="text-sm text-ink-muted">{partyLabel(item)}</span>
                   </button>
                 </li>
               )
@@ -276,11 +260,10 @@ export function CommandPalette({ items }: Props) {
 
         <div
           aria-live="polite"
-          className="flex items-center justify-between px-5 py-2.5 border-t border-ink/20 font-mono text-[9px] uppercase tracking-[0.2em] text-ink-muted"
+          className="flex items-center justify-between px-5 py-2.5 border-t border-ink/20 text-xs text-ink-muted"
         >
           <span>
-            <kbd className="mr-1">↑↓</kbd> navegar ·{' '}
-            <kbd className="mx-1">↵</kbd> abrir
+            <kbd className="font-mono">↑↓</kbd> navega, <kbd className="font-mono">↵</kbd> abre
           </span>
           <span>{resultsLabel}</span>
         </div>

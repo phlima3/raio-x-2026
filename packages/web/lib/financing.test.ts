@@ -1,6 +1,42 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { financingComposition, filterValidParties, fefcStanding } from './financing'
+import {
+  financingComposition,
+  filterValidParties,
+  fefcStanding,
+  fmtBRLShort,
+  fundoEleitoralLine,
+} from './financing'
+
+test('valor curto em reais, como manchete', () => {
+  assert.equal(fmtBRLShort(42000000), 'R$ 42 milhões')
+  assert.equal(fmtBRLShort(35309910), 'R$ 35,3 milhões')
+  assert.equal(fmtBRLShort(2800007), 'R$ 2,8 milhões')
+  assert.equal(fmtBRLShort(1000000), 'R$ 1 milhão')
+  assert.equal(fmtBRLShort(607500.16), 'R$ 608 mil')
+  assert.equal(fmtBRLShort(9621.53), 'R$ 9,6 mil')
+  assert.equal(fmtBRLShort(317), 'R$' + '\u00a0' + '317') // Intl usa espaço inseparável
+})
+
+test('linha do fundão distingue sem contas, origem não consultada, zero e valor', () => {
+  assert.equal(fundoEleitoralLine(null), 'Sem prestação de contas no TSE.')
+  assert.equal(
+    fundoEleitoralLine({ totalReceived: '2800007', fefcReceived: null }),
+    'R$ 2,8 milhões arrecadados. Origem do dinheiro não consultada.',
+  )
+  assert.equal(
+    fundoEleitoralLine({ totalReceived: '2800007', fefcReceived: '0' }),
+    'Sem fundo eleitoral. R$ 2,8 milhões arrecadados de outras fontes.',
+  )
+  assert.equal(
+    fundoEleitoralLine({ totalReceived: '43677867.29', fefcReceived: '42000000' }),
+    'R$ 42 milhões do fundo eleitoral, 96% do que arrecadou.',
+  )
+  assert.equal(
+    fundoEleitoralLine({ totalReceived: '0', fefcReceived: '0' }),
+    'Sem receita declarada.',
+  )
+})
 
 test('orders the buckets by size and skips the empty ones', () => {
   const parts = financingComposition({
