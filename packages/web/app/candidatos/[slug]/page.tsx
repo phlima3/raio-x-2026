@@ -17,7 +17,7 @@ import { ConsistencyPanel } from '@/components/ConsistencyPanel'
 import { NewsPanel } from '@/components/NewsPanel'
 import { SectionNav } from '@/components/SectionNav'
 import { absoluteImageUrl, canonicalUrl, renderableImageUrl } from '@/lib/seo'
-import { bioProvenance, candidacyStatusPresentation, opensAsDownload } from '@/lib/candidacy'
+import { bioProvenance, candidacyStatusPresentation, opensAsDownload, partyLabel } from '@/lib/candidacy'
 import { JsonLd } from '@/components/JsonLd'
 import {
   buildBreadcrumbList,
@@ -58,7 +58,7 @@ function tituloBusca(c: CandidateDetail): string {
   if ((c.votingRecords?.length ?? 0) > 0) assuntos.push('votações')
   if ((c.assetDeclarations?.length ?? 0) > 0) assuntos.push('patrimônio')
 
-  const identificacao = `${c.name} (${c.party}-${c.state})`
+  const identificacao = `${c.name} (${partyLabel(c)})`
   if (assuntos.length === 0) return `${identificacao}: ficha da candidatura 2026`
   return `${identificacao}: ${assuntos.slice(0, 3).join(', ')}`
 }
@@ -130,7 +130,7 @@ function resumoSocial(c: CandidateDetail): string {
   const votacoes = c.votingRecords?.length ?? 0
   if (votacoes > 0) fatos.push(`${votacoes} votações registradas`)
 
-  const cabeca = `${c.name} (${c.party}-${c.state}) nas Eleições 2026.`
+  const cabeca = `${c.name} (${partyLabel(c)}) nas Eleições 2026.`
   if (fatos.length === 0) return `${cabeca} Situação da candidatura e fontes oficiais.`
   return `${cabeca} ${fatos.join(', ')}. Cada dado com a fonte no TSE.`
 }
@@ -148,7 +148,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     const office = POSITION_LABELS[c.position] ?? c.position
     return {
       title: tituloBusca(c),
-      description: `Quem é ${c.name}, candidatura a ${office} por ${c.party}-${c.state} nas Eleições 2026: situação eleitoral, propostas, histórico de votações, patrimônio e a fonte oficial de cada dado.`,
+      description: `Quem é ${c.name}, candidatura a ${office} por ${partyLabel(c)} nas Eleições 2026: situação eleitoral, propostas, histórico de votações, patrimônio e a fonte oficial de cada dado.`,
       alternates: { canonical: canonicalPath },
       robots: qualification?.indexable
         ? { index: true, follow: true }
@@ -243,7 +243,7 @@ export default async function CandidatePage(props: Props): Promise<JSX.Element> 
   const statusVerifiedAt = formatDate(candidate.candidacyStatusVerifiedAt)
   const materialUpdatedAt = formatDate(candidate.materialUpdatedAt)
   const reviewedAt = formatDate(candidate.reviewedAt)
-  const description = `Quem é ${candidate.name}, candidatura a ${officeLabel} por ${candidate.party}-${candidate.state} nas Eleições 2026: situação eleitoral, propostas, histórico de votações, patrimônio e a fonte oficial de cada dado.`
+  const description = `Quem é ${candidate.name}, candidatura a ${officeLabel} por ${partyLabel(candidate)} nas Eleições 2026: situação eleitoral, propostas, histórico de votações, patrimônio e a fonte oficial de cada dado.`
 
   return (
     <div className="paper-grain text-ink">
