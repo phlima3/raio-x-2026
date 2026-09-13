@@ -48,31 +48,95 @@ export function buildWebSiteSchema() {
 interface CandidateWebPageInput {
   name: string
   slug: string
+  title: string
   description: string
   image?: string
   dateModified?: string | null
+  /** Nome social/de urna, quando difere do nome de registro. */
+  socialName?: string | null
+  party: string
+  /** Sigla da UF. O nome por extenso entra via `stateName`. */
+  state: string
+  stateName?: string
+  /** Rótulo do cargo já pronto para leitura ("Senador(a) Federal"). */
+  officeLabel: string
+  ballotNumber?: number | null
+  /** Página oficial da candidatura, quando registrada. */
+  siteUrl?: string | null
+  /** Introdução da ficha, usada como `description` da pessoa. */
+  bioSummary?: string | null
 }
 
-export function buildCandidateWebPageSchema(input: CandidateWebPageInput) {
+/**
+ * A ficha é um `ProfilePage` sobre uma `Person`, não uma `WebPage` genérica.
+ *
+ * A busca por nome de candidato é uma busca por entidade: o Google precisa
+ * decidir que esta página é *sobre aquela pessoa* antes de considerar exibi-la.
+ * Um `Person` com apenas nome, foto e URL não desambigua homônimo nenhum — e
+ * homônimo é a regra numa base de 500+ candidaturas.
+ *
+ * Então tudo que a página já mostra ao leitor e serve de traço de identidade
+ * entra no grafo: partido, UF, cargo disputado, número na urna, nome de urna e
+ * site oficial. Nada aqui é inventado para o robô — cada campo é o mesmo dado
+ * que o `<dl>` do cabeçalho exibe, e some do JSON-LD quando não existe.
+ */
+export function buildCandidateProfilePageSchema(input: CandidateWebPageInput) {
   const url = canonicalUrl(`/candidatos/${input.slug}`)
+  const personId = `${url}#person`
+  const alternateName =
+    input.socialName && input.socialName.trim() !== input.name.trim()
+      ? input.socialName.trim()
+      : undefined
+
+  const person = {
+    '@type': 'Person',
+    '@id': personId,
+    name: input.name,
+    ...(alternateName ? { alternateName } : {}),
+    ...(input.bioSummary ? { description: input.bioSummary } : {}),
+    ...(input.image ? { image: input.image } : {}),
+    url,
+    jobTitle: `Candidatura a ${input.officeLabel} nas Eleições 2026`,
+    nationality: { '@type': 'Country', name: 'Brasil' },
+    memberOf: { '@type': 'PoliticalParty', name: input.party },
+    workLocation: {
+      '@type': 'AdministrativeArea',
+      name: input.stateName ?? input.state,
+      address: {
+        '@type': 'PostalAddress',
+        addressRegion: input.state,
+        addressCountry: 'BR',
+      },
+    },
+    ...(input.ballotNumber != null
+      ? {
+          identifier: {
+            '@type': 'PropertyValue',
+            name: 'Número na urna',
+            value: String(input.ballotNumber),
+          },
+        }
+      : {}),
+    // `sameAs` só aceita endereço que *é* a pessoa em outro lugar da web. A
+    // fonte da situação eleitoral e a da biografia documentam a candidatura,
+    // não são perfis dela — por isso ficam fora daqui.
+    ...(input.siteUrl ? { sameAs: [input.siteUrl] } : {}),
+    subjectOf: { '@id': `${url}#webpage` },
+  }
+
   return {
     '@context': 'https://schema.org',
-    '@type': 'WebPage',
+    '@type': 'ProfilePage',
     '@id': `${url}#webpage`,
     url,
-    name: `${input.name}: propostas, partido e histórico`,
+    name: input.title,
     description: input.description,
+    inLanguage: 'pt-BR',
     isPartOf: { '@id': canonicalUrl('/#website') },
     publisher: { '@id': canonicalUrl('/#organization') },
     ...(input.dateModified ? { dateModified: input.dateModified } : {}),
-    mainEntity: {
-      '@type': 'Person',
-      '@id': `${url}#person`,
-      name: input.name,
-      ...(input.image ? { image: input.image } : {}),
-      url,
-    },
-    about: { '@id': `${url}#person` },
+    mainEntity: person,
+    about: { '@id': personId },
   }
 }
 

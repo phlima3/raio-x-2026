@@ -21,6 +21,13 @@ export const metadata: Metadata = {
 
 const ELECTION_DATE = new Date('2026-10-04T00:00:00-03:00')
 
+/** Rótulo curto da disputa, para a lista estadual da home. */
+const STATE_RACE_LABELS: Record<string, string> = {
+  GOVERNADOR: 'Governo',
+  SENADOR: 'Senado',
+  DEPUTADO_FEDERAL: 'Câmara',
+}
+
 function daysUntilElection(): number {
   const diff = ELECTION_DATE.getTime() - Date.now()
   return Math.max(0, Math.ceil(diff / 86_400_000))
@@ -68,6 +75,31 @@ export default async function HomePage() {
     return !latest || candidateDate > latest ? candidateDate : latest
   }, null)
   const publishedAt = latestUpdate ? formatLongDate(latestUpdate) : null
+
+  /**
+   * As fichas estaduais mais recentes, linkadas direto da home.
+   *
+   * A disputa presidencial tem a Seção I, que aponta para cada ficha. Governo
+   * e Senado não tinham nada: todo caminho da home para essas 500 fichas
+   * passava por `/busca`, que é `noindex` de propósito — página de resultado
+   * de busca interna não deve entrar no índice. O resultado é que a home não
+   * distribuía força nenhuma para o grosso do arquivo.
+   *
+   * O corte é por data de atualização, não por relevância eleitoral: o site
+   * não escolhe candidato em destaque, e a ordem por atualização ainda tem a
+   * vantagem de girar sozinha conforme o arquivo é trabalhado.
+   */
+  const recentesNosEstados = seoReport
+    .filter((candidate) => candidate.indexable && candidate.position !== 'PRESIDENTE')
+    .map((candidate) => ({
+      ...candidate,
+      atualizadoEm: candidate.materialUpdatedAt
+        ? Date.parse(candidate.materialUpdatedAt)
+        : Number.NEGATIVE_INFINITY,
+    }))
+    .filter((candidate) => Number.isFinite(candidate.atualizadoEm))
+    .sort((a, b) => b.atualizadoEm - a.atualizadoEm)
+    .slice(0, 12)
 
   const statItems = stats
     ? [
@@ -216,20 +248,23 @@ export default async function HomePage() {
         >
           <span className="text-ink-muted">Atalhos</span>
           <span aria-hidden className="text-ink-soft">/</span>
+          {/* Os atalhos apontavam para `/busca?position=…`, que é `noindex`:
+              o leitor chegava a uma lista filtrada e o rastreador, a uma porta
+              fechada. As landings abaixo mostram a mesma coisa e são indexáveis. */}
           <Link
-            href="/busca?position=PRESIDENTE"
+            href="/candidatos-presidente"
             className="focus-editorial hover:text-ember border-b border-transparent hover:border-ember py-1 transition-colors"
           >
             Presidentes
           </Link>
           <Link
-            href="/busca?position=GOVERNADOR"
+            href="/eleicoes-2026#disputas-por-uf"
             className="focus-editorial hover:text-ember border-b border-transparent hover:border-ember py-1 transition-colors"
           >
             Governadores
           </Link>
           <Link
-            href="/busca?position=SENADOR"
+            href="/eleicoes-2026#disputas-por-uf"
             className="focus-editorial hover:text-ember border-b border-transparent hover:border-ember py-1 transition-colors"
           >
             Senadores
@@ -278,7 +313,7 @@ export default async function HomePage() {
             </p>
           </div>
           <Link
-            href="/busca?position=PRESIDENTE"
+            href="/candidatos-presidente"
             className="focus-editorial font-mono text-xs uppercase tracking-[0.22em] text-ink hover:text-ember border-b-2 border-ink hover:border-ember pb-1 transition-colors"
           >
             Ver todos os candidatos →
@@ -299,12 +334,64 @@ export default async function HomePage() {
         )}
       </section>
 
-      {/* ——— Seção II — Como funciona ——— */}
+      {/* ——— Seção II — Disputas estaduais ——— */}
+      {recentesNosEstados.length > 0 && (
+        <section className="border-t border-ink/20 cv-auto">
+          <div className="container mx-auto px-6 py-20 md:py-24">
+            <div className="flex items-end justify-between mb-12 gap-6 flex-wrap">
+              <div>
+                <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-ember mb-4">
+                  <span className="inline-block w-8 h-px bg-ember align-middle mr-3" />
+                  Seção II
+                </p>
+                <h2 className="font-serif text-4xl md:text-[3.25rem] leading-[0.98] tracking-[-0.015em]">
+                  Aos governos e ao Senado
+                </h2>
+                <p className="mt-4 text-ink-muted max-w-md text-[15px] leading-relaxed">
+                  As fichas estaduais trabalhadas mais recentemente. Só entram
+                  perfis com situação eleitoral documentada e conteúdo apoiado
+                  por fontes citadas.
+                </p>
+              </div>
+              <Link
+                href="/eleicoes-2026#disputas-por-uf"
+                className="focus-editorial font-mono text-xs uppercase tracking-[0.22em] text-ink hover:text-ember border-b-2 border-ink hover:border-ember pb-1 transition-colors"
+              >
+                Todas as disputas por UF →
+              </Link>
+            </div>
+
+            <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8">
+              {recentesNosEstados.map((candidate) => (
+                <li key={candidate.slug} className="border-b border-ink/20">
+                  <Link
+                    href={`/candidatos/${candidate.slug}`}
+                    className="focus-editorial group flex flex-col gap-1.5 py-5 transition-colors hover:bg-paper-light/60"
+                  >
+                    <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-soft">
+                      {STATE_RACE_LABELS[candidate.position] ?? candidate.position} ·{' '}
+                      {candidate.state}
+                    </span>
+                    <span className="font-serif text-xl leading-snug text-pretty transition-colors group-hover:text-ember">
+                      {candidate.name}
+                    </span>
+                    <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-muted">
+                      {candidate.party}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
+
+      {/* ——— Seção III — Como funciona ——— */}
       <section className="border-t border-ink/20 cv-auto">
         <div className="container mx-auto px-6 py-20 md:py-24">
           <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-ember mb-4">
             <span className="inline-block w-8 h-px bg-ember align-middle mr-3" />
-            Seção II
+            Seção III
           </p>
           <h2 className="font-serif text-4xl md:text-[3.25rem] leading-[0.98] tracking-[-0.015em] mb-14 max-w-2xl">
             Três passos para{' '}
