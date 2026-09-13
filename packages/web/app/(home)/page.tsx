@@ -7,6 +7,7 @@ import {
 } from '@/lib/api'
 import { PresidentialIndex } from '@/components/PresidentialIndex'
 import { PresidentialSheet } from '@/components/PresidentialSheet'
+import { SobreOsDados } from '@/components/SobreOsDados'
 import { CommandPalette } from '@/components/CommandPalette'
 import type { CandidateSummary } from '@/lib/types'
 
@@ -25,29 +26,6 @@ const STATE_RACE_LABELS: Record<string, string> = {
   SENADOR: 'Senado',
   DEPUTADO_FEDERAL: 'Câmara',
 }
-
-const SOURCES = [
-  {
-    label: 'TSE',
-    desc: 'registro de candidaturas, declaração de bens e contas de campanha',
-    href: 'https://dadosabertos.tse.jus.br',
-  },
-  {
-    label: 'Câmara dos Deputados',
-    desc: 'votações nominais e projetos de lei apresentados',
-    href: 'https://dadosabertos.camara.leg.br',
-  },
-  {
-    label: 'Senado Federal',
-    desc: 'matérias, votações e histórico dos senadores',
-    href: 'https://legis.senado.leg.br/dadosabertos',
-  },
-  {
-    label: 'Portal da Transparência',
-    desc: 'gastos públicos, convênios e benefícios',
-    href: 'https://portaldatransparencia.gov.br',
-  },
-]
 
 function daysUntilElection(): number {
   const diff = ELECTION_DATE.getTime() - Date.now()
@@ -69,14 +47,6 @@ function latestDate(values: Array<string | null | undefined>): Date | null {
     if (Number.isNaN(date.getTime())) return latest
     return !latest || date > latest ? date : latest
   }, null)
-}
-
-/** "nos 26 estados e no Distrito Federal", sem contar o `BR` dos presidenciáveis. */
-function coverageLabel(byState: Record<string, number>): string {
-  const ufs = Object.keys(byState).filter((uf) => uf !== 'BR')
-  const states = ufs.filter((uf) => uf !== 'DF').length
-  if (ufs.includes('DF')) return `em ${states} estados e no Distrito Federal`
-  return `em ${states} estados`
 }
 
 export default async function HomePage() {
@@ -176,61 +146,12 @@ export default async function HomePage() {
         )}
       </section>
 
-      {/* Sobre os dados: o memorial descritivo, em linguagem de leitor */}
-      <section className="border-t border-ink/20">
-        <div className="container mx-auto px-4 md:px-6 py-16 md:py-20">
-          <h2 className="font-serif text-3xl md:text-4xl tracking-[-0.015em] mb-8">
-            Sobre os dados
-          </h2>
-          <div className="grid md:grid-cols-2 gap-x-12 gap-y-6 text-[17px] leading-[1.7] text-ink max-w-5xl">
-            <div className="space-y-5">
-              <p>
-                O Raio-X 2026 reúne, em um só lugar, o que é público sobre cada
-                candidatura a presidente, governador e senador: quem é a pessoa,
-                o que promete e como votou quando teve mandato.
-              </p>
-              <p>
-                Tudo vem de fontes oficiais. O registro de candidatura, a
-                declaração de bens e as contas de campanha são do TSE. Os votos em
-                plenário e os projetos apresentados são da Câmara e do Senado. As
-                propostas saem do plano de governo que cada campanha entregou ao
-                TSE e dos sites das campanhas.
-              </p>
-            </div>
-            <div className="space-y-5">
-              <p>
-                Os dados são baixados automaticamente todos os dias. Para resumir
-                planos de governo longos, usamos inteligência artificial; cada
-                resumo é marcado como tal na ficha e aponta o documento de
-                origem. Nada entra no site sem uma fonte com link.
-              </p>
-              <p>
-                {stats
-                  ? `Hoje o arquivo tem ${stats.total} candidaturas, de ${Object.keys(stats.byParty).length} partidos, ${coverageLabel(stats.byState)}. `
-                  : ''}
-                {publishedAt ? `Última atualização em ${formatLongDate(publishedAt)}. ` : ''}
-                Projeto independente, sem fins eleitorais e com código aberto.
-              </p>
-            </div>
-          </div>
-
-          <ul className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-6 max-w-5xl">
-            {SOURCES.map(({ label, desc, href }) => (
-              <li key={label} className="border-t border-ink/25 pt-4">
-                <a
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="focus-editorial font-serif text-xl hover:text-ember transition-colors"
-                >
-                  {label}
-                </a>
-                <p className="mt-1 text-sm text-ink-muted leading-snug">{desc}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
+      {/* Sobre os dados: uma frase que acende no scroll */}
+      <SobreOsDados
+        total={stats?.total ?? null}
+        updatedAt={publishedAt ? formatLongDate(publishedAt) : null}
+        presidents={presidents}
+      />
 
       {/* Presidência */}
       <section className="border-t border-ink/20 cv-auto">

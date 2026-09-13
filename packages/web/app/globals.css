@@ -98,6 +98,38 @@ input[type='search']::-webkit-search-cancel-button:hover {
   }
 }
 
+/* "Sobre os dados": cada palavra acende do cinza para o preto conforme o
+   bloco de 200vh rola. Sem suporte (Firefox) o texto já nasce preto.
+   Não obedece `prefers-reduced-motion` de propósito: nada se desloca, só a
+   cor muda com a rolagem. `--i`/`--n` vêm do componente SobreOsDados. */
+.reveal-word {
+  color: #1a1614;
+}
+
+@supports (animation-timeline: --x) {
+  .reveal-scroll {
+    view-timeline-name: --reveal;
+    view-timeline-axis: block;
+  }
+
+  /* O bloco tem 200vh, então `cover` vale 300vh de rolagem: o texto fica
+     preso de 33% (topo do bloco no topo da tela) até ~79% (fim do bloco
+     alcança o fim do texto). As palavras acendem dentro desse trecho. */
+  .reveal-word {
+    color: #c9c1ad;
+    animation: reveal-ink linear both;
+    animation-timeline: --reveal;
+    animation-range: cover calc(36% + var(--i) / var(--n) * 36%)
+      cover calc(42% + var(--i) / var(--n) * 36%);
+  }
+}
+
+@keyframes reveal-ink {
+  to {
+    color: #1a1614;
+  }
+}
+
 @keyframes scroll-grow {
   from {
     transform: scaleX(0);
@@ -284,5 +316,11 @@ input[type='search']::-webkit-search-cancel-button:hover {
   .scroll-compress-wordmark {
     animation: none !important;
     transform: none !important;
+  }
+
+  /* A duração de 0,001ms acima completa a animação de rolagem na hora e o
+     texto nasce preto. Aqui não há movimento, só cor; a rolagem é do leitor. */
+  .reveal-word {
+    animation-duration: auto !important;
   }
 }
