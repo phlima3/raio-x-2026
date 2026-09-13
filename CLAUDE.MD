@@ -402,7 +402,7 @@ chrome de jornal inventado ("Edição Nº 01", "Colofão", "§"). Regras que fic
 
 - Partido e UF seguem a imprensa: `partyLabel()` em `lib/candidacy.ts` dá
   `PSD-GO`; presidenciável fica só com o partido.
-- A hero é a tira das 13 fotos oficiais do TSE (`PresidentialStrip`). A lista
+- A hero é dividida: título e busca à esquerda; à direita o painel das 13 fotos oficiais do TSE coladas, em ordem de número de urna (`PresidentialSheet`). A lista
   da Presidência mostra o fundo eleitoral em uma frase (`fundoEleitoralLine`
   em `lib/financing.ts`), a partir de `fefcReceived`/`totalReceived` que
   `GET /api/candidates` passou a expor. Campo `undefined` = API antiga, a
