@@ -30,11 +30,11 @@ const mono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_ORIGIN),
   title: {
-    default: 'Raio-X 2026 — Transparência Eleitoral',
+    default: 'Raio-X 2026 — Propostas e histórico dos candidatos',
     template: '%s | Raio-X 2026',
   },
   description:
-    'Compare candidatos, acompanhe propostas e acesse dados de transparência das eleições brasileiras de 2026.',
+    'Propostas, votações e bens de todos os candidatos a presidente, governador e senador em 2026, com a fonte oficial em cada dado. Compare lado a lado.',
   keywords: ['eleições 2026', 'candidatos', 'propostas', 'transparência eleitoral', 'brasil'],
   openGraph: {
     type: 'website',

@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og'
 
 export const runtime = 'edge'
-export const alt = 'Raio-X 2026 — Transparência Eleitoral'
+export const alt = 'Raio-X 2026 — Propostas e histórico dos candidatos'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
