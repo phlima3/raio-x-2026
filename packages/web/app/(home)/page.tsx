@@ -6,7 +6,7 @@ import {
   fetchCandidateStats,
 } from '@/lib/api'
 import { PresidentialIndex } from '@/components/PresidentialIndex'
-import { PresidentialStrip } from '@/components/PresidentialStrip'
+import { PresidentialSheet } from '@/components/PresidentialSheet'
 import { CommandPalette } from '@/components/CommandPalette'
 import type { CandidateSummary } from '@/lib/types'
 
@@ -132,45 +132,48 @@ export default async function HomePage() {
 
   return (
     <div className="paper-grain text-ink">
-      {/* Hero: o título e as caras da urna */}
-      <section className="container mx-auto px-4 md:px-6 pt-12 md:pt-16 pb-14">
-        <h1 className="font-serif font-normal text-[2.5rem] sm:text-5xl md:text-6xl lg:text-[4.5rem] leading-[1] tracking-[-0.02em]">
-          Quem são, o que propõem,
-          <br className="hidden sm:block" /> como votaram.
-        </h1>
-        <p className="mt-5 text-lg md:text-xl leading-relaxed text-ink-muted max-w-[60ch]">
-          {presidents.length > 0
-            ? `${presidents.length} nomes registrados no TSE para a Presidência. `
-            : 'Presidência, governos estaduais e Senado. '}
-          1º turno em{' '}
-          <strong className="font-medium text-ember tabular-nums">{daysLeft} dias</strong>.
-        </p>
+      {/* Hero: o título à esquerda, o painel da urna à direita */}
+      <section className="container mx-auto px-4 md:px-6 pt-12 md:pt-16 pb-14 grid grid-cols-12 gap-y-10 md:gap-x-10 lg:gap-x-14 items-start">
+        <div className="col-span-12 md:col-span-5">
+          <h1 className="font-serif font-normal text-[2.5rem] sm:text-5xl lg:text-[4.25rem] leading-[1] tracking-[-0.02em]">
+            Quem são,
+            <br className="hidden md:block" /> o que propõem,
+            <br className="hidden md:block" /> como votaram.
+          </h1>
+          <p className="mt-5 text-lg leading-relaxed text-ink-muted max-w-[60ch]">
+            {presidents.length > 0
+              ? `${presidents.length} nomes registrados no TSE para a Presidência. `
+              : 'Presidência, governos estaduais e Senado. '}
+            1º turno em{' '}
+            <strong className="font-medium text-ember tabular-nums">{daysLeft} dias</strong>.
+          </p>
 
-        {presidents.length > 0 && <PresidentialStrip candidates={presidents} />}
+          <form action="/busca" method="get" className="mt-10">
+            <label htmlFor="q" className="block text-sm text-ink-muted mb-2">
+              Buscar candidato por nome, partido ou estado
+            </label>
+            <div className="flex items-stretch border-2 border-ink">
+              <input
+                id="q"
+                type="search"
+                name="q"
+                className="flex-1 min-w-0 bg-transparent py-3.5 px-4 font-serif text-lg md:text-xl focus:outline-none focus:bg-paper-light"
+              />
+              <button
+                type="submit"
+                className="focus-editorial bg-ink text-paper px-6 md:px-8 text-base hover:bg-ember transition-colors whitespace-nowrap"
+              >
+                Buscar
+              </button>
+            </div>
+          </form>
+        </div>
 
-        <form
-          action="/busca"
-          method="get"
-          className="mt-12 md:mt-14 max-w-3xl"
-        >
-          <label htmlFor="q" className="block text-sm text-ink-muted mb-2">
-            Buscar candidato por nome, partido ou estado
-          </label>
-          <div className="flex items-stretch border-2 border-ink">
-            <input
-              id="q"
-              type="search"
-              name="q"
-              className="flex-1 min-w-0 bg-transparent py-3.5 px-4 font-serif text-lg md:text-xl focus:outline-none focus:bg-paper-light"
-            />
-            <button
-              type="submit"
-              className="focus-editorial bg-ink text-paper px-6 md:px-8 text-base hover:bg-ember transition-colors whitespace-nowrap"
-            >
-              Buscar
-            </button>
+        {presidents.length > 0 && (
+          <div className="col-span-12 md:col-span-7">
+            <PresidentialSheet candidates={presidents} />
           </div>
-        </form>
+        )}
       </section>
 
       {/* Sobre os dados: o memorial descritivo, em linguagem de leitor */}
