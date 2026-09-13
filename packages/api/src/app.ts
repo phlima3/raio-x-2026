@@ -16,6 +16,17 @@ export function createApp(): Express {
 
   app.set('trust proxy', 1)
   app.use(helmet())
+  // O Google rastreia api.raio-x-2026.com.br e lista `/api/candidates`,
+  // `/api/candidates/stats` e `/api/candidates/seo-report` como "rastreada,
+  // mas não indexada" (Search Console, 2026-09). JSON não é página: dizer
+  // isso no cabeçalho vale para toda rota, inclusive as que ainda não existem.
+  app.use((_req, res, next) => {
+    res.setHeader('X-Robots-Tag', 'noindex, nofollow')
+    next()
+  })
+  app.get('/robots.txt', (_req, res) => {
+    res.type('text/plain').send('User-agent: *\nDisallow: /\n')
+  })
   const corsOrigins = [
     'http://localhost:3000',
     'https://raio-x-2026.com.br',
