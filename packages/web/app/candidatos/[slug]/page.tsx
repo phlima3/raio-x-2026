@@ -21,8 +21,9 @@ import { bioProvenance, candidacyStatusPresentation, opensAsDownload } from '@/l
 import { JsonLd } from '@/components/JsonLd'
 import {
   buildBreadcrumbList,
-  buildCandidateWebPageSchema,
+  buildCandidateProfilePageSchema,
 } from '@/lib/structured-data'
+import { BRAZIL_STATES } from '@/lib/landing'
 
 import type { JSX } from "react";
 
@@ -35,6 +36,31 @@ const POSITION_LABELS: Record<string, string> = {
   SENADOR: 'Senador(a) Federal',
   DEPUTADO_FEDERAL: 'Deputado(a) Federal',
   GOVERNADOR: 'Governador(a)',
+}
+
+/**
+ * Título da ficha, montado com o que ela de fato responde.
+ *
+ * Quem procura um candidato quase nunca digita só o nome: digita "quem é
+ * fulano", "fulano propostas", "fulano votações". O título antigo —
+ * "X: propostas, partido e histórico" — prometia as três coisas em toda ficha,
+ * inclusive nas que não têm proposta nem votação registrada, e não trazia o
+ * partido nem a UF, que é justamente o que separa dois homônimos na SERP.
+ *
+ * Aqui a sigla e a UF entram sempre (são o desempate) e os assuntos listados
+ * saem do conteúdo real, na mesma regra do `resumoSocial`: não anunciar seção
+ * vazia.
+ */
+function tituloBusca(c: CandidateDetail): string {
+  const assuntos: string[] = []
+  if (c.bioSummary || c.bio) assuntos.push('quem é')
+  if ((c.proposals?.length ?? 0) > 0) assuntos.push('propostas')
+  if ((c.votingRecords?.length ?? 0) > 0) assuntos.push('votações')
+  if ((c.assetDeclarations?.length ?? 0) > 0) assuntos.push('patrimônio')
+
+  const identificacao = `${c.name} (${c.party}-${c.state})`
+  if (assuntos.length === 0) return `${identificacao}: ficha da candidatura 2026`
+  return `${identificacao}: ${assuntos.slice(0, 3).join(', ')}`
 }
 
 export const revalidate = 3600
@@ -119,9 +145,10 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     const c = res.data
     const canonicalPath = `/candidatos/${c.slug}`
     const socialImage = canonicalUrl(`/candidatos/${c.slug}/opengraph-image`)
+    const office = POSITION_LABELS[c.position] ?? c.position
     return {
-      title: `${c.name}: propostas, partido e histórico`,
-      description: `Veja quem é ${c.name} (${c.party}-${c.state}), sua situação nas Eleições 2026, propostas, histórico de votações, patrimônio e fontes oficiais.`,
+      title: tituloBusca(c),
+      description: `Quem é ${c.name}, candidatura a ${office} por ${c.party}-${c.state} nas Eleições 2026: situação eleitoral, propostas, histórico de votações, patrimônio e a fonte oficial de cada dado.`,
       alternates: { canonical: canonicalPath },
       robots: qualification?.indexable
         ? { index: true, follow: true }
@@ -216,7 +243,7 @@ export default async function CandidatePage(props: Props): Promise<JSX.Element> 
   const statusVerifiedAt = formatDate(candidate.candidacyStatusVerifiedAt)
   const materialUpdatedAt = formatDate(candidate.materialUpdatedAt)
   const reviewedAt = formatDate(candidate.reviewedAt)
-  const description = `Veja quem é ${candidate.name} (${candidate.party}-${candidate.state}), sua situação nas Eleições 2026, propostas, histórico de votações, patrimônio e fontes oficiais.`
+  const description = `Quem é ${candidate.name}, candidatura a ${officeLabel} por ${candidate.party}-${candidate.state} nas Eleições 2026: situação eleitoral, propostas, histórico de votações, patrimônio e a fonte oficial de cada dado.`
 
   return (
     <div className="paper-grain text-ink">
@@ -227,12 +254,21 @@ export default async function CandidatePage(props: Props): Promise<JSX.Element> 
         ])}
       />
       <JsonLd
-        data={buildCandidateWebPageSchema({
+        data={buildCandidateProfilePageSchema({
           name: candidate.name,
+          socialName: candidate.socialName,
           slug: candidate.slug,
+          title: tituloBusca(candidate),
           description,
           image: photoSchemaUrl,
           dateModified: candidate.materialUpdatedAt,
+          party: candidate.party,
+          state: candidate.state,
+          stateName: BRAZIL_STATES[candidate.state],
+          officeLabel,
+          ballotNumber: candidate.ballotNumber,
+          siteUrl: candidate.siteUrl,
+          bioSummary: candidate.bioSummary,
         })}
       />
       {/* ——— Top strip — breadcrumb + marker ——— */}
