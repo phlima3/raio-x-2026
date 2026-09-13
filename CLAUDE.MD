@@ -403,10 +403,11 @@ chrome de jornal inventado ("Edição Nº 01", "Colofão", "§"). Regras que fic
 - Partido e UF seguem a imprensa: `partyLabel()` em `lib/candidacy.ts` dá
   `PSD-GO`; presidenciável fica só com o partido.
 - A hero é dividida: título e busca à esquerda; à direita o painel das 13 fotos oficiais do TSE coladas, em ordem de número de urna (`PresidentialSheet`). A lista
-  da Presidência mostra o fundo eleitoral em uma frase (`fundoEleitoralLine`
-  em `lib/financing.ts`), a partir de `fefcReceived`/`totalReceived` que
-  `GET /api/candidates` passou a expor. Campo `undefined` = API antiga, a
-  linha não renderiza; `null` = candidato sem prestação de contas.
+  da Presidência mostra o fundo eleitoral como cifra à direita, coluna de
+  tabela (`fundoEleitoralFigure` em `lib/financing.ts`), a partir de
+  `fefcReceived`/`totalReceived` que `GET /api/candidates` passou a expor.
+  Campo `undefined` = API antiga, a cifra não renderiza; `null` = candidato
+  sem prestação de contas.
 - "Sobre os dados" substitui "Três passos" e "Colofão". As estatísticas viraram
   prosa; `BR` (presidenciáveis) não conta como UF.
 - O comparador filtra por nome, cargo e UF no cliente (`ComparePicker`,
