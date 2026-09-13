@@ -56,6 +56,37 @@ const BLOCKER_TRACK: Record<string, Track | undefined> = {
   status_nao_qualificado: 'aguardando',
 }
 
+/**
+ * Bloqueios que só existem porque a ficha caiu na trilha editorial.
+ *
+ * `evaluateCandidateIndexability` escolhe a trilha por
+ * `isOfficialSourceProfile`: com identificador do TSE, fonte do status, fonte
+ * da trajetória e crédito da foto, a ficha é derivada do registro campo a
+ * campo e não se cobra assinatura humana dela. Sem isso, ela vira ficha
+ * redigida — e aí passam a faltar autoria, revisão, aprovação, revisor e três
+ * módulos em vez de um.
+ *
+ * Quer dizer que esses cinco podem ser *consequência* de um único campo vazio,
+ * e não trabalho de redação. Contá-los como editorial sem olhar a causa é o
+ * que fazia o resumo anunciar "0 fichas voltam com backfill" para uma fila que
+ * é, em boa parte, uma URL faltando.
+ */
+const GATED_BY_OFFICIAL_SOURCE = new Set([
+  'revisao_editorial_ausente',
+  'aprovacao_editorial_ausente',
+  'autoria_ausente',
+  'revisor_ausente',
+  'menos_de_tres_modulos',
+])
+
+/** Os campos que `isOfficialSourceProfile` exige, pelo bloqueio que cada um emite. */
+const OFFICIAL_SOURCE_INPUTS = new Set([
+  'identidade_nao_confirmada',
+  'status_sem_fonte',
+  'trajetoria_sem_fonte',
+  'credito_de_imagem_ausente',
+])
+
 const TRACK_LABEL = {
   dado: 'dado — backfill de campo',
   editorial: 'editorial — texto ou assinatura humana',
@@ -121,10 +152,21 @@ async function main(): Promise<void> {
   // então ela é contada na fila mais cara que a prende — senão o plano promete
   // um ganho que o backfill sozinho não entrega.
   const perTrack = { dado: 0, editorial: 0, aguardando: 0, desconhecida: 0 }
+  let porConsequencia = 0
   for (const candidate of blocked) {
-    const tracks = new Set<Track>(
-      candidate.blockers.map((b) => BLOCKER_TRACK[b] ?? 'desconhecida'),
-    )
+    // Falta um campo da trilha de fonte oficial? Então os bloqueios de
+    // assinatura caem junto com o backfill, e o que decide a fila é só o que
+    // sobra. Ao trocar de trilha a exigência de módulos afrouxa de três para
+    // um: só continua bloqueando quem não tem módulo substantivo nenhum.
+    const derivados = candidate.blockers.some((b) => OFFICIAL_SOURCE_INPUTS.has(b))
+    const efetivos = derivados
+      ? candidate.blockers.filter((b) => !GATED_BY_OFFICIAL_SOURCE.has(b))
+      : [...candidate.blockers]
+    if (derivados && candidate.substantiveModules.length < 1) {
+      efetivos.push('sem_modulo_substantivo')
+    }
+
+    const tracks = new Set<Track>(efetivos.map((b) => BLOCKER_TRACK[b] ?? 'desconhecida'))
     const gargalo = tracks.has('desconhecida')
       ? 'desconhecida'
       : tracks.has('editorial')
@@ -133,6 +175,9 @@ async function main(): Promise<void> {
           ? 'aguardando'
           : 'dado'
     perTrack[gargalo] += 1
+    if (gargalo === 'dado' && efetivos.length < candidate.blockers.length) {
+      porConsequencia += 1
+    }
   }
 
   if (blocked.length > 0) {
@@ -142,6 +187,11 @@ async function main(): Promise<void> {
         .filter((track) => perTrack[track] > 0)
         .map((track) => ({ fila: TRACK_LABEL[track], fichas: perTrack[track] })),
     )
+    if (porConsequencia > 0) {
+      console.info(
+        `\nDestas, ${porConsequencia} aparecem na lista de bloqueios com falta de autoria/revisão só por consequência: preencher os campos da trilha de fonte oficial (fonte da trajetória, fonte do status, identificador do TSE, crédito da foto) dispensa a assinatura humana.`,
+      )
+    }
     console.info(
       `\n${perTrack.dado} ficha(s) voltam ao índice só com backfill de campo — sem escrever uma linha e sem baixar o padrão editorial.`,
     )
