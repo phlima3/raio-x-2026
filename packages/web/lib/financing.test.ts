@@ -5,7 +5,7 @@ import {
   filterValidParties,
   fefcStanding,
   fmtBRLShort,
-  fundoEleitoralLine,
+  fundoEleitoralFigure,
 } from './financing'
 
 test('valor curto em reais, como manchete', () => {
@@ -15,27 +15,37 @@ test('valor curto em reais, como manchete', () => {
   assert.equal(fmtBRLShort(1000000), 'R$ 1 milhão')
   assert.equal(fmtBRLShort(607500.16), 'R$ 608 mil')
   assert.equal(fmtBRLShort(9621.53), 'R$ 9,6 mil')
-  assert.equal(fmtBRLShort(317), 'R$' + '\u00a0' + '317') // Intl usa espaço inseparável
+  assert.equal(fmtBRLShort(317), 'R$' + String.fromCharCode(160) + '317') // Intl usa espaço inseparável
+  assert.equal(fmtBRLShort(42000000, 'figure'), 'R$ 42 mi')
+  assert.equal(fmtBRLShort(1500000, 'figure'), 'R$ 1,5 mi')
+  assert.equal(fmtBRLShort(50000, 'figure'), 'R$ 50 mil')
 })
 
-test('linha do fundão distingue sem contas, origem não consultada, zero e valor', () => {
-  assert.equal(fundoEleitoralLine(null), 'Sem prestação de contas no TSE.')
-  assert.equal(
-    fundoEleitoralLine({ totalReceived: '2800007', fefcReceived: null }),
-    'R$ 2,8 milhões arrecadados. Origem do dinheiro não consultada.',
+test('cifra do fundão distingue sem contas, origem não consultada, zero e valor', () => {
+  assert.deepEqual(fundoEleitoralFigure(null), {
+    value: null,
+    label: 'Sem prestação de contas no TSE',
+    note: null,
+  })
+  assert.deepEqual(fundoEleitoralFigure({ totalReceived: '2800007', fefcReceived: null }), {
+    value: 'R$ 2,8 mi',
+    label: 'arrecadados',
+    note: 'origem do dinheiro não consultada',
+  })
+  assert.deepEqual(fundoEleitoralFigure({ totalReceived: '2800007', fefcReceived: '0' }), {
+    value: 'R$ 0',
+    label: 'do fundo eleitoral',
+    note: 'R$ 2,8 milhões de outras fontes',
+  })
+  assert.deepEqual(
+    fundoEleitoralFigure({ totalReceived: '43677867.29', fefcReceived: '42000000' }),
+    { value: 'R$ 42 mi', label: 'do fundo eleitoral', note: '96% da receita' },
   )
-  assert.equal(
-    fundoEleitoralLine({ totalReceived: '2800007', fefcReceived: '0' }),
-    'Sem fundo eleitoral. R$ 2,8 milhões arrecadados de outras fontes.',
-  )
-  assert.equal(
-    fundoEleitoralLine({ totalReceived: '43677867.29', fefcReceived: '42000000' }),
-    'R$ 42 milhões do fundo eleitoral, 96% do que arrecadou.',
-  )
-  assert.equal(
-    fundoEleitoralLine({ totalReceived: '0', fefcReceived: '0' }),
-    'Sem receita declarada.',
-  )
+  assert.deepEqual(fundoEleitoralFigure({ totalReceived: '0', fefcReceived: '0' }), {
+    value: 'R$ 0',
+    label: 'sem receita declarada',
+    note: null,
+  })
 })
 
 test('orders the buckets by size and skips the empty ones', () => {

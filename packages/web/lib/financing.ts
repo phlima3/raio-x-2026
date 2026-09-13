@@ -121,35 +121,53 @@ export function fmtBRL(value: string | number): string {
   })
 }
 
-/** "R$ 42 milhões", "R$ 2,8 milhões", "R$ 608 mil": o valor como em manchete. */
-export function fmtBRLShort(value: number): string {
+/**
+ * "R$ 42 milhões", "R$ 2,8 milhões", "R$ 608 mil": o valor como em manchete.
+ * `figure` encurta para "R$ 42 mi", para caber como cifra grande na ficha.
+ */
+export function fmtBRLShort(value: number, style: 'prose' | 'figure' = 'prose'): string {
   const short = (n: number) =>
     n.toLocaleString('pt-BR', { maximumFractionDigits: n < 100 ? 1 : 0 })
   if (value >= 1e6) {
-    const n = value / 1e6
-    return `R$ ${short(n)} ${short(n) === '1' ? 'milhão' : 'milhões'}`
+    const n = short(value / 1e6)
+    const unit = style === 'figure' ? 'mi' : n === '1' ? 'milhão' : 'milhões'
+    return `R$ ${n} ${unit}`
   }
   if (value >= 1e3) return `R$ ${short(value / 1e3)} mil`
   return fmtBRL(value)
 }
 
 /**
- * Uma frase sobre o fundo eleitoral, para a lista da home. Cada um dos estados
- * de `fefcStanding` vira uma frase diferente: "sem contas" não é "zero", e
- * "origem não consultada" não é nenhum dos dois.
+ * A cifra do fundo eleitoral para a ficha: valor grande, rótulo e uma linha de
+ * contexto. Cada estado de `fefcStanding` rende um trio diferente: "sem contas"
+ * não é "zero", e "origem não consultada" não é nenhum dos dois.
  */
-export function fundoEleitoralLine(
+export function fundoEleitoralFigure(
   financing: FinancingComposable | null | undefined,
-): string {
+): { value: string | null; label: string; note: string | null } {
   const standing = fefcStanding(financing)
-  if (standing.kind === 'none') return 'Sem prestação de contas no TSE.'
-  if (standing.kind === 'unknown') {
-    return `${fmtBRLShort(amount(financing!.totalReceived))} arrecadados. Origem do dinheiro não consultada.`
+  if (standing.kind === 'none') {
+    return { value: null, label: 'Sem prestação de contas no TSE', note: null }
   }
-  if (standing.total <= 0) return 'Sem receita declarada.'
+  if (standing.kind === 'unknown') {
+    return {
+      value: fmtBRLShort(amount(financing!.totalReceived), 'figure'),
+      label: 'arrecadados',
+      note: 'origem do dinheiro não consultada',
+    }
+  }
+  if (standing.total <= 0) return { value: 'R$ 0', label: 'sem receita declarada', note: null }
   if (standing.value <= 0) {
-    return `Sem fundo eleitoral. ${fmtBRLShort(standing.total)} arrecadados de outras fontes.`
+    return {
+      value: 'R$ 0',
+      label: 'do fundo eleitoral',
+      note: `${fmtBRLShort(standing.total)} de outras fontes`,
+    }
   }
   // Arredondar para baixo: 99,5% virando "100%" diria que não houve outra fonte.
-  return `${fmtBRLShort(standing.value)} do fundo eleitoral, ${Math.floor(standing.share ?? 0)}% do que arrecadou.`
+  return {
+    value: fmtBRLShort(standing.value, 'figure'),
+    label: 'do fundo eleitoral',
+    note: `${Math.floor(standing.share ?? 0)}% da receita`,
+  }
 }

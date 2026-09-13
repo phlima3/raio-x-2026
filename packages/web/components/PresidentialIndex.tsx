@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { ViewTransitionLink } from './ViewTransitionLink'
-import { fundoEleitoralLine } from '@/lib/financing'
+import { fundoEleitoralFigure, type FinancingComposable } from '@/lib/financing'
 
 export type PresidentialCandidate = {
   id: string
@@ -184,7 +184,7 @@ function Entry({ candidate }: { candidate: PresidentialCandidate }) {
   return (
     <ViewTransitionLink
       href={`/candidatos/${slug}`}
-      className="focus-editorial group flex items-start gap-5 py-6 border-b border-ink/20 hover:bg-paper-light/70 transition-colors"
+      className="focus-editorial group grid grid-cols-[auto_1fr] sm:grid-cols-[auto_1fr_auto] items-start gap-x-5 gap-y-3 py-6 border-b border-ink/20 hover:bg-paper-light/70 transition-colors"
     >
       <div
         className="relative w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden bg-paper-dark border border-ink/20 shrink-0"
@@ -206,7 +206,7 @@ function Entry({ candidate }: { candidate: PresidentialCandidate }) {
         )}
       </div>
 
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0">
         <h3
           className="font-serif text-2xl md:text-[1.6rem] leading-tight tracking-[-0.01em] group-hover:text-ember transition-colors"
           style={{ viewTransitionName: `name-${slug}` }}
@@ -222,17 +222,46 @@ function Entry({ candidate }: { candidate: PresidentialCandidate }) {
             “{firstProposalTitle}”
           </p>
         )}
-        {/* `undefined` é API antiga, sem o campo; `null` é candidato sem contas. */}
-        {candidate.totalReceived !== undefined && (
-          <p className="mt-3 text-[15px] text-ink">
-            {fundoEleitoralLine(
-              candidate.totalReceived === null
-                ? null
-                : { totalReceived: candidate.totalReceived, fefcReceived: candidate.fefcReceived },
-            )}
-          </p>
-        )}
       </div>
+
+      {/* `undefined` é API antiga, sem o campo; `null` é candidato sem contas. */}
+      {candidate.totalReceived !== undefined && (
+        <FundoFigure
+          financing={
+            candidate.totalReceived === null
+              ? null
+              : { totalReceived: candidate.totalReceived, fefcReceived: candidate.fefcReceived }
+          }
+        />
+      )}
     </ViewTransitionLink>
+  )
+}
+
+/**
+ * A cifra do fundo eleitoral, à direita da ficha como coluna de tabela. No
+ * celular desce para baixo do texto, alinhada com ele.
+ */
+function FundoFigure({ financing }: { financing: FinancingComposable | null }) {
+  const { value, label, note } = fundoEleitoralFigure(financing)
+  return (
+    <div className="col-start-2 sm:col-start-auto sm:w-[9.5rem] sm:text-right sm:pt-1">
+      {value ? (
+        <>
+          <p
+            className={
+              'text-[26px] font-semibold tracking-[-0.02em] leading-none ' +
+              (value === 'R$ 0' ? 'text-ink-soft' : 'text-ink')
+            }
+          >
+            {value}
+          </p>
+          <p className="mt-1.5 text-xs text-ink-muted leading-tight">{label}</p>
+          {note && <p className="mt-1.5 text-[13px] text-ink leading-tight">{note}</p>}
+        </>
+      ) : (
+        <p className="text-[13px] text-ink-muted leading-tight">{label}</p>
+      )}
+    </div>
   )
 }
