@@ -1,12 +1,5 @@
 import Link from 'next/link'
 
-const ELECTION_DATE = new Date('2026-10-04T00:00:00-03:00')
-
-function daysUntilElection(): number {
-  const diff = ELECTION_DATE.getTime() - Date.now()
-  return Math.max(0, Math.ceil(diff / 86_400_000))
-}
-
 const SECTIONS: Array<{ href: string; label: string }> = [
   { href: '/eleicoes-2026', label: 'Eleições 2026' },
   { href: '/candidatos-presidente', label: 'Presidência' },
@@ -19,10 +12,13 @@ const TRUST_LINKS: Array<{ href: string; label: string }> = [
   { href: '/fontes', label: 'Fontes' },
   { href: '/politica-editorial', label: 'Política editorial' },
   { href: '/correcoes', label: 'Correções' },
+  { href: '/changelog', label: 'Histórico de atualizações' },
 ]
 
+const LINK =
+  'focus-editorial font-serif text-lg md:text-xl hover:text-ember transition-colors'
+
 export function Footer() {
-  const daysLeft = daysUntilElection()
   const year = new Date().getFullYear()
 
   return (
@@ -30,76 +26,35 @@ export function Footer() {
       role="contentinfo"
       className="paper-grain border-t-2 border-ink text-ink mt-auto"
     >
-      {/* Top ornament row */}
-      <div className="border-b border-ink/20">
-        <div className="container mx-auto px-4 md:px-6 py-3 flex items-center justify-between font-mono text-[10px] md:text-[11px] uppercase tracking-[0.22em] text-ink-muted">
-          <span>§ Fim da edição</span>
-          <span className="hidden sm:flex items-center gap-2">
-            <span
-              aria-hidden
-              className="inline-block w-1.5 h-1.5 rounded-full bg-ember"
-            />
-            1º turno em{' '}
-            <strong className="text-ember tabular-nums">{daysLeft}</strong>{' '}
-            dias
-          </span>
-          <a
-            href="https://github.com/phlima3/raio-x-2026"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="focus-editorial hover:text-ember transition-colors"
-          >
-            Código aberto ↗
-          </a>
-        </div>
-      </div>
-
-      {/* Main colophon */}
       <div className="container mx-auto px-4 md:px-6 py-14 md:py-20">
         <div className="grid grid-cols-12 gap-y-12 gap-x-0 md:gap-x-8">
-          {/* Wordmark + mission */}
           <div className="col-span-12 md:col-span-5">
             <Link
               href="/"
-              className="focus-editorial inline-flex items-baseline gap-2.5 group"
-              aria-label="Raio-X 2026 — início"
+              className="focus-editorial inline-flex items-baseline gap-2 group"
+              aria-label="Raio-X 2026, início"
             >
               <span className="font-serif text-4xl md:text-5xl leading-none tracking-[-0.02em] group-hover:text-ember transition-colors">
                 Raio-X
               </span>
-              <span className="font-mono text-xs uppercase tracking-[0.22em] text-ember translate-y-[-3px]">
-                2026
-              </span>
+              <span className="font-serif text-xl text-ember">2026</span>
             </Link>
-            <p className="mt-6 font-serif text-[19px] md:text-xl leading-[1.55] text-ink-muted max-w-md text-pretty">
-              Arquivo público dos candidatos à{' '}
-              <em className="italic text-ink">Presidência</em> e aos{' '}
-              <em className="italic text-ink">governos estaduais</em> nas
-              Eleições Gerais de 2026.
-            </p>
-            <p className="mt-6 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-soft">
-              Compilado de fontes oficiais —
-              <br className="md:hidden" /> projeto independente, sem fins
-              eleitorais.
+            <p className="mt-6 text-[17px] leading-[1.6] text-ink-muted max-w-md text-pretty">
+              Arquivo público dos candidatos à Presidência, aos governos
+              estaduais e ao Senado nas eleições de 2026. Projeto independente,
+              sem fins eleitorais, compilado de fontes oficiais.
             </p>
           </div>
 
-          {/* Sections */}
           <nav
             aria-label="Mapa do site"
             className="col-span-6 md:col-span-3 md:col-start-7"
           >
-            <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-ember mb-5">
-              <span className="inline-block w-6 h-px bg-ember align-middle mr-2" />
-              Seções
-            </p>
+            <p className="text-sm text-ink-muted mb-4">Seções</p>
             <ul className="space-y-3">
               {SECTIONS.map(({ href, label }) => (
                 <li key={href}>
-                  <Link
-                    href={href}
-                    className="focus-editorial font-serif text-lg md:text-xl hover:text-ember transition-colors border-b border-transparent hover:border-ember pb-0.5"
-                  >
+                  <Link href={href} className={LINK}>
                     {label}
                   </Link>
                 </li>
@@ -107,55 +62,35 @@ export function Footer() {
             </ul>
           </nav>
 
-          {/* Sources */}
-          <div className="col-span-6 md:col-span-4">
-            <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-ember mb-5">
-              <span className="inline-block w-6 h-px bg-ember align-middle mr-2" />
-              Projeto
-            </p>
+          <div className="col-span-6 md:col-span-3 md:col-start-10">
+            <p className="text-sm text-ink-muted mb-4">Projeto</p>
             <ul className="space-y-3">
               {TRUST_LINKS.map(({ href, label }) => (
                 <li key={href}>
-                  <Link
-                    href={href}
-                    className="focus-editorial font-serif text-lg md:text-xl hover:text-ember transition-colors border-b border-transparent hover:border-ember pb-0.5 inline-flex items-baseline gap-1.5"
-                  >
-                    <span>{label}</span>
-                    <span
-                      aria-hidden
-                      className="font-mono text-[10px] text-ink-soft"
-                    >
-                      →
-                    </span>
+                  <Link href={href} className={LINK}>
+                    {label}
                   </Link>
                 </li>
               ))}
+              <li>
+                <a
+                  href="https://github.com/phlima3/raio-x-2026"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={LINK}
+                >
+                  Código aberto no GitHub
+                </a>
+              </li>
             </ul>
           </div>
         </div>
       </div>
 
-      {/* Bottom strip — dateline / signature */}
       <div className="border-t border-ink/25 bg-paper-dark/40">
-        <div className="container mx-auto px-4 md:px-6 py-4 flex flex-wrap items-center gap-x-6 gap-y-2 font-mono text-[10px] md:text-[11px] uppercase tracking-[0.22em] text-ink-muted">
-          <span className="tabular-nums">©&nbsp;{year}</span>
-          <span aria-hidden className="text-ink-soft">
-            ·
-          </span>
-          <span>Raio-X 2026</span>
-          <span aria-hidden className="text-ink-soft">
-            ·
-          </span>
-          <span className="italic font-serif text-sm normal-case tracking-normal text-ink-muted">
-            “dados públicos, não partidários.”
-          </span>
-          <Link
-            href="/changelog"
-            className="ml-auto text-ink-soft hover:text-ember hover:underline"
-          >
-            Histórico de atualizações →
-          </Link>
-        </div>
+        <p className="container mx-auto px-4 md:px-6 py-4 text-sm text-ink-muted">
+          © {year} Raio-X 2026. Dados públicos, não partidários.
+        </p>
       </div>
     </footer>
   )

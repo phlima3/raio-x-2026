@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { bioProvenance, candidacyStatusPresentation, opensAsDownload } from './candidacy'
+import { bioProvenance, candidacyStatusPresentation, opensAsDownload, partyLabel } from './candidacy'
+
+test('partido-UF como na imprensa; presidenciável fica só com o partido', () => {
+  assert.equal(partyLabel({ party: 'PSD', state: 'GO', position: 'GOVERNADOR' }), 'PSD-GO')
+  assert.equal(partyLabel({ party: 'PT', state: 'SP', position: 'PRESIDENTE' }), 'PT')
+  assert.equal(partyLabel({ party: 'PSD', state: 'BR' }), 'PSD')
+  assert.equal(partyLabel({ party: 'NOVO', state: null }), 'NOVO')
+})
 
 test('presents each tracked election state without overstating official registration', () => {
   assert.equal(candidacyStatusPresentation('pre_candidato').label, 'Pré-candidatura anunciada')

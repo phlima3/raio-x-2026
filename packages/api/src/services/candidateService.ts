@@ -119,6 +119,14 @@ type CandidateListRow = Pick<
   slug: string
   firstProposalTitle: string | null
   bioSummary: string | null
+  /**
+   * Fundo eleitoral (FEFC) e total arrecadado na prestação de contas pública
+   * mais recente. Nulos quando não há prestação; `fefcReceived` nulo com total
+   * presente significa origem não consultada, e a tela distingue os três casos.
+   */
+  fefcReceived: string | null
+  totalReceived: string | null
+  accountsUpdatedAt: Date | null
 }
 
 interface CandidateListResult {
@@ -257,7 +265,10 @@ export async function listCandidates(filters: CandidateFilters): Promise<Candida
           c."personKey", c."tseId", c."effectiveSlug" AS slug,
           c."candidacyStatus", c."materialUpdatedAt", c."updatedAt",
           c."bioSummary",
-          proposal.title AS "firstProposalTitle"
+          proposal.title AS "firstProposalTitle",
+          financing."fefcReceived"::text AS "fefcReceived",
+          financing."totalReceived"::text AS "totalReceived",
+          financing."accountsUpdatedAt"
         FROM canonical c
         JOIN slug_counts sc ON sc."effectiveSlug" = c."effectiveSlug"
         LEFT JOIN "Person" person ON person.id = c."personId"
@@ -271,6 +282,15 @@ export async function listCandidates(filters: CandidateFilters): Promise<Candida
           ORDER BY p."proposedAt" DESC NULLS LAST, p."updatedAt" DESC
           LIMIT 1
         ) proposal ON true
+        -- Mesmo recorte de PUBLIC_CAMPAIGN_FINANCING_WHERE/ORDER_BY, em SQL.
+        LEFT JOIN LATERAL (
+          SELECT f."fefcReceived", f."totalReceived", f."accountsUpdatedAt"
+          FROM "CampaignFinancing" f
+          WHERE f."candidateId" = c.id
+            AND f."sourceUrl" LIKE 'https://%'
+          ORDER BY f.year DESC, f."updatedAt" DESC
+          LIMIT 1
+        ) financing ON true
         WHERE ${whereClause}
         ORDER BY c.position::text ASC, c.state ASC, name ASC
         LIMIT ${limit} OFFSET ${skip}

@@ -85,6 +85,36 @@ export function sameRace(a: ComparableRace, b: ComparableRace): boolean {
  * chegava pelo botão da ficha de um candidato fora da fatia via a disputa
  * presidencial oferecida como adversária.
  */
+function normalizeText(value: string): string {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+}
+
+export interface PickerFilter {
+  query?: string
+  position?: string
+  state?: string
+}
+
+/**
+ * Recorte da grade do comparador. Sem filtro, a grade tinha 519 nomes e a
+ * pessoa precisava rolar até achar o dela. Nome e partido casam sem acento,
+ * como a busca da API; cargo e UF são exatos.
+ */
+export function filterPickerCandidates<
+  T extends ComparableRace & { name: string; party: string },
+>(candidates: T[], filter: PickerFilter): T[] {
+  const query = normalizeText(filter.query?.trim() ?? '')
+  return candidates.filter((candidate) => {
+    if (filter.position && candidate.position !== filter.position) return false
+    if (filter.state && candidate.state !== filter.state) return false
+    if (!query) return true
+    return (
+      normalizeText(candidate.name).includes(query) ||
+      normalizeText(candidate.party) === query
+    )
+  })
+}
+
 export function eligibleOpponents<T extends ComparableRace & { slug: string }>(
   candidates: T[],
   selected: string | ComparableRace | undefined,
