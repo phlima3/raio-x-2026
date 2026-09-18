@@ -501,7 +501,7 @@ export async function importTseCandidates(
         const materialChanged =
           existingOfficial.personId !== personResolution.personId ||
           existingOfficial.name !== record.name ||
-          existingOfficial.socialName !== record.socialName ||
+          existingOfficial.socialName !== record.ballotName ||
           existingOfficial.party !== record.party ||
           existingOfficial.state !== record.state ||
           existingOfficial.position !== position ||
@@ -521,7 +521,11 @@ export async function importTseCandidates(
           data: {
             personId: personResolution.personId,
             name: record.name,
-            socialName: record.socialName,
+            // `Candidate.socialName` é o nome de urna (NM_URNA_CANDIDATO): é o
+            // que abre o título da ficha e o que se digita no buscador. O nome
+            // social do TSE fica em `Person`. Gravar `record.socialName` aqui
+            // apagava o de urna que a promoção editorial tinha guardado.
+            socialName: record.ballotName,
             party: record.party,
             state: record.state,
             position,
@@ -656,7 +660,7 @@ export async function importTseCandidates(
           tseId: record.tseId,
           slug,
           name: record.name,
-          socialName: record.socialName,
+          socialName: record.ballotName,
           party: record.party,
           state: record.state,
           position,

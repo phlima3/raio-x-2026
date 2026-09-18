@@ -51,6 +51,23 @@ const POSITION_LABELS: Record<string, string> = {
  * saem do conteúdo real, na mesma regra do `resumoSocial`: não anunciar seção
  * vazia.
  */
+/**
+ * Nome pelo qual a candidatura é procurada: o de urna ("Renan Santos"), não o
+ * civil ("Renan Antonio Ferreira dos Santos"). Ninguém digita o civil no
+ * Google; era ele que abria o título e sumia da SERP.
+ */
+function nomeConhecido(c: Pick<CandidateDetail, 'name' | 'socialName'>): string {
+  return c.socialName?.trim() || c.name
+}
+
+/** O civil só entra quando difere do de urna — cobre a busca pelo nome completo. */
+function descricaoBusca(c: CandidateDetail): string {
+  const office = POSITION_LABELS[c.position] ?? c.position
+  const conhecido = nomeConhecido(c)
+  const quem = conhecido === c.name ? conhecido : `${conhecido} (${c.name})`
+  return `Quem é ${quem}, candidatura a ${office} por ${partyLabel(c)} nas Eleições 2026: situação eleitoral, propostas, histórico de votações, patrimônio e a fonte oficial de cada dado.`
+}
+
 function tituloBusca(c: CandidateDetail): string {
   const assuntos: string[] = []
   if (c.bioSummary || c.bio) assuntos.push('quem é')
@@ -58,7 +75,7 @@ function tituloBusca(c: CandidateDetail): string {
   if ((c.votingRecords?.length ?? 0) > 0) assuntos.push('votações')
   if ((c.assetDeclarations?.length ?? 0) > 0) assuntos.push('patrimônio')
 
-  const identificacao = `${c.name} (${partyLabel(c)})`
+  const identificacao = `${nomeConhecido(c)} (${partyLabel(c)})`
   if (assuntos.length === 0) return `${identificacao}: ficha da candidatura 2026`
   return `${identificacao}: ${assuntos.slice(0, 3).join(', ')}`
 }
@@ -130,7 +147,7 @@ function resumoSocial(c: CandidateDetail): string {
   const votacoes = c.votingRecords?.length ?? 0
   if (votacoes > 0) fatos.push(`${votacoes} votações registradas`)
 
-  const cabeca = `${c.name} (${partyLabel(c)}) nas Eleições 2026.`
+  const cabeca = `${nomeConhecido(c)} (${partyLabel(c)}) nas Eleições 2026.`
   if (fatos.length === 0) return `${cabeca} Situação da candidatura e fontes oficiais.`
   return `${cabeca} ${fatos.join(', ')}. Cada dado com a fonte no TSE.`
 }
@@ -145,23 +162,22 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     const c = res.data
     const canonicalPath = `/candidatos/${c.slug}`
     const socialImage = canonicalUrl(`/candidatos/${c.slug}/opengraph-image`)
-    const office = POSITION_LABELS[c.position] ?? c.position
     return {
       title: tituloBusca(c),
-      description: `Quem é ${c.name}, candidatura a ${office} por ${partyLabel(c)} nas Eleições 2026: situação eleitoral, propostas, histórico de votações, patrimônio e a fonte oficial de cada dado.`,
+      description: descricaoBusca(c),
       alternates: { canonical: canonicalPath },
       robots: qualification?.indexable
         ? { index: true, follow: true }
         : { index: false, follow: true },
       openGraph: {
-        title: `${c.name} — Raio-X 2026`,
+        title: `${nomeConhecido(c)} — Raio-X 2026`,
         // Texto que o leitor ve no card compartilhado. Cita o que esta ficha
         // tem de concreto, em vez da mesma frase para as 519 candidaturas:
         // "Propostas, votacoes e dados de transparencia de X" nao diferencia
         // nada e nao da motivo para abrir.
         description: resumoSocial(c),
         url: canonicalPath,
-        images: [{ url: socialImage, alt: `Raio-X eleitoral de ${c.name}` }],
+        images: [{ url: socialImage, alt: `Raio-X eleitoral de ${nomeConhecido(c)}` }],
       },
       twitter: {
         card: 'summary_large_image',
@@ -243,14 +259,14 @@ export default async function CandidatePage(props: Props): Promise<JSX.Element> 
   const statusVerifiedAt = formatDate(candidate.candidacyStatusVerifiedAt)
   const materialUpdatedAt = formatDate(candidate.materialUpdatedAt)
   const reviewedAt = formatDate(candidate.reviewedAt)
-  const description = `Quem é ${candidate.name}, candidatura a ${officeLabel} por ${partyLabel(candidate)} nas Eleições 2026: situação eleitoral, propostas, histórico de votações, patrimônio e a fonte oficial de cada dado.`
+  const description = descricaoBusca(candidate)
 
   return (
     <div className="paper-grain text-ink">
       <JsonLd
         data={buildBreadcrumbList([
           { name: 'Início', path: '/' },
-          { name: candidate.name, path: `/candidatos/${candidate.slug}` },
+          { name: nomeConhecido(candidate), path: `/candidatos/${candidate.slug}` },
         ])}
       />
       <JsonLd
@@ -438,8 +454,13 @@ export default async function CandidatePage(props: Props): Promise<JSX.Element> 
               className="font-serif font-normal text-4xl sm:text-6xl md:text-7xl lg:text-[5.5rem] leading-[0.95] tracking-[-0.02em] text-balance"
               style={{ viewTransitionName: `name-${params.slug}` }}
             >
-              {candidate.name}
+              {nomeConhecido(candidate)}
             </h1>
+            {nomeConhecido(candidate) !== candidate.name && (
+              <p className="mt-3 font-serif text-lg md:text-xl text-ink-muted">
+                {candidate.name}
+              </p>
+            )}
 
             {candidate.bioSummary || candidate.bio ? (
               <div className="mt-8 md:mt-10 max-w-2xl">
