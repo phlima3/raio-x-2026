@@ -1,0 +1,192 @@
+{
+  "url": "https://raio-x-2026.com.br/",
+  "status": 200,
+  "capturedAt": "2026-09-26T14:10:38.394Z",
+  "viewport": {
+    "width": 430,
+    "dsf": 3
+  },
+  "hero": {
+    "h1": "Quem são, o que propõem, como votaram.",
+    "lead": "13 nomes registrados no TSE para a Presidência. 1º turno em 8 dias.",
+    "searchLabel": "Buscar candidato por nome, partido ou estado",
+    "button": "Buscar"
+  },
+  "presidents": [
+    {
+      "href": "/candidatos/luiz-inacio-lula-da-silva-pt-sp",
+      "slug": "luiz-inacio-lula-da-silva-pt-sp",
+      "photoSrc": "/images/candidates/tse/280002542548.jpg",
+      "ballotNumber": "13",
+      "label": "Luiz Inácio Lula da Silva, PT"
+    },
+    {
+      "href": "/candidatos/renan-santos-missao-sp",
+      "slug": "renan-santos-missao-sp",
+      "photoSrc": "/images/candidates/tse/280002540694.jpg",
+      "ballotNumber": "14",
+      "label": "Renan Antonio Ferreira dos Santos, MISSÃO"
+    },
+    {
+      "href": "/candidatos/hertz-da-conceicao-dias-pstu-br-presidente-2026",
+      "slug": "hertz-da-conceicao-dias-pstu-br-presidente-2026",
+      "photoSrc": "/images/candidates/tse/280002541457.jpg",
+      "ballotNumber": "16",
+      "label": "Hertz da Conceicao Dias, PSTU"
+    },
+    {
+      "href": "/candidatos/edmilson-silva-costa-pcb-br-presidente-2026",
+      "slug": "edmilson-silva-costa-pcb-br-presidente-2026",
+      "photoSrc": "/images/candidates/tse/280002551975.jpg",
+      "ballotNumber": "21",
+      "label": "Edmilson Silva Costa, PCB"
+    },
+    {
+      "href": "/candidatos/flavio-bolsonaro-pl-rj",
+      "slug": "flavio-bolsonaro-pl-rj",
+      "photoSrc": "/images/candidates/tse/280002551544.jpg",
+      "ballotNumber": "22",
+      "label": "Flavio Nantes Bolsonaro, PL"
+    },
+    {
+      "href": "/candidatos/clariana-zacarkim-barao-dc-br-presidente-2026",
+      "slug": "clariana-zacarkim-barao-dc-br-presidente-2026",
+      "photoSrc": "/images/candidates/tse/280002552484.jpg",
+      "ballotNumber": "27",
+      "label": "Clariana Zacarkim Barao, DC"
+    },
+    {
+      "href": "/candidatos/leonardo-alves-de-araujo-prtb-br-presidente-2026",
+      "slug": "leonardo-alves-de-araujo-prtb-br-presidente-2026",
+      "photoSrc": null,
+      "ballotNumber": "28",
+      "label": "Leonardo Alves de Araujo, PRTB"
+    },
+    {
+      "href": "/candidatos/rui-costa-pimenta-pco-br-presidente-2026",
+      "slug": "rui-costa-pimenta-pco-br-presidente-2026",
+      "photoSrc": "/images/candidates/tse/280002552487.jpg",
+      "ballotNumber": "29",
+      "label": "Rui Costa Pimenta, PCO"
+    },
+    {
+      "href": "/candidatos/romeu-zema-novo-mg",
+      "slug": "romeu-zema-novo-mg",
+      "photoSrc": "/images/candidates/tse/280002539826.jpg",
+      "ballotNumber": "30",
+      "label": "Romeu Zema Neto, NOVO"
+    },
+    {
+      "href": "/candidatos/wilson-grassi-junior-democrata-br-presidente-2026",
+      "slug": "wilson-grassi-junior-democrata-br-presidente-2026",
+      "photoSrc": "/images/candidates/tse/280002548139.jpg",
+      "ballotNumber": "35",
+      "label": "Wilson Grassi Junior, DEMOCRATA"
+    },
+    {
+      "href": "/candidatos/ronaldo-ramos-caiado-psd-br-presidente-2026",
+      "slug": "ronaldo-ramos-caiado-psd-br-presidente-2026",
+      "photoSrc": "/images/candidates/tse/280002551932.jpg",
+      "ballotNumber": "55",
+      "label": "Ronaldo Ramos Caiado, PSD"
+    },
+    {
+      "href": "/candidatos/augusto-jorge-cury-avante-br-presidente-2026",
+      "slug": "augusto-jorge-cury-avante-br-presidente-2026",
+      "photoSrc": "/images/candidates/tse/280002551547.jpg",
+      "ballotNumber": "70",
+      "label": "Augusto Jorge Cury, AVANTE"
+    },
+    {
+      "href": "/candidatos/samara-martins-da-silva-feitosa-up-br-presidente-2026",
+      "slug": "samara-martins-da-silva-feitosa-up-br-presidente-2026",
+      "photoSrc": "/images/candidates/tse/280002538811.jpg",
+      "ballotNumber": "80",
+      "label": "Samara Martins da Silva Feitosa, UP"
+    }
+  ],
+  "sheetNote": "O número em cada foto é o da urna.",
+  "sobre": {
+    "words": [
+      "O",
+      "que",
+      "é",
+      "público",
+      "sobre",
+      "468",
+      "candidaturas",
+      "",
+      "em",
+      "todo",
+      "o",
+      "país",
+      "",
+      "direto",
+      "do",
+      "TSE,",
+      "da",
+      "Câmara",
+      "e",
+      "do",
+      "Senado.",
+      "Cada",
+      "dado",
+      "com",
+      "a",
+      "fonte",
+      "ao",
+      "lado."
+    ],
+    "note": "Resumos feitos por inteligência artificial são marcados na ficha. Atualizado em 18 de setembro de 2026. Como os dados são coletados"
+  },
+  "footer": "© 2026 Raio-X 2026. Dados públicos, não partidários.",
+  "shots": {
+    "viewport": "capture/raw/home-viewport.png",
+    "h1": {
+      "file": "capture/raw/home-h1.png",
+      "box": {
+        "x": 16,
+        "y": 103,
+        "width": 398,
+        "height": 120
+      }
+    },
+    "search": {
+      "file": "capture/raw/home-search.png",
+      "box": {
+        "x": 16,
+        "y": 341.5,
+        "width": 398,
+        "height": 88
+      }
+    },
+    "sheet": {
+      "file": "capture/raw/home-sheet.png",
+      "box": {
+        "x": 16,
+        "y": 404.5,
+        "width": 398,
+        "height": 527.3125
+      }
+    },
+    "navbar": {
+      "file": "capture/raw/home-navbar.png",
+      "box": {
+        "x": 0,
+        "y": 0,
+        "width": 430,
+        "height": 55
+      }
+    }
+  },
+  "blocked": [
+    "https://cloud.umami.is/script.js",
+    "https://raio-x-2026.com.br/api/web-vitals",
+    "https://raio-x-2026.com.br/api/web-vitals"
+  ],
+  "failed": [
+    "console: Failed to load resource: net::ERR_FAILED",
+    "console: Failed to load resource: net::ERR_FAILED",
+    "console: Failed to load resource: net::ERR_FAILED"
+  ]
+}

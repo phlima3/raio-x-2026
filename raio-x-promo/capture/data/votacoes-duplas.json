@@ -1,0 +1,21 @@
+{
+ "verificado_em": "26/09/2026, entre 14:12 e 14:29 UTC (GET /api/candidates/:slug, success: true)",
+ "fichas": {
+  "luiz-inacio-lula-da-silva-pt-sp": {
+   "nomeDeUrna": "Lula",
+   "votingRecords": 0
+  },
+  "flavio-bolsonaro-pl-rj": {
+   "nomeDeUrna": "Flavio Bolsonaro",
+   "votingRecords": 0
+  },
+  "renan-santos-missao-sp": {
+   "nomeDeUrna": "Renan Santos",
+   "votingRecords": 0
+  },
+  "augusto-jorge-cury-avante-br-presidente-2026": {
+   "nomeDeUrna": "Escritor Augusto Cury",
+   "votingRecords": 0
+  }
+ }
+}

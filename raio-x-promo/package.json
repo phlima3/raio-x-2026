@@ -1,0 +1,20 @@
+{
+  "name": "raio-x-promo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx --yes hyperframes@0.8.78 preview",
+    "check": "npx --yes hyperframes@0.8.78 check",
+    "render": "npx --yes hyperframes@0.8.78 render",
+    "publish": "npx --yes hyperframes@0.8.78 publish",
+    "music": "python3 scripts/make_music.py",
+    "crops": "python3 scripts/crops.py",
+    "build": "node scripts/build.mjs",
+    "render:final": "npx --yes hyperframes@0.8.78 render --quality delivery --fps 30 --output raio-x-promo.mp4",
+    "sheet": "python3 scripts/contact_sheet.py video raio-x-promo.mp4 snapshots/contact-sheet.jpg"
+  },
+  "devDependencies": {
+    "gsap": "^3.15.0",
+    "playwright-core": "1.56"
+  }
+}

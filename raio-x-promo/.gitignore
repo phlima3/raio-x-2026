@@ -1,0 +1,7 @@
+# Dependências e saídas intermediárias
+node_modules/
+renders/
+snapshots/
+.hyperframes/
+# Capturas brutas (página inteira); os recortes usados ficam em assets/captures
+capture/raw/

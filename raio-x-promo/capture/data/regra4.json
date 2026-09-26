@@ -1,0 +1,2790 @@
+{
+ "em": "2026-09-26T14:27:45.366Z",
+ "escolhida": null,
+ "verificadas": [
+  {
+   "grupo": "presidência (número de urna)",
+   "nome": "Hertz Dias",
+   "slug": "hertz-da-conceicao-dias-pstu-br-presidente-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "presidência (número de urna)",
+   "nome": "Edmilson Costa",
+   "slug": "edmilson-silva-costa-pcb-br-presidente-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "presidência (número de urna)",
+   "nome": "Clariana Barao",
+   "slug": "clariana-zacarkim-barao-dc-br-presidente-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "presidência (número de urna)",
+   "nome": "Leonardo Avalanche",
+   "slug": "leonardo-alves-de-araujo-prtb-br-presidente-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "presidência (número de urna)",
+   "nome": "Rui Costa Pimenta",
+   "slug": "rui-costa-pimenta-pco-br-presidente-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "presidência (número de urna)",
+   "nome": "Zema",
+   "slug": "romeu-zema-novo-mg",
+   "votos": 0
+  },
+  {
+   "grupo": "presidência (número de urna)",
+   "nome": "Veterinário Wilson Grassi",
+   "slug": "wilson-grassi-junior-democrata-br-presidente-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "presidência (número de urna)",
+   "nome": "Ronaldo Caiado",
+   "slug": "ronaldo-ramos-caiado-psd-br-presidente-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "presidência (número de urna)",
+   "nome": "Samara",
+   "slug": "samara-martins-da-silva-feitosa-up-br-presidente-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Acácio Favacho",
+   "slug": "acacio-da-silva-favacho-neto-mdb-ap-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Acir Gurgacz",
+   "slug": "acir-marcos-gurgacz-pdt-ro-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Adriano Trajano",
+   "slug": "adriano-trajano-da-conceicao-pco-pb-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Aécio Neves",
+   "slug": "aecio-neves-da-cunha-psdb-mg-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Afrânio Boppré",
+   "slug": "afranio-tadeu-boppre-psol-sc-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Aires Mota",
+   "slug": "aires-mota-de-almeida-pv-ro-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Alcides Fernandes",
+   "slug": "alcides-fernandes-da-silva-pl-ce-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Alexandre Curi",
+   "slug": "alexandre-maranhao-khury-republicanos-pr-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Alexandre Fleming",
+   "slug": "alexandre-fleming-vasques-bastos-up-al-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Alexandre Guimarães",
+   "slug": "jose-alexandre-domingues-guimaraes-mdb-to-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Alliny Serrão",
+   "slug": "alliny-sousa-da-rocha-serrao-uniao-ap-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Ana Lucia da Silveira Machado",
+   "slug": "ana-lucia-da-silveira-machado-up-sc-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Ana Luiza do Mlb",
+   "slug": "ana-luiza-cardoso-de-macedo-up-mg-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "André do Prado",
+   "slug": "andre-luis-do-prado-pl-sp-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "André Gadelha",
+   "slug": "andre-avelino-de-paiva-gadelha-neto-mdb-pb-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "André Moura",
+   "slug": "andre-luis-dantas-ferreira-uniao-se-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Angelo Coronel",
+   "slug": "angelo-mario-coronel-de-azevedo-martins-republicanos-ba-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Antônio Barros",
+   "slug": "antonio-de-barros-araujo-filho-novo-pi-senador-2026-549933",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Antônio de Barros Araújo Filho",
+   "slug": "antonio-de-barros-araujo-filho-novo-pi-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Antônio José Lira",
+   "slug": "antonio-jose-de-freitas-lira-avante-pi-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Apóstolo Flavio Braga",
+   "slug": "flavio-alves-braga-dc-to-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Arcanjo Pimenta",
+   "slug": "arcanjo-carlos-pimenta-mdb-mg-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Arthur Lira",
+   "slug": "arthur-cesar-pereira-de-lira-pp-al-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Áurea Carolina",
+   "slug": "aurea-carolina-de-freitas-e-silva-psol-mg-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Bartô Macuxi",
+   "slug": "bartolomeu-da-silva-tomaz-psol-rr-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Benedita da Silva",
+   "slug": "benedita-souza-da-silva-sampaio-pt-rj-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Beto do Movimento",
+   "slug": "jonas-carlos-da-conceicao-psol-ms-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Bia Kicis",
+   "slug": "beatriz-kicis-torrents-de-sordi-pl-df-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Bruno Scheid",
+   "slug": "bruno-scheid-pl-ro-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Callegari",
+   "slug": "wellington-callegari-dc-es-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Capi",
+   "slug": "joao-alberto-rodrigues-capiberibe-psb-ap-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Capitão Alberto Neto",
+   "slug": "alberto-barros-cavalcante-neto-pl-am-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Capitão Contar",
+   "slug": "renan-barbosa-contar-pl-ms-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Capitão Wagner",
+   "slug": "wagner-sousa-gomes-uniao-ce-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Carlin Moura",
+   "slug": "carlos-magno-de-moura-soares-avante-mg-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Carlos Bolsonaro",
+   "slug": "carlos-nantes-bolsonaro-pl-sc-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Carlos Jordy",
+   "slug": "carlos-roberto-coelho-de-mattos-junior-pl-rj-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Carlos Portinho",
+   "slug": "carlos-francisco-portinho-pl-rj-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Carlos Sant Anna",
+   "slug": "carlos-soares-sant-anna-novo-pe-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Carlos Sodré",
+   "slug": "carlos-eduardo-sodre-mobiliza-ba-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Carlos Viana",
+   "slug": "carlos-alberto-dias-viana-psd-mg-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Carol",
+   "slug": "caroline-sant-anna-pco-sc-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Carol de Toni",
+   "slug": "caroline-rodrigues-de-toni-pl-sc-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Catarina Matos",
+   "slug": "catarina-da-graca-almeida-matos-up-ce-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Celso Sabino",
+   "slug": "celso-sabino-de-oliveira-pdt-pa-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Chicão",
+   "slug": "francisco-das-chagas-silva-melo-filho-uniao-pa-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Chico Rodrigues",
+   "slug": "francisco-de-assis-rodrigues-psb-rr",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Cid Gomes",
+   "slug": "cid-ferreira-gomes-psb-ce",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Cidônio Gonçalves",
+   "slug": "cidonio-goncalves-dos-santos-pl-ma-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Cintia Dias",
+   "slug": "cintia-aparecida-dias-psol-go-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Ciro Nogueira",
+   "slug": "ciro-nogueira-lima-filho-pp-pi",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Clóvis Costa do Coletivo Nós",
+   "slug": "clovis-ferreira-da-costa-agir-rn-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Conti",
+   "slug": "marcelino-conti-de-souza-psol-pa-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Coronel Darwin",
+   "slug": "darwin-salgado-germano-democrata-mt-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Coronel Hélio",
+   "slug": "helio-imbrosio-oliveira-pl-rn-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Coronel Jonildo",
+   "slug": "jonildo-de-castro-teixeira-dc-pa-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Coronel Nilton Santos",
+   "slug": "nilton-rodrigues-dos-santos-novo-to-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Coronel Rocha",
+   "slug": "henrique-alves-da-rocha-pl-se-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Cristina Graeml",
+   "slug": "cristina-reis-graeml-psd-pr-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Dailson Corrêa",
+   "slug": "dailson-de-queiroz-correa-dc-am-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Daniela Mulheres Socialistas",
+   "slug": "daniela-maidana-da-silva-pstu-rs-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Davi Davino Filho",
+   "slug": "david-cabral-davino-filho-republicanos-al-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "David Horn",
+   "slug": "david-horn-pureza-pco-df-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Décio Lima",
+   "slug": "decio-nery-de-lima-pt-sc-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Delegado Alessandro",
+   "slug": "alessandro-vieira-mdb-se",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Delegado André David",
+   "slug": "andre-david-caldas-rosa-rodrigues-republicanos-se-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Delegado Éder Mauro",
+   "slug": "eder-mauro-cardoso-barra-pl-pa-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Deltan Dallagnol",
+   "slug": "deltan-martinazzo-dallagnol-novo-pr-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Domingos Sávio",
+   "slug": "domingos-savio-campos-resende-pl-mg-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Dr Rosinha",
+   "slug": "florisvaldo-fier-pt-pr-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Dr. Fernando Máximo",
+   "slug": "fernando-rodrigues-maximo-pl-ro-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Dr. Junior Feitosa",
+   "slug": "ribamar-de-sousa-feitoza-junior-dc-ac-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Dr. Marcelo Queiroga",
+   "slug": "marcelo-antonio-cartaxo-queiroga-lopes-pl-pb-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Dr. Wanderley",
+   "slug": "jose-wanderley-neto-mdb-al-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Dr. Zacharias Calil",
+   "slug": "zacarias-calil-hamu-mdb-go-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Dr.hilton Gonçalo",
+   "slug": "hilton-goncalo-de-sousa-mobiliza-ma-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Dra Eliana Ferreira",
+   "slug": "eliana-lucia-ferreira-pstu-sp-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Eduardo Amorim",
+   "slug": "eduardo-alves-do-amorim-republicanos-se-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Eduardo Braga",
+   "slug": "carlos-eduardo-de-souza-braga-mdb-am-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Eduardo da Fonte",
+   "slug": "eduardo-henrique-da-fonte-de-albuquerque-silva-pp-pe-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Eduardo Gomes",
+   "slug": "carlos-eduardo-torres-gomes-pl-to",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Eduardo Velloso",
+   "slug": "eduardo-ovidio-borges-de-velloso-vianna-solidariedade-ac-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Edvaldo",
+   "slug": "edvaldo-nogueira-filho-pdt-se-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Eli Borges",
+   "slug": "eli-dias-borges-republicanos-to-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Eliziane Gama",
+   "slug": "eliziane-pereira-gama-melo-pt-ma-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Engenheiro Thulio",
+   "slug": "thulio-santiago-castro-missao-ro-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Enilton Rodrigues",
+   "slug": "enilton-silva-rodrigues-psol-ma-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Erika Kokay",
+   "slug": "erika-juca-kokay-pt-df-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Ernesto Roller",
+   "slug": "ernesto-guimaraes-roller-psdb-go-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Esperidião Amin",
+   "slug": "esperidiao-amin-helou-filho-pp-sc",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Evair de Melo",
+   "slug": "evair-vieira-de-melo-republicanos-es-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Evandro de Oliveira",
+   "slug": "jose-evandro-de-oliveira-pstu-am-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Fabiano Contarato",
+   "slug": "fabiano-contarato-pt-es",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Fábio Ribeiro",
+   "slug": "fabio-paulino-ribeiro-rede-to-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Fávaro",
+   "slug": "carlos-henrique-baqueta-favaro-psd-mt-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Fernanda Lopes",
+   "slug": "fernanda-maristane-lopes-araujo-up-pa-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Fidélis Alcântara",
+   "slug": "fidelis-oliveira-alcantara-up-mg-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Filipe Barros",
+   "slug": "filipe-barros-baptista-de-toledo-ribeiro-pl-pr-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Francinaldo Leão",
+   "slug": "francinaldo-silva-leao-psol-pi-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Frederico Antunes",
+   "slug": "frederico-cantori-antunes-psd-rs-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Fufuca",
+   "slug": "andre-luiz-carvalho-ribeiro-pp-ma-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Gaguim",
+   "slug": "carlos-henrique-amorim-uniao-to-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Galvan",
+   "slug": "antonio-galvan-avante-mt-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Gari Wendell Batista",
+   "slug": "wendell-batista-dos-santos-agir-rn-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Geraldo Rufino",
+   "slug": "geraldo-aristides-rufino-pode-sp-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Gizelle Freitas",
+   "slug": "gizelle-soares-de-freitas-psol-pa-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Gleisi",
+   "slug": "gleisi-helena-hoffmann-pt-pr-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Gorett Bitu",
+   "slug": "maria-gorett-bitu-up-pe-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Gracinha Caiado",
+   "slug": "maria-das-gracas-landim-de-carvalho-caiado-uniao-go-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Gregorio Gould",
+   "slug": "gregorio-motta-gould-up-ba-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Guilherme Darques",
+   "slug": "guilherme-darques-alves-de-paula-up-go-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Guilherme Derrite",
+   "slug": "guilherme-muraro-derrite-pp-sp-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Guilherme Theophilo",
+   "slug": "guilherme-cals-theophilo-gaspar-de-oliveira-novo-ce-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Gustavo Gayer",
+   "slug": "gustavo-gayer-machado-de-araujo-pl-go-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Gustavo Mendanha",
+   "slug": "gustavo-mendanha-melo-prd-go-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Guto Felício dos Santos",
+   "slug": "paulo-augusto-pimenta-felicio-dos-santos-psdb-df-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Guto Schiavetto",
+   "slug": "ricardo-augusto-mangue-schiavetto-missao-sp-senador-2026-554075",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Helder",
+   "slug": "helder-zahluth-barbalho-mdb-pa-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Helena da Asatur",
+   "slug": "maria-helena-teixeira-lima-psd-rr-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Helio Fernando Barbosa Lopes",
+   "slug": "helio-fernando-barbosa-lopes-pl-rr-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Helio Secco",
+   "slug": "helio-kinast-cruz-secco-missao-rj-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Helio Silva",
+   "slug": "helio-palheta-silva-pco-ap-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Hilton Xavier",
+   "slug": "hilton-xavier-de-araujo-avante-rr-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Humberto Costa",
+   "slug": "humberto-sergio-costa-lima-pt-pe",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Isaura Lemos",
+   "slug": "maria-isaura-lemos-psb-go-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Ismael Munduruku",
+   "slug": "ismael-franklin-goncalves-rede-am-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Iure Castro",
+   "slug": "iure-de-castro-silva-cidadania-go-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Janaina Riva",
+   "slug": "janaina-greyce-riva-fagundes-mdb-mt-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Jaques Wagner",
+   "slug": "jaques-wagner-pt-ba",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Jeferson Rocha",
+   "slug": "jeferson-da-rocha-prd-sc-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Joaninha de Oliveira",
+   "slug": "joaninha-de-oliveira-pstu-sc-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Joao Azevêdo",
+   "slug": "joao-azevedo-lins-filho-psb-pb-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "João Batista",
+   "slug": "joao-batista-domingos-up-pb-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "João Roma",
+   "slug": "joao-inacio-ribeiro-roma-neto-pl-ba-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Joaquim do Mlb",
+   "slug": "joaquim-silva-maciel-up-pr-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Jordano Metalúrgico",
+   "slug": "jordano-carvalho-dos-santos-pstu-mg-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Jorge Lopes",
+   "slug": "francisco-jorge-lopes-sousa-psdb-pi-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Jorge Viana",
+   "slug": "jorge-ney-viana-macedo-neves-pt-ac-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Juíz Ramon Moreira",
+   "slug": "ramon-moreira-dc-mg-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Juíza Jô",
+   "slug": "joenilda-lobato-silva-lenzi-dc-ap-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Júlio César O Julim do Lula",
+   "slug": "julio-cesar-de-carvalho-lima-psd-pi-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Karen Guerreiro",
+   "slug": "karen-correia-guerreiro-missao-pr-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Lahesio Bonfim",
+   "slug": "lahesio-rodrigues-do-bonfim-novo-ma-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Leila do Vôlei",
+   "slug": "leila-gomes-de-barros-rego-pdt-df-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Leonardo Monjardim",
+   "slug": "leonardo-passos-monjardim-novo-es-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Livia Noronha",
+   "slug": "livia-maria-araujo-noronha-de-oliveira-solidariedade-pa-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Lucas Barreto",
+   "slug": "luiz-cantuaria-barreto-psd-ap-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Luciana Mandu",
+   "slug": "luciana-lima-da-silva-pstu-rn-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Luciana Oliveira",
+   "slug": "luciana-de-oliveira-e-silva-pt-ro-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Luciano do Mlb",
+   "slug": "luciano-schafer-up-rs-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Luciano Mattos",
+   "slug": "luciano-oliveira-mattos-de-souza-prtb-rj-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Luis Fernando",
+   "slug": "luis-fernando-pereira-da-silva-psd-ro-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Luiz Lemes",
+   "slug": "luiz-antonio-lemes-de-oliveira-dc-ms-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Luizianne",
+   "slug": "luizianne-de-oliveira-lins-rede-ce-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Lunelli",
+   "slug": "antidio-aleixo-lunelli-mdb-sc-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Maguinha Malta",
+   "slug": "magda-santos-malta-pl-es-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Mailson da Silva Neto",
+   "slug": "mailson-da-silva-neto-pco-pe-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Maíra de Souza",
+   "slug": "maira-dias-de-souza-up-sp-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Major Fábio",
+   "slug": "fabio-rodrigues-de-oliveira-novo-pb-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Manoel Carvalho",
+   "slug": "manoel-teodoro-pereira-de-carvalho-filho-mdb-mg-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Manuela D Ávila",
+   "slug": "manuela-pinto-vieira-d-avila-psol-rs-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Mara Rocha",
+   "slug": "cylmara-fernandes-da-rocha-gripp-republicanos-ac-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Marcel van Hattem",
+   "slug": "marcel-van-hattem-novo-rs-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Marcelo Aro",
+   "slug": "marcelo-guilherme-de-aro-ferreira-pp-mg-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Marcelo Carvalho",
+   "slug": "marcelo-carvalho-lavigne-rede-ba-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Marcelo Castro",
+   "slug": "marcelo-costa-e-castro-mdb-pi-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Marcelo Crivella",
+   "slug": "marcelo-bezerra-crivella-republicanos-rj-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Marcelo Millet",
+   "slug": "marcelo-millet-oliveira-pco-ba-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Marcelo Santtana",
+   "slug": "marcelino-jose-guimaraes-santana-dc-ba-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Marcio Alves",
+   "slug": "marcio-alves-dos-santos-up-sp-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Marcio Bittar",
+   "slug": "marcio-miguel-bittar-pl-ac-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Marco Antônio Superman",
+   "slug": "marco-antonio-moreira-da-costa-novo-mg-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Marcos Dias",
+   "slug": "marcos-dias-pereira-pode-rj-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Marcos do Val",
+   "slug": "marcos-ribeiro-do-val-avante-es-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Marcos Dorval",
+   "slug": "marcos-dorval-schmitz-pstu-sc-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Margareth Buzetti",
+   "slug": "margareth-gettert-busetti-pp-mt-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Maria Madalena Nunes",
+   "slug": "maria-madalena-nunes-psol-pi-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Mariana Carvalho",
+   "slug": "mariana-fonseca-ribeiro-carvalho-de-moraes-republicanos-ro-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Mariano Macedo",
+   "slug": "jose-mariano-de-macedo-pstu-pe-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Mariedson",
+   "slug": "jose-mariedson-da-silva-democrata-al-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Marília Arraes",
+   "slug": "marilia-valenca-rocha-arraes-de-alencar-pdt-pe-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Marília Campos",
+   "slug": "marilia-aparecida-campos-pt-mg-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Marina Jhc",
+   "slug": "marina-antunes-candia-e-figueiredo-psdb-al-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Marina Silva",
+   "slug": "maria-osmarina-marina-da-silva-vaz-de-lima-rede-sp-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Mario Rocha",
+   "slug": "mario-souza-da-rocha-psol-rr-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Marlene Soccas",
+   "slug": "marlene-de-souza-soccas-up-sc-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Marley",
+   "slug": "marley-mendonca-alves-avante-df-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Mauro Mendes",
+   "slug": "mauro-mendes-ferreira-uniao-mt-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Mendonça Filho",
+   "slug": "jose-mendonca-bezerra-filho-pl-pe-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Michelle Bolsonaro",
+   "slug": "michelle-de-paula-firmo-reinaldo-bolsonaro-pl-df-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Michelly Xavier",
+   "slug": "michelly-xavier-de-souza-up-rj-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Milton Cardoso",
+   "slug": "milton-batista-cardoso-psdb-rs-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Monica Benicio",
+   "slug": "monica-tereza-azeredo-benicio-psol-rj-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Nabor",
+   "slug": "nabor-wanderley-da-nobrega-filho-republicanos-pb-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Neidinha",
+   "slug": "ivaneide-bandeira-cardozo-psb-ro-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Nicoletti",
+   "slug": "antonio-carlos-nicoletti-pl-rr-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Ó Clemente",
+   "slug": "clemente-sebastiao-de-almeida-campos-democrata-rj-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Oséias Varão",
+   "slug": "oseias-mendes-pereira-varao-pl-go-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Pastor Isamar",
+   "slug": "isamar-pessoa-ramalho-uniao-rr-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Paula Falcão",
+   "slug": "paula-andreia-almeida-falcao-pstu-rj-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Paulo Mourão",
+   "slug": "paulo-sardinha-mourao-pt-to-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Paulo Rubem Santiago",
+   "slug": "paulo-rubem-santiago-ferreira-rede-pe-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Pedro Laurentino",
+   "slug": "pedro-laurentino-reis-pereira-up-pi-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Pedro Paulo",
+   "slug": "pedro-paulo-carvalho-teixeira-psd-rj-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Pedro Taques",
+   "slug": "jose-pedro-goncalves-taques-psb-mt-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Petecão",
+   "slug": "sergio-de-oliveira-cunha-psd-ac-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Petter Maahs",
+   "slug": "petter-maahs-da-silva-pcb-sp-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Pimenta",
+   "slug": "paulo-roberto-severo-pimenta-pt-rs-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Plinio Valério",
+   "slug": "francisco-plinio-valerio-tomaz-psdb-am-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Professor Fabian",
+   "slug": "carlos-fabian-de-carvalho-psol-es-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Professor Guilherme",
+   "slug": "guilherme-oliveira-mosca-up-rn-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Professor Guilherme Amorim",
+   "slug": "guilherme-de-amorim-lino-up-df-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Professor Inacio Moreira",
+   "slug": "inacio-alves-moreira-netto-psol-ac-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Professor Nelson Ferreira",
+   "slug": "nelson-carlos-ferreira-junior-agir-mt-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Professor Osvaldo",
+   "slug": "osvaldo-soares-neto-psol-to-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Professor Uzian Pinto",
+   "slug": "uzian-pinto-machado-dc-ap-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Professora Delliana",
+   "slug": "delliana-ricelli-ribeiro-da-silva-psol-ba-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Professora Evany",
+   "slug": "maria-evany-do-nascimento-psol-am-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Rafael Motta",
+   "slug": "rafael-huete-da-motta-pdt-rn-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Raimundo Moreira",
+   "slug": "raimundo-moreira-correa-pcb-ma-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Randolfe",
+   "slug": "randolph-frederich-rodrigues-alves-pt-ap-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Rayssa Furlan",
+   "slug": "rayssa-cadena-furlan-pode-ap-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Regina Tio Ivo",
+   "slug": "regina-aparecida-silva-novo-rr-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Reginaldo",
+   "slug": "reginaldo-ferreira-de-araujo-pstu-ce-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Regis Ethur",
+   "slug": "regis-batista-ethur-pstu-rs-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Reinaldo Azambuja",
+   "slug": "reinaldo-azambuja-silva-pl-ms-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Renan",
+   "slug": "jose-renan-vasconcelos-calheiros-mdb-al-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Renatinha",
+   "slug": "renata-oliveira-silva-dc-se-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Renato Casagrande",
+   "slug": "jose-renato-casagrande-psb-es-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Renato Jaguarão",
+   "slug": "paulo-renato-jaguarao-silva-da-rosa-cidadania-rs-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Rigotto",
+   "slug": "germano-antonio-rigotto-mdb-rs-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Rinaldo Júnior",
+   "slug": "rinaldo-elias-pereira-junior-dc-pb-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Roberto Oshiro",
+   "slug": "roberto-tarashigue-oshiro-junior-novo-ms-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Rodney Miranda",
+   "slug": "rodney-rocha-miranda-prtb-es-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Rodrigo Valadares",
+   "slug": "rodrigo-santana-valadares-pl-se-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Rogerio Carvalho",
+   "slug": "rogerio-carvalho-santos-pt-se-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Rogério Miranda",
+   "slug": "rogerio-miranda-dc-rr-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Ronaldo Dimas",
+   "slug": "ronaldo-dimas-nogueira-pereira-pode-to-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Ronaldo Fonseca",
+   "slug": "ronaldo-fonseca-de-souza-psd-df-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Rosália Fernandes",
+   "slug": "rosalia-maria-fernandes-pstu-rn-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Rose de Freitas",
+   "slug": "rosilda-de-freitas-mdb-es-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Roseana Sarney",
+   "slug": "roseana-sarney-murad-mdb-ma-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Rosilene Santana",
+   "slug": "rosilene-da-silva-santana-up-pb-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Rui Costa",
+   "slug": "rui-costa-dos-santos-pt-ba-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Salles",
+   "slug": "ricardo-de-aquino-salles-novo-sp-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Samanda de Lula",
+   "slug": "samanda-alves-de-freitas-pt-rn-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Samuel Timoteo",
+   "slug": "samuel-timoteo-da-silva-up-pe-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Sanderson",
+   "slug": "ubiratan-antunes-sanderson-pl-rs-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Sandro Pimentel",
+   "slug": "sandro-de-oliveira-pimentel-psol-rn-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Sebastião Coelho",
+   "slug": "sebastiao-coelho-da-silva-novo-df-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Sergio Meneguelli",
+   "slug": "sergio-meneguelli-psd-es-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Sílvia Cristina",
+   "slug": "silvia-cristina-amancio-chagas-pp-ro-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Simone Tebet",
+   "slug": "simone-nassar-tebet-rocha-psb-sp-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Sonia Godeiro",
+   "slug": "sonia-maria-godeiro-psol-rn-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Soninha Francine",
+   "slug": "sonia-francine-gaspar-marmo-cidadania-sp-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Soraya",
+   "slug": "soraya-vieira-thronicke-psb-ms-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Styvenson Valentim",
+   "slug": "eann-styvenson-valentim-mendes-pode-rn-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Tania Peres",
+   "slug": "tania-mara-santoro-peres-up-rs-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Tércio Tinôco",
+   "slug": "tercio-barreto-ramos-tinoco-uniao-rn-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Teresa Surita",
+   "slug": "maria-teresa-saenz-surita-guimaraes-mdb-rr-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Tiago Junqueira",
+   "slug": "tiago-maximiano-junqueira-pl-pi-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Túlio de Amorim Pfuetzenreiter",
+   "slug": "tulio-de-amorim-pfuetzenreiter-missao-sc-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Túlio Gadêlha",
+   "slug": "tulio-gadelha-sales-de-melo-psd-pe-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Valderi Garcia",
+   "slug": "valderi-garcia-pco-ms-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Valter da Comagran",
+   "slug": "valter-juvenal-de-oliveira-prd-ms-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Vander Loubet",
+   "slug": "vander-luiz-dos-santos-loubet-pt-ms-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Vanderlan Cardoso",
+   "slug": "vanderlan-vieira-cardoso-psd-go-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Vanderlei Luxemburgo",
+   "slug": "vanderlei-luxemburgo-da-silva-pode-to-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Veneziano",
+   "slug": "veneziano-vital-do-rego-segundo-neto-mdb-pb-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Victória Mello Vic",
+   "slug": "victoria-de-fatima-de-mello-pstu-mg-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Vinicius Benevides",
+   "slug": "vinicius-benevides-dos-santos-conceicao-up-rj-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Waguinho",
+   "slug": "wagner-dos-santos-carneiro-republicanos-rj-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Weller Gonçalves",
+   "slug": "weller-pereira-goncalves-pstu-sp-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Weverton Rocha",
+   "slug": "weverton-rocha-marques-de-sousa-pdt-ma-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "William Teixeira",
+   "slug": "william-teixeira-de-oliveira-agir-sp-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Wilson Leite",
+   "slug": "francisco-wilson-leite-da-silva-pstu-ma-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Wilson Lima",
+   "slug": "wilson-miranda-lima-uniao-am-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Xuxa do Amazonas",
+   "slug": "milton-rogerio-moreira-pinto-mobiliza-am-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Zanata",
+   "slug": "eduardo-renno-zanata-pstu-df-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Zé Medeiros",
+   "slug": "jose-antonio-dos-santos-medeiros-pl-mt-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Zenaide Maia",
+   "slug": "zenaide-maia-calado-pereira-dos-santos-psd-rn-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "senado (alfabética)",
+   "nome": "Zequinha Marinho",
+   "slug": "jose-da-cruz-marinho-pode-pa-senador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Acm Neto",
+   "slug": "antonio-carlos-peixoto-de-magalhaes-neto-uniao-ba-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Adailton Furia",
+   "slug": "adailton-antunes-ferreira-psd-ro-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Alan Rick",
+   "slug": "alan-rick-miranda-republicanos-ac-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Alexandre Kalil",
+   "slug": "alexandre-kalil-pdt-mg-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Allyson",
+   "slug": "allyson-leandro-bezerra-silva-uniao-rn-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Álvaro Dias",
+   "slug": "alvaro-costa-dias-pl-rn-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "André Luis",
+   "slug": "andre-luis-caetano-dos-santos-missao-ma-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "André Marinho",
+   "slug": "andre-bourguignon-marinho-novo-rj-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Araceli",
+   "slug": "araceli-maria-pereira-lemos-psol-pa-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Ariel Capistrano",
+   "slug": "ariel-da-silva-capistrano-dc-ba-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Arinalda do Mlb",
+   "slug": "arinalda-vasconcelos-de-medeiros-up-rn-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Aroldo Felix",
+   "slug": "aroldo-felix-de-azevedo-junior-up-ba-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Arthur Henrique",
+   "slug": "arthur-henrique-brandao-machado-pl-rr-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Ataides de Oliveira",
+   "slug": "ataides-de-oliveira-novo-to-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Ben Mendes",
+   "slug": "benoni-benjamin-cardoso-mendes-missao-mg-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Breno Barcelos",
+   "slug": "breno-augusto-fagundes-barcelos-missao-es-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Bruno Pedreiro do Pco",
+   "slug": "brunno-andrade-dias-pco-sc-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Cabo Daciolo",
+   "slug": "benevenuto-daciolo-fonseca-dos-santos-mobiliza-am-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Cadu de Lula",
+   "slug": "carlos-eduardo-xavier-pt-rn-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Camilo Duarte",
+   "slug": "camilo-sobreira-duarte-filho-pco-pb-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Cappelli",
+   "slug": "ricardo-garcia-cappelli-psb-df-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Carlos Cley",
+   "slug": "carlos-cley-ramos-paiva-pstu-ap-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Carlos Machado",
+   "slug": "carlos-alberto-machado-pcb-sp-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Celina Leão",
+   "slug": "celina-leao-hizim-ferreira-pp-df-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Cícero Lucena",
+   "slug": "cicero-de-lucena-filho-mdb-pb-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Ciro Gomes",
+   "slug": "ciro-ferreira-gomes-psdb-ce-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Clécio",
+   "slug": "clecio-luis-vilhena-vieira-uniao-ap-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Cleitinho Azevedo",
+   "slug": "cleiton-gontijo-de-azevedo-republicanos-mg-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Coronel Busnello",
+   "slug": "joao-jacques-soares-busnello-missao-rj-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Cyro Garcia",
+   "slug": "cyro-garcia-pstu-rj-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Daniel Lemes",
+   "slug": "daniel-lemes-vasques-pco-ms-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Daniel Vilela",
+   "slug": "daniel-elias-carvalho-vilela-mdb-go-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Danilo da Silva",
+   "slug": "danilo-pinheiro-evangelista-da-silva-pco-go-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Danilo Soares",
+   "slug": "danilo-soares-sousa-democrata-ce-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Dário Barbosa",
+   "slug": "dario-barbosa-de-melo-pstu-rn-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "David Almeida",
+   "slug": "david-antonio-abisai-pereira-de-almeida-avante-am-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Delcidio Amaral",
+   "slug": "delcidio-do-amaral-gomez-prd-ms-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Delegado Huggo",
+   "slug": "huggo-leonardo-de-lima-anastacio-missao-ce-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Delegado Marcos",
+   "slug": "marcos-jose-reategui-de-souza-dc-ap-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Douglas Ruas",
+   "slug": "douglas-ruas-dos-santos-pl-rj-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Doutor Alexandre Salomão",
+   "slug": "alexandre-salomao-mobiliza-pr-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Doutora Natasha",
+   "slug": "natasha-slhessarenko-fraife-barreto-psd-mt-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Dr. Daniel",
+   "slug": "daniel-barbosa-santos-pode-pa-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Dr. Furlan",
+   "slug": "antonio-paulo-de-oliveira-furlan-psd-ap-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Dr.luisinho",
+   "slug": "francisco-das-chagas-conceicao-da-silva-agir-ac-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Dra. Lúcia Santos",
+   "slug": "lucia-maria-de-sousa-aguiar-dos-santos-psdb-pi-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Du Pereira",
+   "slug": "ivaildo-pereira-da-cruz-dc-to-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Economista Renato Gomes",
+   "slug": "renato-wanderley-gomes-dc-ms-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Eduardo Braide",
+   "slug": "eduardo-salim-braide-psd-ma-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Eduardo Paes",
+   "slug": "eduardo-da-costa-paes-psd-rj-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Eduardo Riedel",
+   "slug": "eduardo-correa-riedel-pp-ms-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Efraim Filho",
+   "slug": "efraim-de-araujo-morais-filho-pl-pb-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Elizeu Aguiar",
+   "slug": "elizeu-morais-de-aguiar-novo-pi-governador-2026-549920",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Elizeu Morais de Aguiar",
+   "slug": "elizeu-morais-de-aguiar-novo-pi-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Elmano de Freitas",
+   "slug": "elmano-de-freitas-da-costa-pt-ce-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Emanuel Cacho",
+   "slug": "emanuel-messias-oliveira-cacho-psdb-se-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Eudo Raffael",
+   "slug": "eudo-raffael-lima-da-silva-pcb-ac-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Expedito Mendonça",
+   "slug": "expedito-carneiro-de-mendonca-pco-df-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Expedito Netto",
+   "slug": "expedito-goncalves-ferreira-netto-pt-ro-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Fábio",
+   "slug": "fabio-cruz-mitidieri-psd-se-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Fábio Trad",
+   "slug": "fabio-ricardo-trad-pt-ms-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Farah Mesquita",
+   "slug": "farah-mesquita-solidariedade-rr-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Felipe Camarão",
+   "slug": "felipe-costa-camarao-pt-ma-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Fernando Haddad",
+   "slug": "fernando-haddad-pt-sp-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Flávio Roscoe",
+   "slug": "flavio-roscoe-nogueira-pl-mg-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Gabriel",
+   "slug": "gabriel-sousa-marques-de-azevedo-mdb-mg-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Gabriel Souza",
+   "slug": "gabriel-vieira-de-souza-mdb-rs-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Gal Leite",
+   "slug": "gualdina-maria-menezes-leite-up-pa-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Gelson Merísio",
+   "slug": "gelson-luiz-merisio-psb-sc-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Gilberto Vasconcelos",
+   "slug": "gilberto-vasconcelos-da-silva-pstu-am-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Godeiro Linharess",
+   "slug": "gladyer-linhares-godeiro-dc-rn-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Guilherme Fonseca",
+   "slug": "guilherme-fonseca-pstu-pe-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Hana Ghassan",
+   "slug": "hana-ghassan-tuma-mdb-pa-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Helder Salomão",
+   "slug": "helder-ignacio-salomao-pt-es-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Hildon Chaves",
+   "slug": "hildon-de-lima-chaves-uniao-ro-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Ieri Braga",
+   "slug": "ieri-de-sousa-braga-junior-pco-ce-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Indira Xavier",
+   "slug": "indira-ivanise-xavier-up-mg-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Isael Munduruku",
+   "slug": "isael-franklin-goncalves-rede-am-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Ivan Moraes",
+   "slug": "ivan-vasconcellos-de-moraes-filho-psol-pe-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Jairo Palheta",
+   "slug": "jairo-palheta-da-silva-marques-pco-ap-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Jeferson Bezerra",
+   "slug": "jeferson-jose-bezerra-agir-ms-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Jerônimo Rodrigues",
+   "slug": "jeronimo-rodrigues-souza-pt-ba-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Jhc",
+   "slug": "joao-henrique-holanda-caldas-psdb-al-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "João Campos",
+   "slug": "joao-henrique-de-andrade-lima-campos-psb-pe-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "João Henrique Catan",
+   "slug": "joao-henrique-miranda-soares-catan-novo-ms-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "João Rodrigues",
+   "slug": "joao-rodrigues-psd-sc-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Joel Rodrigues",
+   "slug": "joel-rodrigues-da-silva-pp-pi-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Jorginho Mello",
+   "slug": "jorginho-dos-santos-mello-pl-sc-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Juliana Brizola",
+   "slug": "juliana-brizola-pdt-rs-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Juliete",
+   "slug": "juliete-pantoja-alves-up-rj-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Kiko Caputo",
+   "slug": "francisco-queiroz-caputo-neto-novo-df-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Laís Chaud",
+   "slug": "lais-paganelli-chaud-up-sc-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Laurez Moreira",
+   "slug": "laurez-da-rocha-moreira-psd-to-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Leandro Grass",
+   "slug": "leandro-antonio-grass-peixoto-pt-df-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Lenilda Luna",
+   "slug": "lenilda-luna-de-almeida-up-al-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Lorenzo Pazolini",
+   "slug": "lorenzo-silva-de-pazolini-republicanos-es-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Luan Monteiro",
+   "slug": "luan-monteiro-paschoal-pires-pco-rj-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Lucas Ribeiro",
+   "slug": "lucas-ribeiro-novais-de-araujo-pp-pb-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Luciana Amorim",
+   "slug": "luciana-de-deus-amorim-up-go-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Lucien Rezende",
+   "slug": "lucien-roberto-garcia-de-rezende-psol-ms-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Luis Cesar Bueno",
+   "slug": "luis-cesar-bueno-e-freitas-pt-go-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Luiz França",
+   "slug": "luiz-felipe-martins-franca-missao-pr-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Mailza Assis",
+   "slug": "mailza-assis-cameli-pp-ac-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Marcelo Brigadeiro",
+   "slug": "marcelo-marcel-franco-jose-da-silva-missao-sc-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Marcelo Maranata",
+   "slug": "marcelo-maranata-soares-reinaldo-psdb-rs-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Márcio Jambo",
+   "slug": "marcio-ferreira-jambo-sobrinho-democrata-al-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Marconi Perillo",
+   "slug": "marconi-ferreira-perillo-junior-psdb-go-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Marcos Rogério",
+   "slug": "marcos-rogerio-da-silva-brito-pl-ro-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Maria Bona",
+   "slug": "maria-bona-carrara-de-sumbuy-pco-ba-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Mateus Simões",
+   "slug": "mateus-simoes-de-almeida-psd-mg-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Mauricio Coelho",
+   "slug": "mauricio-coelho-de-souza-junior-mobiliza-mt-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Omar Aziz",
+   "slug": "omar-jose-abdel-aziz-psd-am-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Orleans Brandão",
+   "slug": "carlos-orleans-braide-brandao-mdb-ma-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Otaviano Pivetta",
+   "slug": "otaviano-olavo-pivetta-republicanos-mt-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Patrus Ananias",
+   "slug": "patrus-ananias-de-sousa-pt-mg-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Paula Belmonte",
+   "slug": "paula-moreno-paro-belmonte-psdb-df-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Pedro Abib",
+   "slug": "pedro-abib-hecktheuer-mdb-ro-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Pedro Coutinho",
+   "slug": "pedro-jorge-coutinho-guerra-dc-pb-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Priscila Voigt",
+   "slug": "priscila-voigt-severiano-up-rs-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Prof Witer Naves",
+   "slug": "witer-fonseca-naves-psol-to-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Professor Gisvaldo",
+   "slug": "gisvaldo-oliveira-da-silva-psol-pi-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Professor Marcus Sodré",
+   "slug": "marcus-alexandre-sodre-pstu-sc-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Professor Roberio Paulino",
+   "slug": "roberio-paulino-rodrigues-psol-rn-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Professor Robson",
+   "slug": "robson-raymundo-da-silva-pstu-df-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Professor Túlio Lopes",
+   "slug": "tulio-cesar-dias-lopes-pcb-mg-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Professora Camila",
+   "slug": "maria-camila-da-silva-falcao-up-pe-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Professora Dorinha",
+   "slug": "maria-auxiliadora-seabra-rezende-uniao-to-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Professora Maria do Carmo",
+   "slug": "maria-do-carmo-seffair-lins-de-albuquerque-pl-am-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Professora Samara Mineiro",
+   "slug": "samara-mineiro-oliveira-up-df-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Rafael Demuner",
+   "slug": "rafael-ketley-demuner-up-es-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Rafael Duda",
+   "slug": "rafael-ribeiro-de-avila-pstu-mg-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Rafael Fonteles",
+   "slug": "rafael-tajra-fonteles-pt-pi-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Rafaell Milas",
+   "slug": "rafaell-milas-de-oliveira-missao-mt-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Ralf Zimmer",
+   "slug": "ralf-guimaraes-zimmer-junior-prd-sc-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Raquel Lyra",
+   "slug": "raquel-teixeira-lyra-lucena-psd-pe-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Reginaldo Lima",
+   "slug": "reginaldo-lima-brauno-pcb-ma-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Rejane de Oliveira",
+   "slug": "rejane-silva-de-oliveira-pstu-rs-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Renan",
+   "slug": "renan-lucio-sant-anna-hallais-missao-pe-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Renan Filho",
+   "slug": "jose-renan-vasconcelos-calheiros-filho-mdb-al-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Requião Filho",
+   "slug": "mauricio-thadeu-de-mello-e-silva-pdt-pr-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Ricardo Ferraço",
+   "slug": "ricardo-de-rezende-ferraco-mdb-es-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Ricardo Marques",
+   "slug": "jose-ricardo-marques-dos-santos-pl-se-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Roberto Cidade",
+   "slug": "roberto-maia-cidade-filho-uniao-am-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Rodrigo de Bolsonaro",
+   "slug": "karlo-rodrigo-lucio-vieira-agir-rn-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Ronaldo Mansur",
+   "slug": "ronaldo-mansur-santos-silva-psol-ba-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Rosi Aires",
+   "slug": "rosimayre-patricia-aires-da-silva-psol-rr-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Samuel Costa",
+   "slug": "samuel-costa-menezes-psb-ro-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Samuel de Mattos",
+   "slug": "samuel-de-mattos-figueiredo-pstu-pr-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Sandro Alex",
+   "slug": "sandro-alex-cruz-de-oliveira-psd-pr-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Santiago Belizário",
+   "slug": "jose-santiago-belizario-up-pi-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Saulo Arcangeli",
+   "slug": "saulo-costa-arcangeli-pstu-ma-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Sergio Moro",
+   "slug": "sergio-fernando-moro-pl-pr-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Serley Leal",
+   "slug": "serley-de-souza-leal-up-ce-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Siqueira Campos Jr",
+   "slug": "jose-wilson-siqueira-campos-junior-democrata-to-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Soldado Sampaio",
+   "slug": "francisco-dos-santos-sampaio-republicanos-rr-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Tarcísio",
+   "slug": "tarcisio-gomes-de-freitas-republicanos-sp-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Taty Cristina de Jesus",
+   "slug": "tatiana-cristina-santos-de-jesus-dc-se-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Tayná Miessa",
+   "slug": "tayna-miessa-tsushida-up-pr-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Thor Dantas",
+   "slug": "thor-oliveira-dantas-psb-ac-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Tião Bocalom",
+   "slug": "sebastiao-bocalom-rodrigues-psdb-ac-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Valmir de Francisquinho",
+   "slug": "valmir-dos-santos-costa-republicanos-se-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Vera Lúcia",
+   "slug": "vera-lucia-da-silva-novo-ce-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Vera Lúcia",
+   "slug": "vera-lucia-pereira-da-silva-salgado-pstu-sp-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Vicentinho Júnior",
+   "slug": "vicente-alves-de-oliveira-junior-psdb-to-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Victor Assis",
+   "slug": "victor-assis-da-silva-pco-pe-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Vivian Mendes",
+   "slug": "vivian-mendes-da-silva-up-sp-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Well Macedo",
+   "slug": "wellingta-josyane-siqueira-macedo-pstu-pa-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Wellington Fagundes",
+   "slug": "wellington-antonio-fagundes-pl-mt-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Wilder Morais",
+   "slug": "wilder-pedro-de-morais-pl-go-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "William Siri",
+   "slug": "william-carlos-brum-bispo-psol-rj-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Yuri Ezequiel",
+   "slug": "yuri-ezequiel-de-lima-silva-up-pb-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Zé Batista",
+   "slug": "jose-batista-neto-pstu-ce-governador-2026",
+   "votos": 0
+  },
+  {
+   "grupo": "governo (alfabética)",
+   "nome": "Zucco",
+   "slug": "luciano-lorenzini-zucco-pl-rs-governador-2026",
+   "votos": 0
+  }
+ ]
+}

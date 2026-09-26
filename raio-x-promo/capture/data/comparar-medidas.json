@@ -1,0 +1,134 @@
+{
+ "luiz-flavio": [
+  {
+   "article": {
+    "w": 280,
+    "h": 326
+   },
+   "title": {
+    "x": 0,
+    "y": 24,
+    "w": 280,
+    "h": 137.5
+   },
+   "meta": {
+    "x": 0,
+    "y": 248,
+    "w": 280,
+    "h": 53
+   },
+   "ia": {
+    "x": 24.203125,
+    "y": 267,
+    "w": 106.609375,
+    "h": 15
+   },
+   "link": {
+    "x": 107.765625,
+    "y": 286,
+    "w": 172.234375,
+    "h": 15
+   },
+   "linkText": "Baixar plano no TSE ↗",
+   "href": "https://cdn.tse.jus.br/estatistica/sead/odsele/proposta_governo/proposta_governo_2026_BR.zip#entry=BR%2F2026BR280002542548_01.pdf"
+  },
+  {
+   "article": {
+    "w": 247,
+    "h": 368.5
+   },
+   "title": {
+    "x": 0,
+    "y": 24,
+    "w": 247,
+    "h": 165
+   },
+   "meta": {
+    "x": 0,
+    "y": 275.5,
+    "w": 247,
+    "h": 68
+   },
+   "ia": {
+    "x": 24.203125,
+    "y": 309.5,
+    "w": 106.609375,
+    "h": 15
+   },
+   "link": {
+    "x": 74.765625,
+    "y": 328.5,
+    "w": 172.234375,
+    "h": 15
+   },
+   "linkText": "Baixar plano no TSE ↗",
+   "href": "https://cdn.tse.jus.br/estatistica/sead/odsele/proposta_governo/proposta_governo_2026_BR.zip#entry=BR%2F2026BR280002551544_01.pdf"
+  }
+ ],
+ "renan-augusto": [
+  {
+   "article": {
+    "w": 280,
+    "h": 353.5
+   },
+   "title": {
+    "x": 0,
+    "y": 24,
+    "w": 280,
+    "h": 165
+   },
+   "meta": {
+    "x": 0,
+    "y": 275.5,
+    "w": 280,
+    "h": 53
+   },
+   "ia": {
+    "x": 24.203125,
+    "y": 294.5,
+    "w": 106.609375,
+    "h": 15
+   },
+   "link": {
+    "x": 107.765625,
+    "y": 313.5,
+    "w": 172.234375,
+    "h": 15
+   },
+   "linkText": "Baixar plano no TSE ↗",
+   "href": "https://cdn.tse.jus.br/estatistica/sead/odsele/proposta_governo/proposta_governo_2026_BR.zip#entry=BR%2F2026BR280002540694_01.pdf"
+  },
+  {
+   "article": {
+    "w": 247,
+    "h": 368.5
+   },
+   "title": {
+    "x": 0,
+    "y": 24,
+    "w": 247,
+    "h": 165
+   },
+   "meta": {
+    "x": 0,
+    "y": 275.5,
+    "w": 247,
+    "h": 68
+   },
+   "ia": {
+    "x": 24.203125,
+    "y": 309.5,
+    "w": 106.609375,
+    "h": 15
+   },
+   "link": {
+    "x": 74.765625,
+    "y": 328.5,
+    "w": 172.234375,
+    "h": 15
+   },
+   "linkText": "Baixar plano no TSE ↗",
+   "href": "https://cdn.tse.jus.br/estatistica/sead/odsele/proposta_governo/proposta_governo_2026_BR.zip#entry=BR%2F2026BR280002551547_01.pdf"
+  }
+ ]
+}

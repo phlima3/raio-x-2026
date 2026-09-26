@@ -1,0 +1,83 @@
+{
+ "fonte": "packages/web/public/images/candidates/tse/ (fotos oficiais do TSE, o mesmo src que a home usa em 26/09/2026)",
+ "fotos": [
+  {
+   "ballotNumber": 13,
+   "slug": "luiz-inacio-lula-da-silva-pt-sp",
+   "photoSrc": "/images/candidates/tse/280002542548.jpg",
+   "file": "assets/photos/urna-13.jpg"
+  },
+  {
+   "ballotNumber": 14,
+   "slug": "renan-santos-missao-sp",
+   "photoSrc": "/images/candidates/tse/280002540694.jpg",
+   "file": "assets/photos/urna-14.jpg"
+  },
+  {
+   "ballotNumber": 16,
+   "slug": "hertz-da-conceicao-dias-pstu-br-presidente-2026",
+   "photoSrc": "/images/candidates/tse/280002541457.jpg",
+   "file": "assets/photos/urna-16.jpg"
+  },
+  {
+   "ballotNumber": 21,
+   "slug": "edmilson-silva-costa-pcb-br-presidente-2026",
+   "photoSrc": "/images/candidates/tse/280002551975.jpg",
+   "file": "assets/photos/urna-21.jpg"
+  },
+  {
+   "ballotNumber": 22,
+   "slug": "flavio-bolsonaro-pl-rj",
+   "photoSrc": "/images/candidates/tse/280002551544.jpg",
+   "file": "assets/photos/urna-22.jpg"
+  },
+  {
+   "ballotNumber": 27,
+   "slug": "clariana-zacarkim-barao-dc-br-presidente-2026",
+   "photoSrc": "/images/candidates/tse/280002552484.jpg",
+   "file": "assets/photos/urna-27.jpg"
+  },
+  {
+   "ballotNumber": 28,
+   "slug": "leonardo-alves-de-araujo-prtb-br-presidente-2026",
+   "photoSrc": null,
+   "file": null
+  },
+  {
+   "ballotNumber": 29,
+   "slug": "rui-costa-pimenta-pco-br-presidente-2026",
+   "photoSrc": "/images/candidates/tse/280002552487.jpg",
+   "file": "assets/photos/urna-29.jpg"
+  },
+  {
+   "ballotNumber": 30,
+   "slug": "romeu-zema-novo-mg",
+   "photoSrc": "/images/candidates/tse/280002539826.jpg",
+   "file": "assets/photos/urna-30.jpg"
+  },
+  {
+   "ballotNumber": 35,
+   "slug": "wilson-grassi-junior-democrata-br-presidente-2026",
+   "photoSrc": "/images/candidates/tse/280002548139.jpg",
+   "file": "assets/photos/urna-35.jpg"
+  },
+  {
+   "ballotNumber": 55,
+   "slug": "ronaldo-ramos-caiado-psd-br-presidente-2026",
+   "photoSrc": "/images/candidates/tse/280002551932.jpg",
+   "file": "assets/photos/urna-55.jpg"
+  },
+  {
+   "ballotNumber": 70,
+   "slug": "augusto-jorge-cury-avante-br-presidente-2026",
+   "photoSrc": "/images/candidates/tse/280002551547.jpg",
+   "file": "assets/photos/urna-70.jpg"
+  },
+  {
+   "ballotNumber": 80,
+   "slug": "samara-martins-da-silva-feitosa-up-br-presidente-2026",
+   "photoSrc": "/images/candidates/tse/280002538811.jpg",
+   "file": "assets/photos/urna-80.jpg"
+  }
+ ]
+}
